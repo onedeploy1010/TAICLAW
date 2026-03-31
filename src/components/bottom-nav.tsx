@@ -51,10 +51,10 @@ export function BottomNav() {
                 <Icon
                   className={`transition-all duration-300 ${
                     isActive
-                      ? "h-[22px] w-[22px] text-[#00e7a0]"
+                      ? "h-[22px] w-[22px] text-primary"
                       : "h-5 w-5 text-[rgba(180,195,190,0.5)]"
                   }`}
-                  style={isActive ? { filter: "drop-shadow(0 0 8px rgba(0,231,160,0.5))" } : undefined}
+                  style={isActive ? { filter: "drop-shadow(0 0 8px rgba(212,175,55,0.45))" } : undefined}
                 />
               </button>
             </Link>

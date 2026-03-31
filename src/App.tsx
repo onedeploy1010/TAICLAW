@@ -195,9 +195,9 @@ function WalletSync() {
         className="w-[calc(100vw-24px)] max-w-[420px] p-0 overflow-hidden [&>button:last-child]:hidden"
         style={{
           background: "#1a1a1a",
-          border: "1px solid rgba(10,186,181,0.3)",
+          border: "1px solid rgba(212,175,55,0.25)",
           borderRadius: 20,
-          boxShadow: "0 25px 60px rgba(0,0,0,0.7), 0 0 40px rgba(10,186,181,0.1)",
+          boxShadow: "0 25px 60px rgba(0,0,0,0.7), 0 0 40px rgba(212,175,55,0.12)",
         }}
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
@@ -207,7 +207,7 @@ function WalletSync() {
         <div className="px-5 sm:px-6 pt-5 pb-2">
           <div className="text-center mb-3">
             <div className="w-11 h-11 rounded-2xl mx-auto mb-2.5 flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #0abab5, #34d399)", boxShadow: "0 4px 15px rgba(10,186,181,0.4)" }}>
+              style={{ background: "linear-gradient(135deg, #D4AF37, #FF3B3B)", boxShadow: "0 4px 15px rgba(212,175,55,0.35)" }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
               </svg>
@@ -225,7 +225,7 @@ function WalletSync() {
               onChange={(e) => { setRefInput(e.target.value); setRefError(""); }}
               placeholder={t("profile.refCodePlaceholder")}
               className="w-full h-11 rounded-xl px-4 text-sm text-white placeholder:text-white/25 outline-none font-mono"
-              style={{ background: "rgba(255,255,255,0.06)", border: refError ? "1px solid #ef4444" : "1px solid rgba(10,186,181,0.15)" }}
+              style={{ background: "rgba(255,255,255,0.06)", border: refError ? "1px solid #ef4444" : "1px solid rgba(212,175,55,0.15)" }}
               autoFocus
             />
           </div>
@@ -246,7 +246,7 @@ function WalletSync() {
             onClick={handleRefSubmit}
             disabled={refLoading || !refInput.trim()}
             className="w-full h-11 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.97] disabled:opacity-40"
-            style={{ background: "linear-gradient(135deg, #0abab5, #34d399)", boxShadow: "0 4px 15px rgba(10,186,181,0.3)" }}
+            style={{ background: "linear-gradient(135deg, #D4AF37, #FF3B3B)", boxShadow: "0 4px 15px rgba(212,175,55,0.25)" }}
           >
             {refLoading ? t("common.processing") : t("common.confirm")}
           </button>
@@ -260,9 +260,9 @@ function WalletSync() {
         className="w-[calc(100vw-24px)] max-w-[420px] p-0 overflow-hidden [&>button:last-child]:hidden"
         style={{
           background: "#1a1a1a",
-          border: "1px solid rgba(10,186,181,0.3)",
+          border: "1px solid rgba(212,175,55,0.25)",
           borderRadius: 20,
-          boxShadow: "0 25px 60px rgba(0,0,0,0.7), 0 0 40px rgba(10,186,181,0.1)",
+          boxShadow: "0 25px 60px rgba(0,0,0,0.7), 0 0 40px rgba(212,175,55,0.12)",
         }}
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
@@ -272,7 +272,7 @@ function WalletSync() {
         <div className="px-5 sm:px-6 pt-5 pb-2">
           <div className="text-center mb-3">
             <div className="w-11 h-11 rounded-2xl mx-auto mb-2.5 flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #0abab5, #34d399)", boxShadow: "0 4px 15px rgba(10,186,181,0.4)" }}>
+              style={{ background: "linear-gradient(135deg, #D4AF37, #FF3B3B)", boxShadow: "0 4px 15px rgba(212,175,55,0.35)" }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
               </svg>
@@ -283,7 +283,7 @@ function WalletSync() {
         </div>
         <div className="px-5 sm:px-6 pb-5 space-y-2.5">
           {referrerWallet && (
-            <div className="rounded-xl px-4 py-2.5" style={{ background: "rgba(10,186,181,0.08)", border: "1px solid rgba(10,186,181,0.15)" }}>
+            <div className="rounded-xl px-4 py-2.5" style={{ background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.15)" }}>
               <p className="text-[10px] text-white/40 mb-0.5">{t("profile.sponsorLabel", "Sponsor (Referrer)")}</p>
               <p className="text-xs text-primary font-mono truncate">{referrerWallet}</p>
             </div>
@@ -302,7 +302,7 @@ function WalletSync() {
               onChange={(e) => { setRefInput(e.target.value); setRefError(""); setReferrerWallet(null); }}
               placeholder={t("profile.refCodePlaceholder")}
               className="w-full h-11 rounded-xl px-4 text-sm text-white placeholder:text-white/25 outline-none text-center font-mono tracking-widest"
-              style={{ background: "rgba(255,255,255,0.06)", border: refError ? "1px solid #ef4444" : "1px solid rgba(10,186,181,0.15)" }}
+              style={{ background: "rgba(255,255,255,0.06)", border: refError ? "1px solid #ef4444" : "1px solid rgba(212,175,55,0.15)" }}
               autoFocus
             />
           </div>
@@ -323,7 +323,7 @@ function WalletSync() {
             onClick={handleRefConfirm}
             disabled={refLoading || !refInput.trim()}
             className="w-full h-11 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.97] disabled:opacity-40 mt-1"
-            style={{ background: "linear-gradient(135deg, #0abab5, #34d399)", boxShadow: "0 4px 15px rgba(10,186,181,0.3)" }}
+            style={{ background: "linear-gradient(135deg, #D4AF37, #FF3B3B)", boxShadow: "0 4px 15px rgba(212,175,55,0.25)" }}
           >
             {refLoading ? t("common.processing") : t("profile.confirmAndRegister")}
           </button>
@@ -341,7 +341,7 @@ function Header() {
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between px-4 lg:px-8 py-2.5 lg:py-3 border-b border-border/40 bg-background/90 backdrop-blur-xl">
       <Link href="/" className="flex items-center cursor-pointer shrink-0" data-testid="link-logo-home">
-        <img src="/og-image.svg" alt="TAICLAW" className="h-8 lg:h-9" />
+        <img src="/taiclaw-mark.svg" alt="TAICLAW" className="h-8 lg:h-9" />
         <span className="font-display text-sm lg:text-base font-bold tracking-widest text-foreground ml-1.5">
           TAIC<span className="text-primary">LAW</span>
         </span>
