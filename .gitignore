@@ -1,0 +1,26 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+
+# Environment variables (never commit secrets)
+.env
+.env.local
+.env.*
+*.pem
+*.key
+
+# IDE
+.idea/
+
+# Pasted assets
+attached_assets/
+
+# Local Netlify folder
+.netlify
+
+# Supabase temp
+supabase/.temp/
+ai-engine/agent/.env

@@ -1,0 +1,377 @@
+/**
+ * Copy Trading Flow — Simplified 2-Step Wizard
+ *
+ * Step 1: Bind exchange API
+ * Step 2: AI suggestions (risk params + coin selection) → Start following
+ *
+ * Models are pre-configured (5 models from strategy list).
+ * All trades are full-auto, strong signal only.
+ * Daily target: 2% profit → stop. Martingale on loss.
+ * Revenue: 80% user / 20% platform.
+ */
+
+import { useState, useEffect } from "react";
+import { ApiKeyBind } from "@/components/strategy/api-key-bind";
+import { AICoinPicker } from "@/components/strategy/ai-coin-picker";
+import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
+import { Brain } from "lucide-react";
+
+type CopyStep = "bind" | "ai";
+
+interface CopyTradingFlowProps {
+  userId?: string;
+  showSteps?: boolean;
+  compact?: boolean;
+  readOnly?: boolean;
+  initialStep?: CopyStep;
+  /** Pre-selected model from strategy card click (e.g. "GPT-4o") */
+  preSelectedModel?: string;
+  onStepChange?: (step: CopyStep) => void;
+}
+
+// Fixed params — not user configurable
+const FIXED_CONFIG = {
+  executionMode: "full-auto",
+  signalStrength: "STRONG",
+  maxPositionSizeUsd: 500,
+  maxLeverage: 10,
+  maxConcurrentPositions: 5,
+  maxDrawdownPct: 20,
+  maxDailyLossPct: 20, // max loss = 20% of total position value
+  cooldownMinutes: 30,
+  dailyTargetPct: 2,   // stop trading at 2% daily profit
+  martingaleEnabled: true,
+  revenueShareUser: 80,
+  revenueSharePlatform: 20,
+};
+
+const MODEL_INFO: Record<string, { color: string; desc: string }> = {
+  "GPT-4o": { color: "#22c55e", desc: "Trend follower, momentum-based" },
+  "Claude": { color: "#f97316", desc: "Risk-aware, contrarian analysis" },
+  "Gemini": { color: "#3b82f6", desc: "Volatility scalper" },
+  "DeepSeek": { color: "#a855f7", desc: "Technical purist, RSI/MACD/BB" },
+  "Llama": { color: "#eab308", desc: "Momentum chaser, local AI" },
+  "TAICLAW": { color: "#fbbf24", desc: "Multi-model consensus + deep learning" },
+};
+
+export function CopyTradingFlow({
+  userId,
+  showSteps = true,
+  compact = false,
+  readOnly = false,
+  initialStep = "bind",
+  preSelectedModel,
+  onStepChange,
+}: CopyTradingFlowProps) {
+  const { t } = useTranslation();
+  const [step, setStep] = useState<CopyStep>(initialStep);
+  const [isActive, setIsActive] = useState(false);
+  const [activating, setActivating] = useState(false);
+  const [riskLevel, setRiskLevel] = useState<"conservative" | "moderate" | "aggressive">("moderate");
+  const [showFineTune, setShowFineTune] = useState(false);
+  const [customSize, setCustomSize] = useState(300);
+  const [customLeverage, setCustomLeverage] = useState(5);
+  const [customPositions, setCustomPositions] = useState(3);
+  const [customDrawdown, setCustomDrawdown] = useState(15);
+  const [configLoaded, setConfigLoaded] = useState(false);
+
+  // Risk presets based on selection
+  const RISK_PRESETS = {
+    conservative: { positionSize: 100, leverage: 3, drawdown: 10, concurrent: 2, label: t("copy.conservative", "保守") },
+    moderate: { positionSize: 300, leverage: 5, drawdown: 15, concurrent: 3, label: t("copy.moderate", "稳健") },
+    aggressive: { positionSize: 500, leverage: 10, drawdown: 20, concurrent: 5, label: t("copy.aggressive", "激进") },
+  };
+
+  const preset = RISK_PRESETS[riskLevel];
+
+  // Load existing config
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from("user_trade_configs")
+      .select("is_active, execution_mode")
+      .eq("wallet_address", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        if (data) setIsActive(!!data.is_active);
+        setConfigLoaded(true);
+      });
+  }, [userId]);
+
+  const goTo = (s: CopyStep) => {
+    setStep(s);
+    onStepChange?.(s);
+  };
+
+  // Activate copy trading
+  const handleActivate = async () => {
+    if (!userId) return;
+    setActivating(true);
+    try {
+      const config = {
+        wallet_address: userId,
+        exchange: "binance",
+        models_follow: preSelectedModel ? [preSelectedModel] : ["GPT-4o", "Claude", "Gemini", "DeepSeek", "Llama", "TAICLAW"],
+        execution_mode: "full-auto",
+        position_size_usd: showFineTune ? customSize : preset.positionSize,
+        max_leverage: showFineTune ? customLeverage : preset.leverage,
+        max_positions: showFineTune ? customPositions : preset.concurrent,
+        max_daily_loss_pct: FIXED_CONFIG.maxDailyLossPct,
+        stop_loss_pct: 3,
+        take_profit_pct: 6,
+        is_active: true,
+      };
+
+      const { data: existing } = await supabase
+        .from("user_trade_configs")
+        .select("id")
+        .eq("wallet_address", userId)
+        .limit(1)
+        .single();
+
+      if (existing) {
+        await supabase.from("user_trade_configs").update({ ...config, updated_at: new Date().toISOString() }).eq("id", existing.id);
+      } else {
+        await supabase.from("user_trade_configs").insert(config);
+      }
+      setIsActive(true);
+    } catch (e) {
+      console.error("Activate failed:", e);
+    } finally {
+      setActivating(false);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (!userId) return;
+    await supabase.from("user_trade_configs").update({ is_active: false }).eq("wallet_address", userId);
+    setIsActive(false);
+  };
+
+  const steps = [
+    { id: "bind" as CopyStep, label: t("copy.bindExchange", "绑定交易所"), num: 1 },
+    { id: "ai" as CopyStep, label: t("copy.aiSuggestion", "AI 建议 & 跟单"), num: 2 },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Step indicator */}
+      {showSteps && (
+        <div className="flex items-center gap-1">
+          {steps.map((s, i) => (
+            <div key={s.id} className="flex items-center flex-1">
+              <button
+                onClick={() => goTo(s.id)}
+                className={cn(
+                  "flex items-center gap-1.5 w-full px-2 py-2 rounded-lg text-[11px] font-semibold transition-colors",
+                  step === s.id ? "bg-primary/10 text-primary" : "text-foreground/25 hover:text-foreground/40"
+                )}
+              >
+                <span className={cn(
+                  "w-5 h-5 rounded-full text-[10px] flex items-center justify-center font-bold shrink-0",
+                  step === s.id ? "bg-primary text-white" : "bg-foreground/8 text-foreground/30"
+                )}>{s.num}</span>
+                <span className={compact ? "hidden sm:inline" : ""}>{s.label}</span>
+              </button>
+              {i < steps.length - 1 && <div className="w-2 h-px bg-foreground/10 shrink-0" />}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Step 1: Bind exchange */}
+      {step === "bind" && (
+        <div className="space-y-4">
+          <ApiKeyBind userId={userId} />
+          <button
+            onClick={() => goTo("ai")}
+            className="w-full py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors"
+          >
+            {t("copy.nextAi", "下一步：AI 建议")}
+          </button>
+        </div>
+      )}
+
+      {/* Step 2: AI suggestions + risk + activate */}
+      {step === "ai" && (
+        <div className="space-y-4">
+          {/* Selected model */}
+          <div className="rounded-xl bg-white/[0.02] p-4" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+            {preSelectedModel && MODEL_INFO[preSelectedModel] ? (
+              <>
+                <h3 className="text-xs font-bold text-foreground/50 mb-2">{t("copy.followingModel", "跟随模型")}</h3>
+                <div className="flex items-center gap-3 bg-primary/5 rounded-xl px-4 py-3 border border-primary/15">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: MODEL_INFO[preSelectedModel].color + "20" }}>
+                    <Brain className="h-4 w-4" style={{ color: MODEL_INFO[preSelectedModel].color }} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-primary">{preSelectedModel}</p>
+                    <p className="text-[10px] text-foreground/30">{MODEL_INFO[preSelectedModel].desc}</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xs font-bold text-foreground/50 mb-2">{t("copy.followingModels", "跟随模型")}</h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(MODEL_INFO).map(([name, info]) => (
+                    <span key={name} className="text-[10px] px-2 py-1 rounded-lg bg-primary/8 text-primary border border-primary/15 font-semibold">
+                      <span className="w-2 h-2 rounded-full inline-block" style={{ background: info.color }} /> {name}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-[9px] text-foreground/20 mt-1.5">{t("copy.multiModelConsensus", "多模型共识交易，≥2个模型一致时下单")}</p>
+              </>
+            )}
+          </div>
+
+          {/* AI Coin Picker */}
+          <AICoinPicker compact />
+
+          {/* Risk preference */}
+          <div className="rounded-xl bg-white/[0.02] p-4" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+            <h3 className="text-xs font-bold text-foreground/50 mb-3">{t("copy.riskPreference", "风险偏好")}</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {(Object.entries(RISK_PRESETS) as [string, typeof preset][]).map(([key, p]) => (
+                <button
+                  key={key}
+                  onClick={() => !readOnly && setRiskLevel(key as any)}
+                  className={cn(
+                    "text-center px-3 py-2.5 rounded-lg text-xs font-bold transition-colors border",
+                    riskLevel === key
+                      ? "bg-primary/10 border-primary/20 text-primary"
+                      : "bg-white/[0.02] border-white/[0.04] text-foreground/30"
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* AI Recommended params */}
+          <div className="rounded-xl bg-white/[0.02] p-4" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+            <h3 className="text-xs font-bold text-foreground/50 mb-3">{t("copy.aiParams", "AI 推荐参数")}</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <ParamCard label={t("copy.positionSize", "单笔仓位")} value={`$${preset.positionSize}`} />
+              <ParamCard label={t("copy.maxLeverage", "最大杠杆")} value={`${preset.leverage}x`} />
+              <ParamCard label={t("copy.maxPositions", "最大持仓")} value={`${preset.concurrent}`} />
+              <ParamCard label={t("copy.maxDrawdown", "最大回撤")} value={`${showFineTune ? customDrawdown : preset.drawdown}%`} />
+            </div>
+            <button
+              onClick={() => {
+                if (!showFineTune) { setCustomSize(preset.positionSize); setCustomLeverage(preset.leverage); setCustomPositions(preset.concurrent); setCustomDrawdown(preset.drawdown); }
+                setShowFineTune(!showFineTune);
+              }}
+              className="text-[10px] text-primary/60 hover:text-primary transition-colors mt-1"
+            >
+              {showFineTune ? t("copy.useAiParams", "使用 AI 建议") : t("copy.fineTune", "手动微调参数 →")}
+            </button>
+          </div>
+
+          {/* Fine-tune panel */}
+          {showFineTune && (
+            <div className="rounded-xl bg-white/[0.02] p-4 space-y-3" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+              <h3 className="text-xs font-bold text-foreground/50">{t("copy.fineTuneParams", "参数微调")}</h3>
+              <div className="space-y-2.5">
+                <RangeRow label={t("copy.positionSize", "单笔仓位")} value={customSize} min={100} max={1000} step={50} unit="$" onChange={setCustomSize} />
+                <RangeRow label={t("copy.maxLeverage", "最大杠杆")} value={customLeverage} min={1} max={10} step={1} unit="x" onChange={setCustomLeverage} />
+                <RangeRow label={t("copy.maxPositions", "最大持仓")} value={customPositions} min={1} max={5} step={1} unit="" onChange={setCustomPositions} />
+                <RangeRow label={t("copy.maxDrawdown", "最大回撤")} value={customDrawdown} min={5} max={20} step={1} unit="%" onChange={setCustomDrawdown} />
+              </div>
+            </div>
+          )}
+
+          {/* Fixed rules */}
+          <div className="rounded-xl bg-white/[0.02] p-4" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+            <h3 className="text-xs font-bold text-foreground/50 mb-3">{t("copy.tradingRules", "交易规则")}</h3>
+            <div className="space-y-1.5 text-[11px]">
+              <div className="flex justify-between"><span className="text-foreground/30">{t("copy.dailyTarget", "每日止盈")}</span><span className="text-green-400 font-bold">2%</span></div>
+              <div className="flex justify-between"><span className="text-foreground/30">{t("copy.martingale", "亏损补单")}</span><span className="text-foreground/50">{t("copy.martingaleEnabled", "马丁策略")}</span></div>
+              <div className="flex justify-between"><span className="text-foreground/30">{t("copy.signalType", "信号类型")}</span><span className="text-foreground/50">{t("copy.strongOnly", "仅强信号")}</span></div>
+              <div className="flex justify-between"><span className="text-foreground/30">{t("copy.cooldown", "冷却时间")}</span><span className="text-foreground/50">≤30min</span></div>
+              <div className="flex justify-between"><span className="text-foreground/30">{t("copy.maxLoss", "最大亏损")}</span><span className="text-red-400">≤{t("copy.maxLossDesc", "持仓本金20%")}</span></div>
+              <div className="flex justify-between"><span className="text-foreground/30">{t("copy.execution", "执行模式")}</span><span className="text-primary font-bold">{t("copy.fullAuto", "全自动")}</span></div>
+            </div>
+          </div>
+
+          {/* Revenue sharing */}
+          <div className="rounded-xl bg-white/[0.02] p-4" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+            <h3 className="text-xs font-bold text-foreground/50 mb-3">{t("copy.revenueShare", "收益分成")}</h3>
+            <div className="flex gap-2">
+              <div className="flex-1 text-center px-3 py-2.5 rounded-lg bg-green-500/8 border border-green-500/15">
+                <p className="text-lg font-black text-green-400">80%</p>
+                <p className="text-[10px] text-foreground/30">{t("copy.userShare", "用户收益")}</p>
+              </div>
+              <div className="flex-1 text-center px-3 py-2.5 rounded-lg bg-blue-500/8 border border-blue-500/15">
+                <p className="text-lg font-black text-blue-400">20%</p>
+                <p className="text-[10px] text-foreground/30">{t("copy.platformShare", "平台分成")}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Activate */}
+          {userId && !readOnly && (
+            <button
+              onClick={handleActivate}
+              disabled={activating}
+              className={cn(
+                "w-full py-3.5 rounded-xl text-sm font-bold transition-all",
+                activating
+                  ? "bg-primary/20 text-primary/60"
+                  : "bg-primary text-black hover:bg-primary/90 active:scale-[0.98]"
+              )}
+            >
+              {activating ? t("copy.saving", "保存中...") : isActive ? t("copy.updateConfig", "更新跟单配置") : t("copy.startFollow", "开启跟单")}
+            </button>
+          )}
+
+          {isActive && (
+            <div className="text-center">
+              <button onClick={handleDeactivate} className="text-[11px] text-red-400/50 hover:text-red-400 transition-colors">
+                {t("copy.stopFollow", "停止跟单")}
+              </button>
+            </div>
+          )}
+
+          {/* Back */}
+          <button
+            onClick={() => goTo("bind")}
+            className="w-full py-2 rounded-xl bg-foreground/5 text-foreground/40 text-xs font-bold hover:bg-foreground/10 transition-colors"
+          >
+            {t("copy.prevStep", "上一步")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ParamCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="px-3 py-2.5 rounded-lg bg-white/[0.02]" style={{ border: "1px solid rgba(255,255,255,0.04)" }}>
+      <p className="text-[10px] text-foreground/25">{label}</p>
+      <p className="text-sm font-bold mt-0.5 text-foreground/60">{value}</p>
+    </div>
+  );
+}
+
+function RangeRow({ label, value, min, max, step, unit, onChange }: {
+  label: string; value: number; min: number; max: number; step: number; unit: string; onChange: (v: number) => void;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[11px] text-foreground/40">{label}</span>
+        <span className="text-xs font-bold text-foreground/60">{unit === "$" ? `$${value}` : `${value}${unit}`}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        className="w-full h-1 rounded-full appearance-none bg-foreground/10 accent-primary" />
+    </div>
+  );
+}
