@@ -483,42 +483,6 @@ function ModelDetail({
           <div className="flex-1"><SimOrdersButton model={meta.key} color={meta.color} /></div>
         </div>
 
-        {/* Prediction History */}
-        <div className="px-4 pb-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[12px] font-semibold text-foreground/80">{t("aiLab.recentResults")}</span>
-            <span className="text-[10px] text-muted-foreground">{recentPreds.length > 0 ? t("aiLab.recentCount", { count: recentPreds.length }) : ""}</span>
-          </div>
-          <div className="space-y-1">
-            {recentPreds.length > 0 ? recentPreds.map(p => (
-              <div key={p.id} className="flex items-center gap-2 rounded-md px-2.5 py-1.5"
-                style={{ background: "rgba(255,255,255,0.025)" }}>
-                <div className={`h-1.5 w-1.5 rounded-full shrink-0 ${p.direction_correct ? "bg-emerald-400" : p.direction_correct === false ? "bg-red-400" : "bg-yellow-400"}`} />
-                <span className="text-[11px] font-bold text-foreground/70 w-10 shrink-0">{p.asset}</span>
-                <DirBadge dir={p.prediction} />
-                <span className="text-[10px] text-muted-foreground/50 flex-1 text-right">{p.confidence}%</span>
-                <span className="text-[10px] text-muted-foreground/30 shrink-0">{timeSince(p.created_at)}</span>
-              </div>
-            )) : (
-              ["BTC", "ETH", "SOL", "BNB"].map((asset, i) => {
-                const dirs = ["BULLISH", "BEARISH", "BULLISH", "NEUTRAL"];
-                const confs = [75, 62, 68, 55];
-                const times = ["5m", "12m", "25m", "1h"];
-                const correct = [true, false, true, null];
-                return (
-                  <div key={asset} className="flex items-center gap-2 rounded-md px-2.5 py-1.5"
-                    style={{ background: "rgba(255,255,255,0.025)" }}>
-                    <div className={`h-1.5 w-1.5 rounded-full shrink-0 ${correct[i] === true ? "bg-emerald-400" : correct[i] === false ? "bg-red-400" : "bg-yellow-400"}`} />
-                    <span className="text-[11px] font-bold text-foreground/70 w-10 shrink-0">{asset}</span>
-                    <DirBadge dir={dirs[i]} />
-                    <span className="text-[10px] text-muted-foreground/50 flex-1 text-right">{confs[i]}%</span>
-                    <span className="text-[10px] text-muted-foreground/30 shrink-0">{times[i]} {t("aiLab.agoSuffix")}</span>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
       </DialogContent>
     </Dialog>
   );

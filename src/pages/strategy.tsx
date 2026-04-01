@@ -34,7 +34,7 @@ type TabId = "strategies" | "ailab" | "signals";
 const TABS: { id: TabId; labelKey: string }[] = [
   { id: "strategies", labelKey: "strategy.strategyList" },
   { id: "ailab", labelKey: "strategy.aiLab" },
-  { id: "signals", labelKey: "aiLab.signalFeed" },
+  { id: "signals", labelKey: "matchEngine.title" },
 ];
 
 import { EXCHANGES, HEDGE_CONFIG } from "@/lib/data";
@@ -216,64 +216,6 @@ function StrategyListTab({ walletAddr, onFollowStrategy }: { walletAddr: string;
         </div>
       )}
 
-    </div>
-  );
-}
-
-function SignalFeedTab() {
-  const { t } = useTranslation();
-  const { data: signals = [] } = useQuery<TradeSignal[]>({
-    queryKey: ["signal-feed-tab"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("trade_signals").select("id,asset,direction,confidence,strategy_type,created_at").order("created_at", { ascending: false }).limit(30);
-      if (error) throw error;
-      return data as TradeSignal[];
-    },
-    staleTime: 30_000, retry: false,
-  });
-
-  const feedData = signals.length > 0 ? signals : [
-    { id: "1", asset: "BTC", direction: "BULLISH", confidence: 78, strategy_type: "trend_following", created_at: new Date(Date.now() - 120000).toISOString() },
-    { id: "2", asset: "ETH", direction: "BEARISH", confidence: 65, strategy_type: "mean_reversion", created_at: new Date(Date.now() - 300000).toISOString() },
-    { id: "3", asset: "SOL", direction: "BULLISH", confidence: 71, strategy_type: "breakout", created_at: new Date(Date.now() - 480000).toISOString() },
-    { id: "4", asset: "BNB", direction: "BULLISH", confidence: 63, strategy_type: "momentum", created_at: new Date(Date.now() - 840000).toISOString() },
-    { id: "5", asset: "DOGE", direction: "BEARISH", confidence: 59, strategy_type: "scalping", created_at: new Date(Date.now() - 1140000).toISOString() },
-    { id: "6", asset: "XRP", direction: "BULLISH", confidence: 74, strategy_type: "swing", created_at: new Date(Date.now() - 1860000).toISOString() },
-    { id: "7", asset: "ADA", direction: "BEARISH", confidence: 55, strategy_type: "rune_ai", created_at: new Date(Date.now() - 2400000).toISOString() },
-    { id: "8", asset: "AVAX", direction: "BULLISH", confidence: 72, strategy_type: "trend_following", created_at: new Date(Date.now() - 3000000).toISOString() },
-    { id: "9", asset: "LINK", direction: "BULLISH", confidence: 68, strategy_type: "momentum", created_at: new Date(Date.now() - 3600000).toISOString() },
-    { id: "10", asset: "DOT", direction: "NEUTRAL", confidence: 51, strategy_type: "swing", created_at: new Date(Date.now() - 4200000).toISOString() },
-  ];
-
-  return (
-    <div style={{ animation: "fadeSlideIn 0.3s ease-out" }}>
-      <div className="flex items-center gap-2 mb-3">
-        <Activity className="h-4 w-4 text-primary" />
-        <span className="text-sm font-bold text-foreground/80">{t("aiLab.signalFeed")}</span>
-        <span className="ml-auto flex items-center gap-1">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[10px] text-emerald-400">{t("aiLab.liveLabel")}</span>
-        </span>
-      </div>
-      <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
-        {feedData.map((sig, i) => {
-          const mins = Math.floor((Date.now() - new Date(sig.created_at).getTime()) / 60000);
-          const timeLabel = mins < 60 ? `${mins}m` : `${Math.floor(mins / 60)}h`;
-          return (
-            <div key={sig.id} className="flex items-center gap-2 px-3 py-2.5"
-              style={{ borderBottom: i < feedData.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", background: "rgba(255,255,255,0.015)", animation: `fadeSlideIn 0.3s ease-out ${i * 0.04}s both` }}>
-              <span className={`inline-flex items-center gap-0.5 font-bold rounded text-[10px] px-1.5 py-0.5 shrink-0 ${sig.direction === "BULLISH" ? "text-emerald-400 bg-emerald-500/10" : sig.direction === "BEARISH" ? "text-red-400 bg-red-500/10" : "text-foreground/40 bg-white/[0.05]"}`}>
-                {sig.direction === "BULLISH" ? <TrendingUp className="h-2.5 w-2.5" /> : sig.direction === "BEARISH" ? <TrendingDown className="h-2.5 w-2.5" /> : <Minus className="h-2.5 w-2.5" />}
-                {sig.direction === "BULLISH" ? t("aiLab.longDir") : sig.direction === "BEARISH" ? t("aiLab.shortDir") : t("aiLab.neutralDir")}
-              </span>
-              <span className="text-[11px] font-bold text-foreground/70 w-12 shrink-0">{sig.asset}</span>
-              <span className="text-[10px] text-muted-foreground/50 flex-1 truncate">{sig.strategy_type?.replace(/_/g, " ")} · {sig.confidence}%</span>
-              <span className="text-[10px] text-muted-foreground/30 shrink-0">{timeLabel} {t("aiLab.agoSuffix")}</span>
-            </div>
-          );
-        })}
-      </div>
-      <div className="mt-2 text-center text-[10px] text-muted-foreground/40">{t("aiLab.capturedCount", { count: feedData.length })}</div>
     </div>
   );
 }
@@ -546,8 +488,7 @@ export default function StrategyPage() {
         )}
 
         {activeTab === "signals" && (
-          <div className="space-y-4">
-            <SignalFeedTab />
+          <div style={{ animation: "fadeSlideIn 0.3s ease-out" }}>
             <TradeMatchingEngine />
           </div>
         )}
