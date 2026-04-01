@@ -651,7 +651,17 @@
     "copyTradingLocked": "跟單交易暫未開放",
     "copyTradingLockedDesc": "該功能需要達到一定等級後解鎖。請先完成節點購買或提升會員等級。",
     "expectedOpenTime": "預計開放時間：敬請期待",
-    "backToStrategies": "返回策略列表"
+    "backToStrategies": "返回策略列表",
+    "gpt4o": "GPT-4o",
+    "gpt4oDesc": "趨勢跟蹤 · 動量分析",
+    "claude": "Claude",
+    "claudeDesc": "風險感知 · 逆向分析",
+    "gemini": "Gemini",
+    "geminiDesc": "波動率剝頭皮 · 多時間框架",
+    "deepseek": "DeepSeek",
+    "deepseekDesc": "技術純粹派 · RSI/MACD/BB",
+    "llama": "Llama",
+    "llamaDesc": "動量追蹤 · 本地AI模型"
   },
   "profile": {
     "assetsOverview": "資產概覽",

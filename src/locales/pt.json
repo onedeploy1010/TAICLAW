@@ -651,7 +651,17 @@
     "copyTradingLocked": "Copy Trading Indisponível",
     "copyTradingLockedDesc": "Este recurso requer um nível específico. Complete a compra do nó ou atualize sua associação.",
     "expectedOpenTime": "Abertura prevista: Em breve",
-    "backToStrategies": "Voltar às Estratégias"
+    "backToStrategies": "Voltar às Estratégias",
+    "gpt4o": "GPT-4o",
+    "gpt4oDesc": "Seguidor de tendência · Análise de momentum",
+    "claude": "Claude",
+    "claudeDesc": "Consciente do risco · Análise contrária",
+    "gemini": "Gemini",
+    "geminiDesc": "Scalper de volatilidade · Multi-temporal",
+    "deepseek": "DeepSeek",
+    "deepseekDesc": "Purista técnico · RSI/MACD/BB",
+    "llama": "Llama",
+    "llamaDesc": "Perseguidor de momentum · IA local"
   },
   "profile": {
     "assetsOverview": "Visão Geral dos Ativos",

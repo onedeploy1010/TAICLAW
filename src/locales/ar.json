@@ -651,7 +651,17 @@
     "copyTradingLocked": "نسخ التداول غير متاح",
     "copyTradingLockedDesc": "تتطلب هذه الميزة الوصول إلى مستوى معين. يرجى إكمال شراء العقدة أو ترقية عضويتك.",
     "expectedOpenTime": "الموعد المتوقع: ترقبوا",
-    "backToStrategies": "العودة إلى الاستراتيجيات"
+    "backToStrategies": "العودة إلى الاستراتيجيات",
+    "gpt4o": "GPT-4o",
+    "gpt4oDesc": "متابع الاتجاه · تحليل الزخم",
+    "claude": "Claude",
+    "claudeDesc": "واعي بالمخاطر · تحليل عكسي",
+    "gemini": "Gemini",
+    "geminiDesc": "سكالبر التقلبات · متعدد الأطر الزمنية",
+    "deepseek": "DeepSeek",
+    "deepseekDesc": "أصولي تقني · RSI/MACD/BB",
+    "llama": "Llama",
+    "llamaDesc": "مطارد الزخم · نموذج AI محلي"
   },
   "profile": {
     "assetsOverview": "نظرة عامة على الأصول",

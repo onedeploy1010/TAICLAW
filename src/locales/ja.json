@@ -651,7 +651,17 @@
     "copyTradingLocked": "コピートレード未開放",
     "copyTradingLockedDesc": "一定のレベルに達する必要があります。ノード購入またはメンバーシップのアップグレードを完了してください。",
     "expectedOpenTime": "開放予定時期：お楽しみに",
-    "backToStrategies": "戦略一覧に戻る"
+    "backToStrategies": "戦略一覧に戻る",
+    "gpt4o": "GPT-4o",
+    "gpt4oDesc": "トレンドフォロー · モメンタム分析",
+    "claude": "Claude",
+    "claudeDesc": "リスク認識 · 逆張り分析",
+    "gemini": "Gemini",
+    "geminiDesc": "ボラティリティスキャルプ · マルチタイムフレーム",
+    "deepseek": "DeepSeek",
+    "deepseekDesc": "テクニカル純粋派 · RSI/MACD/BB",
+    "llama": "Llama",
+    "llamaDesc": "モメンタム追跡 · ローカルAI"
   },
   "profile": {
     "assetsOverview": "資産概要",

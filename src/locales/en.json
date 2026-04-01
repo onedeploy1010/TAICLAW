@@ -681,7 +681,17 @@
     "copyTradingLocked": "Copy Trading Not Available",
     "copyTradingLockedDesc": "This feature requires reaching a certain level to unlock. Please complete node purchase or upgrade your membership level.",
     "expectedOpenTime": "Expected opening time: Stay tuned",
-    "backToStrategies": "Back to Strategies"
+    "backToStrategies": "Back to Strategies",
+    "gpt4o": "GPT-4o",
+    "gpt4oDesc": "Trend follower · Momentum-based analysis",
+    "claude": "Claude",
+    "claudeDesc": "Risk-aware · Contrarian analysis",
+    "gemini": "Gemini",
+    "geminiDesc": "Volatility scalper · Multi-timeframe",
+    "deepseek": "DeepSeek",
+    "deepseekDesc": "Technical purist · RSI/MACD/BB",
+    "llama": "Llama",
+    "llamaDesc": "Momentum chaser · Local AI model"
   },
   "profile": {
     "assetsOverview": "Assets Overview",

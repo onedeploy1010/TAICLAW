@@ -651,7 +651,17 @@
     "copyTradingLocked": "카피트레이딩 미개방",
     "copyTradingLockedDesc": "일정 레벨 달성 후 해제됩니다. 노드 구매 또는 멤버십 업그레이드를 완료하세요.",
     "expectedOpenTime": "오픈 예정 시기: 추후 공지",
-    "backToStrategies": "전략 목록으로 돌아가기"
+    "backToStrategies": "전략 목록으로 돌아가기",
+    "gpt4o": "GPT-4o",
+    "gpt4oDesc": "추세 추종 · 모멘텀 분석",
+    "claude": "Claude",
+    "claudeDesc": "리스크 인식 · 역추세 분석",
+    "gemini": "Gemini",
+    "geminiDesc": "변동성 스캘핑 · 멀티 타임프레임",
+    "deepseek": "DeepSeek",
+    "deepseekDesc": "기술적 순수파 · RSI/MACD/BB",
+    "llama": "Llama",
+    "llamaDesc": "모멘텀 추적 · 로컬 AI"
   },
   "profile": {
     "assetsOverview": "자산 개요",

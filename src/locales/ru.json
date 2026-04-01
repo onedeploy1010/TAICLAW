@@ -651,7 +651,17 @@
     "copyTradingLocked": "Копи-трейдинг недоступен",
     "copyTradingLockedDesc": "Для разблокировки необходимо достичь определённого уровня. Приобретите ноду или повысьте уровень членства.",
     "expectedOpenTime": "Ожидаемое время открытия: Следите за обновлениями",
-    "backToStrategies": "Назад к Стратегиям"
+    "backToStrategies": "Назад к Стратегиям",
+    "gpt4o": "GPT-4o",
+    "gpt4oDesc": "Следование тренду · Анализ моментума",
+    "claude": "Claude",
+    "claudeDesc": "Осознание рисков · Контрарный анализ",
+    "gemini": "Gemini",
+    "geminiDesc": "Скальпер волатильности · Мульти-таймфрейм",
+    "deepseek": "DeepSeek",
+    "deepseekDesc": "Технический пурист · RSI/MACD/BB",
+    "llama": "Llama",
+    "llamaDesc": "Преследователь моментума · Локальная ИИ"
   },
   "profile": {
     "assetsOverview": "Обзор Активов",

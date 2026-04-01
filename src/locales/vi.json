@@ -651,7 +651,17 @@
     "copyTradingLocked": "Copy Trading chưa mở",
     "copyTradingLockedDesc": "Tính năng này yêu cầu đạt một cấp độ nhất định. Vui lòng hoàn tất mua node hoặc nâng cấp thành viên.",
     "expectedOpenTime": "Thời gian dự kiến mở: Sắp tới",
-    "backToStrategies": "Quay lại Chiến lược"
+    "backToStrategies": "Quay lại Chiến lược",
+    "gpt4o": "GPT-4o",
+    "gpt4oDesc": "Theo xu hướng · Phân tích động lượng",
+    "claude": "Claude",
+    "claudeDesc": "Nhận thức rủi ro · Phân tích ngược",
+    "gemini": "Gemini",
+    "geminiDesc": "Scalp biến động · Đa khung thời gian",
+    "deepseek": "DeepSeek",
+    "deepseekDesc": "Thuần kỹ thuật · RSI/MACD/BB",
+    "llama": "Llama",
+    "llamaDesc": "Theo đuổi động lượng · AI cục bộ"
   },
   "profile": {
     "assetsOverview": "Tổng quan tài sản",

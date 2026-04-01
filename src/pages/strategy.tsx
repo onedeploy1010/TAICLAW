@@ -22,7 +22,7 @@ import {
   Shield, CheckCircle2, TrendingUp, TrendingDown,
   Minus, Clock, Brain, Info, RefreshCw, Wallet, ChevronLeft, ChevronRight,
   Search, RotateCcw, Copy, Eye, EyeOff, Key, Link2, MessageCircle,
-  DollarSign, Zap, Gauge, ArrowLeftRight, Flame, Waves, Sparkles, Activity, Crown,
+  DollarSign, Zap, Gauge, ArrowLeftRight, Flame, Waves, Sparkles, Activity, Crown, Search,
 } from "lucide-react";
 import type { Strategy, StrategySubscription, Profile, HedgePosition, InsurancePurchase } from "@shared/types";
 import { StrategyHeader } from "@/components/strategy/strategy-header";
@@ -55,13 +55,12 @@ interface StrategyDef {
 }
 
 const AI_STRATEGIES: StrategyDef[] = [
-  { key: "trend_following", nameKey: "aiLab.trendAi", descKey: "aiLab.trendAiDesc", icon: TrendingUp, color: "#4ade80", assets: ["BTC", "ETH", "SOL"], timeframe: "4H", risk: "medium" },
-  { key: "mean_reversion", nameKey: "aiLab.reversionAi", descKey: "aiLab.reversionAiDesc", icon: ArrowLeftRight, color: "#60a5fa", assets: ["ETH", "BNB", "SOL"], timeframe: "1H", risk: "low" },
-  { key: "breakout", nameKey: "aiLab.breakoutAi", descKey: "aiLab.breakoutAiDesc", icon: Zap, color: "#fbbf24", assets: ["BTC", "SOL", "DOGE"], timeframe: "1H", risk: "high" },
-  { key: "scalping", nameKey: "aiLab.scalpAi", descKey: "aiLab.scalpAiDesc", icon: Gauge, color: "#f472b6", assets: ["BTC", "ETH", "XRP"], timeframe: "5m", risk: "high" },
-  { key: "momentum", nameKey: "aiLab.momentumAi", descKey: "aiLab.momentumAiDesc", icon: Flame, color: "#fb923c", assets: ["SOL", "AVAX", "DOGE"], timeframe: "15m", risk: "medium" },
-  { key: "swing", nameKey: "aiLab.swingAi", descKey: "aiLab.swingAiDesc", icon: Waves, color: "#a78bfa", assets: ["BTC", "ETH", "BNB"], timeframe: "1D", risk: "low" },
   { key: "rune_ai", nameKey: "aiLab.runeAi", descKey: "aiLab.runeAiDesc", icon: Crown, color: "#d4a832", assets: ["BTC", "ETH", "SOL", "BNB"], timeframe: "Multi", risk: "medium", hot: true },
+  { key: "GPT-4o", nameKey: "strategy.gpt4o", descKey: "strategy.gpt4oDesc", icon: Brain, color: "#4ade80", assets: ["BTC", "ETH", "SOL"], timeframe: "4H", risk: "medium" },
+  { key: "Claude", nameKey: "strategy.claude", descKey: "strategy.claudeDesc", icon: Shield, color: "#a78bfa", assets: ["ETH", "BNB", "SOL"], timeframe: "1H", risk: "low" },
+  { key: "Gemini", nameKey: "strategy.gemini", descKey: "strategy.geminiDesc", icon: Sparkles, color: "#60a5fa", assets: ["BTC", "SOL", "DOGE"], timeframe: "15m", risk: "high" },
+  { key: "DeepSeek", nameKey: "strategy.deepseek", descKey: "strategy.deepseekDesc", icon: Search, color: "#fbbf24", assets: ["BTC", "ETH", "XRP"], timeframe: "1H", risk: "medium" },
+  { key: "Llama", nameKey: "strategy.llama", descKey: "strategy.llamaDesc", icon: Zap, color: "#fb923c", assets: ["SOL", "AVAX", "DOGE"], timeframe: "15m", risk: "medium" },
 ];
 
 const RISK_COLORS: Record<string, string> = {

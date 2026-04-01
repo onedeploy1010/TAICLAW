@@ -681,7 +681,17 @@
     "copyTradingLocked": "跟单交易暂未开放",
     "copyTradingLockedDesc": "该功能需要达到一定等级后解锁。请先完成节点购买或提升会员等级。",
     "expectedOpenTime": "预计开放时间：敬请期待",
-    "backToStrategies": "返回策略列表"
+    "backToStrategies": "返回策略列表",
+    "gpt4o": "GPT-4o",
+    "gpt4oDesc": "趋势跟踪 · 动量分析",
+    "claude": "Claude",
+    "claudeDesc": "风险感知 · 逆向分析",
+    "gemini": "Gemini",
+    "geminiDesc": "波动率剥头皮 · 多时间框架",
+    "deepseek": "DeepSeek",
+    "deepseekDesc": "技术纯粹派 · RSI/MACD/BB",
+    "llama": "Llama",
+    "llamaDesc": "动量追踪 · 本地AI模型"
   },
   "profile": {
     "assetsOverview": "资产概览",
