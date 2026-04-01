@@ -14,6 +14,8 @@ import {
   BarChart3, Sparkles, ChevronRight, X, Activity,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { AiThinkingConsole } from "@/components/strategy/ai-thinking-console";
+import { TradeMatchingEngine } from "@/components/strategy/trade-matching-engine";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -291,6 +293,11 @@ function ModelDetail({
           </div>
         </div>
 
+        {/* AI Thinking Console */}
+        <div className="px-4 pb-3">
+          <AiThinkingConsole model={meta.key} color={meta.color} isVisible={true} />
+        </div>
+
         {/* Prediction History */}
         <div className="px-4 pb-3">
           <div className="flex items-center justify-between mb-2">
@@ -492,6 +499,9 @@ export function AiLab() {
           )}
         </div>
       </div>
+
+      {/* Trade Matching Engine */}
+      <TradeMatchingEngine />
 
       {/* Detail Sheet */}
       {selected && selectedMeta && (
