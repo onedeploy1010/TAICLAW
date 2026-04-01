@@ -321,7 +321,7 @@ export default function Vault() {
   };
 
   return (
-    <div className="space-y-6 pb-40 lg:pb-8 lg:px-6 lg:pt-4">
+    <div className="space-y-4 pb-24 lg:pb-8 lg:px-6 lg:pt-4">
       <style>{`
         @keyframes fadeSlideIn {
           from { opacity: 0; transform: translateY(8px); }
@@ -416,57 +416,86 @@ export default function Vault() {
         })()}
       </div>
 
-      {/* Global Vault Stats */}
-      <div className="px-4 lg:px-0">
-        <VaultChart />
-      </div>
-
-      <div className="px-4 lg:px-0">
-        <VaultStats />
-      </div>
-
-      <div className="px-4 lg:px-0">
-        <Card className="border-border bg-card shadow-[0_0_15px_rgba(212,168,50,0.05)]">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between gap-4 mb-3 flex-wrap">
-              <div>
-                <div className="text-[12px] text-muted-foreground">{t("vault.yourPosition")}</div>
-                <div className="text-2xl font-bold" data-testid="text-my-position">
-                  {walletAddress ? formatUSD(totalPrincipal) : "$0.00"}
-                </div>
-              </div>
-              <div>
-                <div className="text-[12px] text-muted-foreground">{t("vault.accumulatedYield")}</div>
-                <div className="text-2xl font-bold text-neon-value" data-testid="text-my-yield">
-                  {walletAddress ? formatMA(totalYield) : "0.00 RUNE"}
-                </div>
-              </div>
+      {/* Position + Yield + Records — all inside selected vault context */}
+      <div className="px-4 lg:px-0 space-y-4">
+        {/* Position Summary */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="text-[10px] text-muted-foreground mb-1">{t("vault.yourPosition")}</div>
+            <div className="text-xl font-bold tabular-nums" data-testid="text-my-position">
+              {walletAddress ? formatUSD(totalPrincipal) : "$0.00"}
             </div>
-            <Button
-              variant="secondary"
-              className="w-full"
-              onClick={() => window.location.href = "/profile"}
-              data-testid="button-claim"
-            >
-              <Sparkles className="mr-2 h-4 w-4" /> {t("vault.claimYield")}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+          <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="text-[10px] text-muted-foreground mb-1">{t("vault.accumulatedYield")}</div>
+            <div className="text-xl font-bold text-primary tabular-nums" data-testid="text-my-yield">
+              {walletAddress ? formatMA(totalYield) : "0.00 RUNE"}
+            </div>
+          </div>
+        </div>
 
-      <div className="px-4 lg:px-0">
-        <Tabs defaultValue="deposit">
+        {/* Deposit / Redeem / Claim buttons */}
+        <div className="flex gap-2">
+          <Button
+            className="flex-1 text-xs h-9"
+            style={{ background: "linear-gradient(135deg, hsl(43,74%,58%), hsl(38,70%,46%))", color: "#0a0704" }}
+            onClick={() => setDepositOpen(true)}
+          >
+            <ArrowDownToLine className="mr-1.5 h-3.5 w-3.5" />
+            {t("vault.depositToVault")}
+          </Button>
+          <Button
+            variant="outline"
+            className="flex-1 text-xs h-9"
+            onClick={() => setRedeemOpen(true)}
+          >
+            <ArrowUpFromLine className="mr-1.5 h-3.5 w-3.5" />
+            {t("vault.redeemFromVault")}
+          </Button>
+        </div>
+
+        {/* Records Tabs */}
+        <Tabs defaultValue="positions">
           <TabsList className="w-full bg-card border border-border">
-            <TabsTrigger value="deposit" className="flex-1 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" data-testid="tab-deposit">
+            <TabsTrigger value="positions" className="flex-1 text-[10px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              {t("vault.positions")}
+            </TabsTrigger>
+            <TabsTrigger value="deposit" className="flex-1 text-[10px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               {t("vault.depositRecords", "存入记录")}
             </TabsTrigger>
-            <TabsTrigger value="withdraw" className="flex-1 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" data-testid="tab-withdraw">
+            <TabsTrigger value="withdraw" className="flex-1 text-[10px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               {t("vault.redeemRecords", "赎回记录")}
             </TabsTrigger>
-            <TabsTrigger value="yield" className="flex-1 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" data-testid="tab-yield">
+            <TabsTrigger value="yield" className="flex-1 text-[10px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               {t("vault.yieldTab")}
             </TabsTrigger>
           </TabsList>
+          <TabsContent value="positions" className="mt-3 space-y-3">
+            {walletAddress && activePositions.length > 0 ? (
+              <div className="space-y-2">
+                {activePositions.map((pos) => {
+                  const planConfig = VAULT_PLANS[pos.planType as keyof typeof VAULT_PLANS];
+                  const isBonus = pos.isBonus || pos.planType === "BONUS_5D";
+                  const dailyRatePct = isBonus ? "0.5" : planConfig ? (planConfig.dailyRate * 100).toFixed(1) : "0.0";
+                  const cycleDays = isBonus ? 5 : (planConfig?.days || 0);
+                  return (
+                    <div key={pos.id} className={cn("flex items-center justify-between rounded-lg px-3 py-2.5 text-xs", isBonus ? "bg-amber-500/5 border border-amber-500/10" : "bg-white/[0.02] border border-white/[0.06]")}>
+                      <div>
+                        <span className="font-bold text-sm">${Number(pos.principal).toFixed(0)}</span>
+                        <span className="text-muted-foreground ml-1.5">{isBonus ? t("vault.bonusLabel", "体验金") : (planConfig?.label || pos.planType)}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-primary font-bold">{dailyRatePct}%</span>
+                        <span className="text-muted-foreground text-[10px] ml-1">{cycleDays}D</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-sm text-muted-foreground">{walletAddress ? t("vault.noPositionsYet") : t("common.connectWalletToView")}</div>
+            )}
+          </TabsContent>
           <TabsContent value="deposit" className="mt-3 space-y-3">
             {walletAddress ? (
               <>
@@ -652,28 +681,6 @@ export default function Vault() {
         </Tabs>
       </div>
 
-      <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-md px-3 sm:px-4 py-2.5 sm:py-3">
-        <div className="mx-auto max-w-lg lg:max-w-2xl flex gap-2 sm:gap-3">
-          <Button
-            className="flex-1 min-w-0 bg-cyan-600 text-white border-cyan-700 text-xs sm:text-sm px-2 sm:px-4 h-9 sm:h-10"
-            onClick={() => setDepositOpen(true)}
-            data-testid="button-deposit-vault"
-          >
-            <ArrowDownToLine className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-            <span className="truncate">{t("vault.depositToVault")}</span>
-          </Button>
-          <Button
-            variant="secondary"
-            className="flex-1 min-w-0 text-xs sm:text-sm px-2 sm:px-4 h-9 sm:h-10"
-            onClick={() => setRedeemOpen(true)}
-            data-testid="button-redeem-vault"
-          >
-            <ArrowUpFromLine className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-            <span className="truncate">{t("vault.redeemFromVault")}</span>
-          </Button>
-        </div>
-      </div>
-
       <VaultDepositDialog open={depositOpen} onOpenChange={setDepositOpen} />
 
       <Dialog open={redeemOpen} onOpenChange={setRedeemOpen}>
@@ -821,7 +828,7 @@ export default function Vault() {
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-sm font-bold text-neon-value">+{arAmt.toFixed(2)} MA</div>
+                      <div className="text-sm font-bold text-neon-value">+{arAmt.toFixed(2)} RUNE</div>
                       <div className="text-[10px] text-muted-foreground">{formatUSD(Number(r.amount))}</div>
                     </div>
                   </div>
