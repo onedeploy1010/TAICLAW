@@ -466,7 +466,7 @@ function MASwap() {
             : !account ? t("ma.connectWallet", "连接钱包")
             : exceedsQuota ? t("ma.exceedsLimit", "超出额度")
             : inputAmount <= 0 ? t("ma.enterAmount", "输入数量")
-            : isSwapped ? t("ma.buyMA", "买入 MA")
+            : isSwapped ? t("ma.buyMA", "买入 RUNE")
             : t("ma.swapTo", "闪兑 {{token}}", { token: outputToken })}
         </button>
       </div>
@@ -617,7 +617,7 @@ function VaultRedeemSection() {
 
               <div className="text-[10px] space-y-1 text-white/40">
                 <div className="flex justify-between">
-                  <span>{t("ma.mintedMA", "铸造 MA")}</span>
+                  <span>{t("ma.mintedMA", "铸造 RUNE")}</span>
                   <span className="font-mono text-white/60">{totalMA.toFixed(2)} MA</span>
                 </div>
                 {isEarly && (

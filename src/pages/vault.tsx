@@ -72,7 +72,7 @@ function TransactionTable({ walletAddress, type }: { walletAddress: string; type
                 <div className="flex items-center gap-2">
                   <span className="font-semibold">{tx.token || "USDT"}</span>
                   <span className="text-neon-value font-mono">
-                    {type === "YIELD" ? `${usdcToMA(Number(tx.amount)).toFixed(2)} MA` : `$${Number(tx.amount).toFixed(2)}`}
+                    {type === "YIELD" ? `${usdcToMA(Number(tx.amount)).toFixed(2)} RUNE` : `$${Number(tx.amount).toFixed(2)}`}
                   </span>
                 </div>
                 <Badge
@@ -210,6 +210,7 @@ export default function Vault() {
     ];
   }, []);
 
+  const [activeVaultKey, setActiveVaultKey] = useState("rune-ai");
   const [depositOpen, setDepositOpen] = useState(false);
   const [redeemOpen, setRedeemOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>("5_DAYS");
@@ -328,62 +329,63 @@ export default function Vault() {
         }
       `}</style>
 
-      {/* Strategy Vault Cards */}
+      {/* Strategy Vault Tabs */}
       <div className="px-4 lg:px-0">
-        <h3 className="text-base font-bold mb-3 flex items-center gap-2">
+        <div className="flex items-center gap-2 mb-3">
           <Sparkles className="h-4 w-4" style={{ color: "rgba(212,168,50,0.9)" }} />
-          {t("vault.strategyVaults", "Strategy Vaults")}
-        </h3>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-          {strategyVaults.map((vault, idx) => {
-            const Icon = vault.icon;
+          <h3 className="text-base font-bold">{t("vault.strategyVaults")}</h3>
+        </div>
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-2">
+          {strategyVaults.map((v) => {
+            const Icon = v.icon;
+            const active = activeVaultKey === v.key;
             return (
-              <div
-                key={vault.key}
-                className="relative rounded-xl p-3 space-y-2 overflow-hidden"
-                style={{
-                  background: vault.accentBg,
-                  border: `1px solid ${vault.accentBorder}`,
-                  animation: `fadeSlideIn 0.3s ease-out ${idx * 0.06}s both`,
-                }}
-              >
-                {vault.hot && (
-                  <Badge
-                    className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 border-0 font-bold"
-                    style={{ background: "rgba(212,168,50,0.25)", color: "rgba(212,168,50,1)" }}
-                  >
-                    {t("vault.hotBadge", "Hot")}
-                  </Badge>
-                )}
-                <div className="flex items-center gap-2">
-                  <div
-                    className="flex items-center justify-center w-7 h-7 rounded-lg"
-                    style={{ background: vault.accentBg, border: `1px solid ${vault.accentBorder}` }}
-                  >
-                    <Icon className="h-3.5 w-3.5" style={{ color: vault.accent }} />
-                  </div>
-                  <span className="text-xs font-bold leading-tight" style={{ color: vault.accent }}>
-                    {t(vault.nameKey, vault.nameKey)}
-                  </span>
-                </div>
-                <div className="text-lg font-black font-mono" style={{ color: vault.accent }}>
-                  {t("vault.apyRange", "{{min}}-{{max}}% APY", { min: vault.apyMin, max: vault.apyMax })}
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-foreground/40">
-                  <span>{t("vault.tvl", "TVL")}</span>
-                  <span className="font-mono font-semibold text-foreground/60">${(vault.tvl / 1000).toFixed(0)}K</span>
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-foreground/40">
-                  <span>{t("vault.minDeposit", "Min ${{amount}}", { amount: vault.minDeposit })}</span>
-                  <span className="flex items-center gap-1">
-                    <Lock className="h-2.5 w-2.5" />
-                    {t("vault.lockPeriod", "{{days}}D Lock", { days: vault.lockDays })}
-                  </span>
-                </div>
-              </div>
+              <button key={v.key} onClick={() => setActiveVaultKey(v.key)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold whitespace-nowrap shrink-0 transition-all ${active ? "text-black" : "text-muted-foreground"}`}
+                style={active ? { background: `linear-gradient(135deg, ${v.accent}, ${v.accent}cc)`, boxShadow: `0 0 12px ${v.accent}30` } : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <Icon className="h-3 w-3" />
+                {t(v.nameKey).replace(/ Vault| 金库| 金庫/g, "")}
+                {v.hot && <span className="text-[8px] px-1 rounded bg-black/20">🔥</span>}
+              </button>
             );
           })}
         </div>
+
+        {/* Active Vault Detail */}
+        {(() => {
+          const v = strategyVaults.find(x => x.key === activeVaultKey) || strategyVaults[0];
+          const Icon = v.icon;
+          return (
+            <div className="rounded-xl p-4 mt-1" style={{ background: "linear-gradient(145deg, rgba(22,16,8,0.98), rgba(14,10,4,0.99))", border: `1px solid ${v.accent}20`, boxShadow: `0 0 20px ${v.accent}08` }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: `${v.accent}18`, border: `1px solid ${v.accent}30` }}>
+                    <Icon className="h-4.5 w-4.5" style={{ color: v.accent }} />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold" style={{ color: v.accent }}>{t(v.nameKey)}</div>
+                    <div className="text-[10px] text-muted-foreground">{t("vault.lockPeriodLabel", { days: v.lockDays })} · {t("vault.minDepositLabel", { amount: v.minDeposit })}</div>
+                  </div>
+                </div>
+                {v.hot && <Badge className="text-[9px] border-0" style={{ background: `${v.accent}20`, color: v.accent }}>{t("vault.hotBadge")}</Badge>}
+              </div>
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                <div className="rounded-lg p-2.5 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="text-[15px] font-black tabular-nums" style={{ color: v.accent }}>{v.apyMin}-{v.apyMax}%</div>
+                  <div className="text-[9px] text-muted-foreground mt-0.5">APY</div>
+                </div>
+                <div className="rounded-lg p-2.5 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="text-[15px] font-black tabular-nums text-foreground/80">${(v.tvl / 1000).toFixed(0)}K</div>
+                  <div className="text-[9px] text-muted-foreground mt-0.5">{t("vault.tvlLabel")}</div>
+                </div>
+                <div className="rounded-lg p-2.5 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="text-[15px] font-black tabular-nums text-foreground/80">{v.lockDays}D</div>
+                  <div className="text-[9px] text-muted-foreground mt-0.5">{t("vault.lock")}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       <VaultChart />
@@ -394,7 +396,7 @@ export default function Vault() {
       </div>
 
       <div className="px-4 lg:px-0">
-        <Card className="border-border bg-card shadow-[0_0_15px_rgba(0,188,165,0.05)]">
+        <Card className="border-border bg-card shadow-[0_0_15px_rgba(212,168,50,0.05)]">
           <CardContent className="p-4">
             <div className="flex items-center justify-between gap-4 mb-3 flex-wrap">
               <div>
@@ -406,7 +408,7 @@ export default function Vault() {
               <div>
                 <div className="text-[12px] text-muted-foreground">{t("vault.accumulatedYield")}</div>
                 <div className="text-2xl font-bold text-neon-value" data-testid="text-my-yield">
-                  {walletAddress ? formatMA(totalYield) : "0.00 MA"}
+                  {walletAddress ? formatMA(totalYield) : "0.00 RUNE"}
                 </div>
               </div>
             </div>
@@ -700,27 +702,27 @@ export default function Vault() {
                         <span>${principal.toFixed(2)} USDT</span>
                       </div>
                       <div className="flex justify-between gap-2">
-                        <span className="text-muted-foreground">{t("vault.mintedMA", "铸造 MA")}</span>
-                        <span>{totalMA.toFixed(2)} MA</span>
+                        <span className="text-muted-foreground">{t("vault.mintedMA", "铸造 RUNE")}</span>
+                        <span>{totalMA.toFixed(2)} RUNE</span>
                       </div>
                       <div className="flex justify-between gap-2">
                         <span className="text-muted-foreground">{t("vault.accumulatedInterest", "累计收益 ({{days}}天)", { days })}</span>
-                        <span className="text-neon-value">+{yieldMA.toFixed(2)} MA</span>
+                        <span className="text-neon-value">+{yieldMA.toFixed(2)} RUNE</span>
                       </div>
                       {isEarly && (
                         <>
                           <div className="flex justify-between gap-2 text-red-400">
                             <span>{t("vault.earlyRedeemPenalty", "提前赎回罚金 (20%)")}</span>
-                            <span>-{penaltyMA.toFixed(2)} MA</span>
+                            <span>-{penaltyMA.toFixed(2)} RUNE</span>
                           </div>
                           <div className="text-[10px] text-yellow-400/80 bg-yellow-500/8 rounded px-2 py-1">
-                            {t("vault.earlyRedeemWarning", "未到期赎回将扣除铸造 MA 的 20%，仅返还 80%")}
+                            {t("vault.earlyRedeemWarning", "未到期赎回将扣除铸造 RUNE 的 20%，仅返还 80%")}
                           </div>
                         </>
                       )}
                       <div className="flex justify-between gap-2 pt-1.5 border-t border-border/30">
                         <span className="font-medium">{t("vault.redeemReceive", "赎回获得")}</span>
-                        <span className="font-bold text-primary">{(netMA + yieldMA).toFixed(2)} MA</span>
+                        <span className="font-bold text-primary">{(netMA + yieldMA).toFixed(2)} RUNE</span>
                       </div>
                       <div className="text-[10px] text-muted-foreground">
                         {t("vault.approxValue", "≈ ${{value}} (按当前价 ${{price}})", { value: ((netMA + yieldMA) * maPrice).toFixed(2), price: maPrice.toFixed(4) })}

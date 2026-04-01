@@ -7,7 +7,7 @@ const PROFILE_MENU = [
   { path: "/profile/nodes", labelKey: "profile.nodeDetailsTitle", icon: Server },
   { path: "/profile/nodes/earnings", labelKey: "profile.nodeEarningsDetail", icon: TrendingUp },
   { path: "/profile/referral", labelKey: "profile.referralTeam", icon: GitBranch },
-  { path: "/profile/ma", labelKey: "profile.maToken", icon: Coins },
+  { path: "/profile/ma", labelKey: "profile.runeToken", icon: Coins },
   { path: "/profile/swap", labelKey: "profile.swap", icon: ArrowLeftRight },
   { path: "/profile/transactions", labelKey: "profile.transactionHistory", icon: History },
   { path: "/profile/notifications", labelKey: "profile.notifications", icon: Bell },

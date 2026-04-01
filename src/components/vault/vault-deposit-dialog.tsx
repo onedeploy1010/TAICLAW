@@ -165,7 +165,7 @@ export function VaultDepositDialog({ open, onOpenChange }: VaultDepositDialogPro
             {t("vault.depositToVault")}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            {t("deposit.description", "存入 USDT，铸造 MA 锁仓，每日产生收益")}
+            {t("deposit.description", "存入 USDT，铸造 RUNE 锁仓，每日产生收益")}
           </DialogDescription>
         </DialogHeader>
 

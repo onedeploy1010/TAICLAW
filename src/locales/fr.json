@@ -314,7 +314,7 @@
     "receive": "Recevoir",
     "exchangeRate": "Taux de Change",
     "fee": "Frais",
-    "exceedsQuota": "Dépasse le quota, doit conserver au moins 50% MA",
+    "exceedsQuota": "Dépasse le quota, doit conserver au moins 50% RUNE",
     "swapSuccess": "Échange Réussi",
     "transferring": "Transfert...",
     "recording": "Enregistrement...",

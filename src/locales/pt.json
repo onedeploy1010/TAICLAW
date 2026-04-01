@@ -314,7 +314,7 @@
     "receive": "Receber",
     "exchangeRate": "Taxa de Câmbio",
     "fee": "Taxa",
-    "exceedsQuota": "Excede a cota, deve manter pelo menos 50% MA",
+    "exceedsQuota": "Excede a cota, deve manter pelo menos 50% RUNE",
     "swapSuccess": "Troca Bem-sucedida",
     "transferring": "Transferindo...",
     "recording": "Registrando...",

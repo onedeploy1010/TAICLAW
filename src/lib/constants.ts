@@ -47,19 +47,19 @@ export function usdcToMA(usdc: number): number {
 
 export function formatMA(usdc: number): string {
   const ma = usdcToMA(usdc);
-  return `${new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ma)} MA`;
+  return `${new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ma)} RUNE`;
 }
 
 export function formatCompactMA(usdc: number): string {
   const ma = usdcToMA(usdc);
   if (isZh()) {
-    if (ma >= 100_000_000) return `${(ma / 100_000_000).toFixed(2)}亿 MA`;
-    if (ma >= 10_000) return `${(ma / 10_000).toFixed(2)}万 MA`;
-    return `${ma.toFixed(2)} MA`;
+    if (ma >= 100_000_000) return `${(ma / 100_000_000).toFixed(2)}亿 RUNE`;
+    if (ma >= 10_000) return `${(ma / 10_000).toFixed(2)}万 RUNE`;
+    return `${ma.toFixed(2)} RUNE`;
   }
-  if (ma >= 1_000_000) return `${(ma / 1_000_000).toFixed(2)}M MA`;
-  if (ma >= 1_000) return `${(ma / 1_000).toFixed(1)}K MA`;
-  return `${ma.toFixed(2)} MA`;
+  if (ma >= 1_000_000) return `${(ma / 1_000_000).toFixed(2)}M RUNE`;
+  if (ma >= 1_000) return `${(ma / 1_000).toFixed(1)}K RUNE`;
+  return `${ma.toFixed(2)} RUNE`;
 }
 
 export function shortenAddress(address: string): string {
