@@ -71,7 +71,8 @@
     "strategy": "전략",
     "profile": "마이페이지",
     "market": "마켓",
-    "nodes": "노드"
+    "nodes": "노드",
+    "predict": "예측"
   },
   "dashboard": {
     "depthRatio": "뎁스 비율",

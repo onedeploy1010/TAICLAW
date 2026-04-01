@@ -71,7 +71,8 @@
     "strategy": "Strategie",
     "profile": "Profil",
     "market": "Markt",
-    "nodes": "Knoten"
+    "nodes": "Knoten",
+    "predict": "Prognose"
   },
   "dashboard": {
     "depthRatio": "Tiefenverhältnis",

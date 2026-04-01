@@ -71,7 +71,8 @@
     "strategy": "الاستراتيجية",
     "profile": "الملف الشخصي",
     "market": "السوق",
-    "nodes": "العُقد"
+    "nodes": "العُقد",
+    "predict": "تنبؤ"
   },
   "dashboard": {
     "depthRatio": "نسبة العمق",

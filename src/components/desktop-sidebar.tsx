@@ -5,7 +5,7 @@ import { useActiveAccount } from "thirdweb/react";
 
 const mainNavItems = [
   { path: "/", icon: Home, labelKey: "nav.home" },
-  { path: "/trade", icon: BarChart3, labelKey: "nav.trade" },
+  { path: "/trade", icon: BarChart3, labelKey: "nav.predict" },
   {
     path: "/vault",
     labelKey: "nav.vault",
@@ -19,7 +19,7 @@ const mainNavItems = [
       </svg>
     ),
   },
-  { path: "/strategy", icon: Brain, labelKey: "nav.strategy" },
+  { path: "/strategy", icon: Brain, labelKey: "nav.trade" },
   { path: "/market", icon: TrendingUp, labelKey: "nav.market" },
   { path: "/profile", icon: User, labelKey: "nav.profile" },
 ];

@@ -71,7 +71,8 @@
     "strategy": "Chiến lược",
     "profile": "Hồ sơ",
     "market": "Thị trường",
-    "nodes": "Nút"
+    "nodes": "Nút",
+    "predict": "Dự đoán"
   },
   "dashboard": {
     "depthRatio": "Tỷ lệ chiều sâu",

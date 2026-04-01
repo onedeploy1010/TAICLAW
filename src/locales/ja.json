@@ -71,7 +71,8 @@
     "strategy": "戦略",
     "profile": "マイページ",
     "market": "マーケット",
-    "nodes": "ノード"
+    "nodes": "ノード",
+    "predict": "予測"
   },
   "dashboard": {
     "depthRatio": "デプス比率",

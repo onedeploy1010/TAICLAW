@@ -71,7 +71,8 @@
     "strategy": "Стратегия",
     "profile": "Профиль",
     "market": "Рынок",
-    "nodes": "Ноды"
+    "nodes": "Ноды",
+    "predict": "Прогноз"
   },
   "dashboard": {
     "depthRatio": "Коэффициент Глубины",

@@ -71,7 +71,8 @@
     "strategy": "Estratégia",
     "profile": "Perfil",
     "market": "Mercado",
-    "nodes": "Nós"
+    "nodes": "Nós",
+    "predict": "Prever"
   },
   "dashboard": {
     "depthRatio": "Razão de Profundidade",

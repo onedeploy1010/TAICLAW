@@ -1,12 +1,12 @@
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { Compass, CandlestickChart, Vault, Cpu, User } from "lucide-react";
+import { Compass, TrendingUp, Vault, LineChart, User } from "lucide-react";
 
 const tabs = [
   { path: "/", icon: Compass, id: "home", labelKey: "nav.home" },
-  { path: "/trade", icon: CandlestickChart, id: "trade", labelKey: "nav.trade" },
+  { path: "/trade", icon: TrendingUp, id: "predict", labelKey: "nav.predict" },
   { path: "/vault", icon: Vault, id: "vault", labelKey: "nav.vault" },
-  { path: "/strategy", icon: Cpu, id: "strategy", labelKey: "nav.strategy" },
+  { path: "/strategy", icon: LineChart, id: "trade", labelKey: "nav.trade" },
   { path: "/profile", icon: User, id: "profile", labelKey: "nav.profile" },
 ];
 

@@ -71,7 +71,8 @@
     "strategy": "策略",
     "profile": "我的",
     "market": "市場",
-    "nodes": "節點"
+    "nodes": "節點",
+    "predict": "預測"
   },
   "dashboard": {
     "depthRatio": "深度比率",
