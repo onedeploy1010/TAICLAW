@@ -216,14 +216,6 @@ function PolyCard({
           <p className="text-[13px] font-semibold leading-snug text-foreground/90 flex-1 line-clamp-2">
             {market.question}
           </p>
-          <a
-            href={`https://polymarket.com/event/${market.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 p-1 rounded text-muted-foreground hover:text-primary transition-colors"
-          >
-            <ExternalLink className="h-3 w-3" />
-          </a>
         </div>
 
         <ProbBar yes={market.yesPrice} no={market.noPrice} />
@@ -256,9 +248,6 @@ function PolyCard({
               </span>
             )}
           </div>
-          <Badge variant="outline" className="text-[10px] text-primary/70 border-primary/20 no-default-hover-elevate no-default-active-elevate">
-            <Globe className="h-2 w-2 mr-0.5" /> Polymarket
-          </Badge>
         </div>
       </div>
     </div>
@@ -385,11 +374,6 @@ function AiCard({
           </button>
         </div>
 
-        <div className="flex items-center justify-end mt-2">
-          <Badge variant="outline" className="text-[10px] text-primary/70 border-primary/20 no-default-hover-elevate no-default-active-elevate">
-            <Brain className="h-2 w-2 mr-0.5" /> {t("trade.aiPredictionBadge")}
-          </Badge>
-        </div>
       </div>
     </div>
   );
@@ -484,11 +468,6 @@ function NewsCard({
           </button>
         </div>
 
-        <div className="flex justify-end mt-2">
-          <Badge variant="outline" className="text-[10px] text-primary/70 border-primary/20 no-default-hover-elevate no-default-active-elevate">
-            <Newspaper className="h-2 w-2 mr-0.5" /> {t("trade.newsSignalBadge")}
-          </Badge>
-        </div>
       </div>
     </div>
   );
@@ -776,7 +755,6 @@ export default function Trade() {
         <div className="flex items-center justify-between gap-2 mb-2.5">
           <div>
             <h1 className="text-base font-bold tracking-tight text-foreground">{t("trade.predictionMarkets")}</h1>
-            <p className="text-[11px] text-muted-foreground">{t("trade.poweredBy")}</p>
           </div>
           <div className="flex items-center gap-1.5">
             {/* Sort dropdown */}
