@@ -176,7 +176,9 @@
     "endsOn": "{{date}} 終了",
     "missingFieldsError": "入力が不足しています",
     "yes": "はい",
-    "no": "いいえ"
+    "no": "いいえ",
+    "loadMore": "さらに読み込む (残り {{remaining}} 件)",
+    "allMarketsShown": "全 {{count}} マーケット表示済み"
   },
   "vault": {
     "title": "ボールト",

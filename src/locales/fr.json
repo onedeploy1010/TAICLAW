@@ -176,7 +176,9 @@
     "endsOn": "Fin {{date}}",
     "missingFieldsError": "Champs manquants",
     "yes": "Oui",
-    "no": "Non"
+    "no": "Non",
+    "loadMore": "Charger plus ({{remaining}} restants)",
+    "allMarketsShown": "{{count}} marchés affichés"
   },
   "vault": {
     "title": "Coffre",

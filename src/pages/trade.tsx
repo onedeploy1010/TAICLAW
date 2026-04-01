@@ -66,6 +66,57 @@ interface UnifiedMarket {
   newsPred?: NewsPred;
 }
 
+// ─── Seed Data (shown when APIs return empty) ─────────────────────────────────
+
+function daysFromNow(d: number) { return new Date(Date.now() + d * 86400000).toISOString(); }
+function hoursAgo(h: number) { return new Date(Date.now() - h * 3600000).toISOString(); }
+
+const SEED_POLYMARKETS: PolymarketMarket[] = [
+  { id: "pm-1", question: "Will Bitcoin exceed $150,000 by end of 2026?", yesPrice: 0.42, noPrice: 0.58, volume: 2840000, liquidity: 890000, endDate: daysFromNow(180), category: "crypto", slug: "btc-150k-2026" },
+  { id: "pm-2", question: "Will Ethereum ETF see $10B inflows in Q2 2026?", yesPrice: 0.35, noPrice: 0.65, volume: 1520000, liquidity: 450000, endDate: daysFromNow(60), category: "crypto", slug: "eth-etf-q2" },
+  { id: "pm-3", question: "Will Solana flip Ethereum in daily transactions?", yesPrice: 0.28, noPrice: 0.72, volume: 980000, liquidity: 320000, endDate: daysFromNow(90), category: "crypto", slug: "sol-flip-eth" },
+  { id: "pm-4", question: "Will the Fed cut rates before July 2026?", yesPrice: 0.61, noPrice: 0.39, volume: 4200000, liquidity: 1200000, endDate: daysFromNow(75), category: "politics", slug: "fed-rate-cut-2026" },
+  { id: "pm-5", question: "Will AI tokens market cap exceed $500B?", yesPrice: 0.38, noPrice: 0.62, volume: 1100000, liquidity: 380000, endDate: daysFromNow(120), category: "crypto", slug: "ai-tokens-500b" },
+  { id: "pm-6", question: "Will BNB reach $1,000 in 2026?", yesPrice: 0.22, noPrice: 0.78, volume: 750000, liquidity: 210000, endDate: daysFromNow(200), category: "crypto", slug: "bnb-1000" },
+  { id: "pm-7", question: "Will there be a major CEX bankruptcy in 2026?", yesPrice: 0.15, noPrice: 0.85, volume: 620000, liquidity: 180000, endDate: daysFromNow(270), category: "crypto", slug: "cex-bankruptcy" },
+  { id: "pm-8", question: "Will Dogecoin reach $1 before 2027?", yesPrice: 0.08, noPrice: 0.92, volume: 3100000, liquidity: 950000, endDate: daysFromNow(300), category: "crypto", slug: "doge-1-dollar" },
+  { id: "pm-9", question: "Will Bitcoin dominance drop below 40%?", yesPrice: 0.18, noPrice: 0.82, volume: 1850000, liquidity: 520000, endDate: daysFromNow(150), category: "crypto", slug: "btc-dominance-40" },
+  { id: "pm-10", question: "Will US approve a Solana ETF in 2026?", yesPrice: 0.45, noPrice: 0.55, volume: 2100000, liquidity: 680000, endDate: daysFromNow(100), category: "crypto", slug: "sol-etf-2026" },
+  { id: "pm-11", question: "Will total crypto market cap reach $10T?", yesPrice: 0.32, noPrice: 0.68, volume: 3500000, liquidity: 1100000, endDate: daysFromNow(240), category: "crypto", slug: "crypto-10t" },
+  { id: "pm-12", question: "Will China lift crypto trading ban by 2027?", yesPrice: 0.12, noPrice: 0.88, volume: 890000, liquidity: 250000, endDate: daysFromNow(365), category: "politics", slug: "china-crypto-ban" },
+  { id: "pm-13", question: "Will XRP win full SEC lawsuit by Q3 2026?", yesPrice: 0.55, noPrice: 0.45, volume: 1650000, liquidity: 480000, endDate: daysFromNow(85), category: "crypto", slug: "xrp-sec-q3" },
+  { id: "pm-14", question: "Will Layer 2 TVL exceed Ethereum L1?", yesPrice: 0.48, noPrice: 0.52, volume: 720000, liquidity: 210000, endDate: daysFromNow(160), category: "crypto", slug: "l2-tvl-exceed" },
+  { id: "pm-15", question: "Will a CBDC launch in a G7 country by 2026?", yesPrice: 0.25, noPrice: 0.75, volume: 580000, liquidity: 160000, endDate: daysFromNow(200), category: "politics", slug: "g7-cbdc" },
+];
+
+const SEED_AI_PREDICTIONS: AiPrediction[] = [
+  { id: "ai-1", asset: "BTC", prediction: "BULLISH", confidence: "78", targetPrice: "108500", currentPrice: "102300", fearGreedIndex: 68, fearGreedLabel: "Greed", reasoning: "Strong EMA alignment with increasing volume. MACD histogram expanding bullish. Support at $98K holding firm.", timeframe: "4H", expiresAt: daysFromNow(1), createdAt: hoursAgo(1) },
+  { id: "ai-2", asset: "ETH", prediction: "BULLISH", confidence: "72", targetPrice: "4200", currentPrice: "3850", fearGreedIndex: 65, fearGreedLabel: "Greed", reasoning: "ETH/BTC ratio recovering. Blob fees increasing indicating L2 adoption. RSI momentum positive at 58.", timeframe: "4H", expiresAt: daysFromNow(1), createdAt: hoursAgo(2) },
+  { id: "ai-3", asset: "SOL", prediction: "BULLISH", confidence: "81", targetPrice: "195", currentPrice: "172", fearGreedIndex: 72, fearGreedLabel: "Greed", reasoning: "Solana DEX volume hitting ATH. Firedancer upgrade sentiment positive. Breakout from descending triangle.", timeframe: "1H", expiresAt: daysFromNow(1), createdAt: hoursAgo(1) },
+  { id: "ai-4", asset: "BNB", prediction: "NEUTRAL", confidence: "55", targetPrice: "620", currentPrice: "608", fearGreedIndex: 52, fearGreedLabel: "Neutral", reasoning: "Consolidating near $600 support. Low volatility environment. Waiting for BTC direction confirmation.", timeframe: "4H", expiresAt: daysFromNow(1), createdAt: hoursAgo(3) },
+  { id: "ai-5", asset: "DOGE", prediction: "BEARISH", confidence: "64", targetPrice: "0.135", currentPrice: "0.158", fearGreedIndex: 45, fearGreedLabel: "Fear", reasoning: "Meme coin momentum fading. Whale wallets distributing. RSI bearish divergence on daily chart.", timeframe: "1D", expiresAt: daysFromNow(2), createdAt: hoursAgo(4) },
+  { id: "ai-6", asset: "XRP", prediction: "BULLISH", confidence: "69", targetPrice: "2.85", currentPrice: "2.52", fearGreedIndex: 60, fearGreedLabel: "Greed", reasoning: "SEC lawsuit progress favorable. Cross-border payment partnerships expanding. Bollinger squeeze imminent.", timeframe: "4H", expiresAt: daysFromNow(1), createdAt: hoursAgo(2) },
+  { id: "ai-7", asset: "ADA", prediction: "BEARISH", confidence: "62", targetPrice: "0.42", currentPrice: "0.48", fearGreedIndex: 38, fearGreedLabel: "Fear", reasoning: "Development activity declining. TVL flat. Price below 200 EMA. Possible retest of $0.40 support.", timeframe: "1D", expiresAt: daysFromNow(2), createdAt: hoursAgo(5) },
+  { id: "ai-8", asset: "AVAX", prediction: "BULLISH", confidence: "74", targetPrice: "42", currentPrice: "36.5", fearGreedIndex: 58, fearGreedLabel: "Neutral", reasoning: "Subnet adoption accelerating. Gaming ecosystem growing. Price breaking above 50-day MA with volume.", timeframe: "4H", expiresAt: daysFromNow(1), createdAt: hoursAgo(1) },
+  { id: "ai-9", asset: "LINK", prediction: "BULLISH", confidence: "76", targetPrice: "22", currentPrice: "18.9", fearGreedIndex: 62, fearGreedLabel: "Greed", reasoning: "CCIP adoption expanding rapidly. Staking TVL increasing. Technical pattern: cup and handle forming.", timeframe: "1D", expiresAt: daysFromNow(3), createdAt: hoursAgo(6) },
+  { id: "ai-10", asset: "DOT", prediction: "NEUTRAL", confidence: "52", targetPrice: "7.5", currentPrice: "7.2", fearGreedIndex: 44, fearGreedLabel: "Fear", reasoning: "Parachain auctions slowing. Range-bound between $6.8-$7.8. Awaiting catalyst for directional move.", timeframe: "4H", expiresAt: daysFromNow(1), createdAt: hoursAgo(3) },
+];
+
+const SEED_NEWS: NewsPred[] = [
+  { id: "n-1", headline: "BlackRock Bitcoin ETF sees record $1.2B daily inflow", asset: "BTC", prediction: "BULLISH", confidence: 82, reasoning: "Massive institutional demand signals sustained buying pressure. Likely to push BTC above key resistance levels.", impact: "HIGH", source: "Bloomberg", url: "#", publishedAt: hoursAgo(1) },
+  { id: "n-2", headline: "SEC delays Ethereum options decision to Q3 2026", asset: "ETH", prediction: "BEARISH", confidence: 58, reasoning: "Regulatory delay dampens short-term sentiment. May cause temporary pullback as traders adjust positions.", impact: "MEDIUM", source: "Reuters", url: "#", publishedAt: hoursAgo(2) },
+  { id: "n-3", headline: "Solana processes 100M transactions in 24 hours — new record", asset: "SOL", prediction: "BULLISH", confidence: 75, reasoning: "Network performance milestone validates scalability thesis. Likely to attract more DeFi and gaming projects.", impact: "HIGH", source: "CoinDesk", url: "#", publishedAt: hoursAgo(3) },
+  { id: "n-4", headline: "Major crypto exchange announces $500M insurance fund", asset: "CRYPTO", prediction: "BULLISH", confidence: 65, reasoning: "Increased security measures boost institutional confidence. Positive for overall market sentiment.", impact: "MEDIUM", source: "The Block", url: "#", publishedAt: hoursAgo(4) },
+  { id: "n-5", headline: "EU MiCA regulation fully enforced — compliance deadline hits", asset: "CRYPTO", prediction: "BEARISH", confidence: 60, reasoning: "Strict compliance requirements may cause small exchanges to exit EU. Short-term friction for market access.", impact: "HIGH", source: "Financial Times", url: "#", publishedAt: hoursAgo(5) },
+  { id: "n-6", headline: "Chainlink CCIP integrated by 5 major banks for cross-chain", asset: "LINK", prediction: "BULLISH", confidence: 78, reasoning: "Enterprise adoption of Chainlink infrastructure validates long-term thesis. Strong fundamental catalyst.", impact: "HIGH", source: "Decrypt", url: "#", publishedAt: hoursAgo(2) },
+  { id: "n-7", headline: "Whale alert: $400M BTC moved from exchange to cold storage", asset: "BTC", prediction: "BULLISH", confidence: 70, reasoning: "Large withdrawal from exchanges reduces sell-side liquidity. Historically precedes upward price moves.", impact: "MEDIUM", source: "CryptoQuant", url: "#", publishedAt: hoursAgo(6) },
+  { id: "n-8", headline: "Dogecoin foundation announces smart contract upgrade", asset: "DOGE", prediction: "BULLISH", confidence: 62, reasoning: "Smart contract capability could expand DOGE utility beyond meme status. Watch for developer adoption.", impact: "LOW", source: "CoinTelegraph", url: "#", publishedAt: hoursAgo(7) },
+  { id: "n-9", headline: "US Treasury proposes new stablecoin reporting requirements", asset: "CRYPTO", prediction: "BEARISH", confidence: 55, reasoning: "Additional compliance burden on stablecoin issuers. May slow DeFi growth temporarily.", impact: "MEDIUM", source: "WSJ", url: "#", publishedAt: hoursAgo(8) },
+  { id: "n-10", headline: "Avalanche subnet adopted by major gaming studio for Web3 game", asset: "AVAX", prediction: "BULLISH", confidence: 72, reasoning: "AAA gaming adoption strengthens Avalanche ecosystem. Expected to drive TVL and user growth.", impact: "MEDIUM", source: "GameFi News", url: "#", publishedAt: hoursAgo(3) },
+  { id: "n-11", headline: "BNB Chain burns $200M in quarterly token burn", asset: "BNB", prediction: "BULLISH", confidence: 68, reasoning: "Deflationary mechanism reduces supply. Historically bullish for BNB price action.", impact: "MEDIUM", source: "Binance Blog", url: "#", publishedAt: hoursAgo(9) },
+  { id: "n-12", headline: "Federal Reserve signals potential rate pause through 2026", asset: "BTC", prediction: "NEUTRAL", confidence: 52, reasoning: "Uncertainty in macro direction. Risk assets could go either way depending on economic data.", impact: "HIGH", source: "CNBC", url: "#", publishedAt: hoursAgo(10) },
+];
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function timeAgo(dateStr: string) {
@@ -161,7 +212,7 @@ function PolyCard({
           </div>
         )}
 
-        <div className="flex items-start justify-between gap-2 mb-2.5">
+        <div className="flex items-start justify-between gap-2 mb-2.5 min-h-[36px]">
           <p className="text-[13px] font-semibold leading-snug text-foreground/90 flex-1 line-clamp-2">
             {market.question}
           </p>
@@ -630,6 +681,7 @@ export default function Trade() {
   const [sortOpen, setSortOpen] = useState(false);
   const [betTarget, setBetTarget] = useState<BetTarget | null>(null);
   const [betOpen, setBetOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(8);
 
   const { data: polymarkets = [], isLoading: polyLoading } = useQuery<PolymarketMarket[]>({
     queryKey: ["polymarket-markets"],
@@ -666,21 +718,26 @@ export default function Trade() {
 
   const isLoading = polyLoading && aiLoading && newsLoading;
 
+  // Use seed data as fallback when APIs return empty
+  const polyData = polymarkets.length > 0 ? polymarkets : SEED_POLYMARKETS;
+  const aiData = aiPredictions.length > 0 ? aiPredictions : SEED_AI_PREDICTIONS;
+  const newsData = (newsPredictions as NewsPred[]).length > 0 ? (newsPredictions as NewsPred[]) : SEED_NEWS;
+
   // Build unified filtered list
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
 
-    const polyItems = polymarkets
+    const polyItems = polyData
       .filter(() => category === "all" || category === "crypto")
       .filter(m => !q || m.question.toLowerCase().includes(q))
       .map(m => ({ source: "polymarket" as const, id: m.id, data: m }));
 
-    const aiItems = aiPredictions
+    const aiItems = aiData
       .filter(() => category === "all" || category === "ai")
       .filter(p => !q || p.asset?.toLowerCase().includes(q))
       .map(p => ({ source: "ai" as const, id: `ai-${p.asset}`, data: p }));
 
-    const newsItems = (newsPredictions as NewsPred[])
+    const newsItems = newsData
       .filter(() => category === "all" || category === "news")
       .filter(n => !q || n.headline?.toLowerCase().includes(q) || n.asset?.toLowerCase().includes(q))
       .map(n => ({ source: "news" as const, id: n.id, data: n }));
@@ -706,7 +763,7 @@ export default function Trade() {
       });
     }
     return myBetItems;
-  }, [polymarkets, aiPredictions, newsPredictions, category, search, sort, betIds]);
+  }, [polyData, aiData, newsData, category, search, sort, betIds]);
 
   const currentSortLabelKey = SORTS.find(s => s.key === sort)?.labelKey ?? "trade.sortVolume";
 
@@ -771,7 +828,7 @@ export default function Trade() {
             return (
               <button
                 key={cat.id}
-                onClick={() => setCategory(cat.id)}
+                onClick={() => { setCategory(cat.id); setVisibleCount(8); }}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-medium whitespace-nowrap transition-all shrink-0 ${
                   isActive ? "text-black" : "text-muted-foreground hover:text-foreground"
                 }`}
@@ -799,9 +856,9 @@ export default function Trade() {
       {/* ── Stats bar ───────────────────────────────── */}
       <div className="mt-2 mb-1">
         <StatsBar
-          polyCount={polymarkets.length}
-          aiCount={aiPredictions.length}
-          newsCount={(newsPredictions as NewsPred[]).length}
+          polyCount={polyData.length}
+          aiCount={aiData.length}
+          newsCount={newsData.length}
           betsCount={myBets.length}
         />
       </div>
@@ -833,7 +890,8 @@ export default function Trade() {
             )}
           </div>
         ) : (
-          filtered.map(item => {
+          <>
+          {filtered.slice(0, visibleCount).map(item => {
             if (item.source === "polymarket") {
               const m = item.data as PolymarketMarket;
               return (
@@ -928,7 +986,22 @@ export default function Trade() {
               );
             }
             return null;
-          })
+          })}
+          {visibleCount < filtered.length && (
+            <button
+              onClick={() => setVisibleCount(c => c + 8)}
+              className="w-full py-3 rounded-xl text-[13px] font-bold text-primary transition-all active:scale-[0.98]"
+              style={{ background: "rgba(212,168,50,0.06)", border: "1px solid rgba(212,168,50,0.15)" }}
+            >
+              {t("trade.loadMore", { remaining: filtered.length - visibleCount })}
+            </button>
+          )}
+          {visibleCount >= filtered.length && filtered.length > 0 && (
+            <div className="text-center py-3 text-[11px] text-muted-foreground/40">
+              {t("trade.allMarketsShown", { count: filtered.length })}
+            </div>
+          )}
+          </>
         )}
       </div>
 

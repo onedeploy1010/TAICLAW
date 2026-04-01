@@ -176,7 +176,9 @@
     "endsOn": "{{date}} 結束",
     "missingFieldsError": "缺少必填項",
     "yes": "是",
-    "no": "否"
+    "no": "否",
+    "loadMore": "載入更多 (剩餘 {{remaining}} 個)",
+    "allMarketsShown": "已顯示全部 {{count}} 個市場"
   },
   "vault": {
     "title": "金庫",

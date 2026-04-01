@@ -176,7 +176,9 @@
     "endsOn": "Ends {{date}}",
     "missingFieldsError": "Missing fields",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "loadMore": "Load more ({{remaining}} remaining)",
+    "allMarketsShown": "All {{count}} markets shown"
   },
   "vault": {
     "title": "Vault",

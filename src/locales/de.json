@@ -176,7 +176,9 @@
     "endsOn": "Endet {{date}}",
     "missingFieldsError": "Fehlende Felder",
     "yes": "Ja",
-    "no": "Nein"
+    "no": "Nein",
+    "loadMore": "Mehr laden ({{remaining}} übrig)",
+    "allMarketsShown": "Alle {{count}} Märkte angezeigt"
   },
   "vault": {
     "title": "Tresor",

@@ -176,7 +176,9 @@
     "endsOn": "ينتهي {{date}}",
     "missingFieldsError": "حقول مفقودة",
     "yes": "نعم",
-    "no": "لا"
+    "no": "لا",
+    "loadMore": "تحميل المزيد ({{remaining}} متبقي)",
+    "allMarketsShown": "تم عرض جميع الأسواق ({{count}})"
   },
   "vault": {
     "title": "الخزنة",

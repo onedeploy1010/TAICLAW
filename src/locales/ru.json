@@ -176,7 +176,9 @@
     "endsOn": "Заканчивается {{date}}",
     "missingFieldsError": "Заполните все поля",
     "yes": "Да",
-    "no": "Нет"
+    "no": "Нет",
+    "loadMore": "Загрузить ещё (осталось {{remaining}})",
+    "allMarketsShown": "Показаны все {{count}} рынков"
   },
   "vault": {
     "title": "Хранилище",

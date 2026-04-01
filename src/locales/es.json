@@ -176,7 +176,9 @@
     "endsOn": "Termina {{date}}",
     "missingFieldsError": "Campos faltantes",
     "yes": "Sí",
-    "no": "No"
+    "no": "No",
+    "loadMore": "Cargar más ({{remaining}} restantes)",
+    "allMarketsShown": "{{count}} mercados mostrados"
   },
   "vault": {
     "title": "Bóveda",

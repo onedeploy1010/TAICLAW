@@ -176,7 +176,9 @@
     "endsOn": "Kết thúc {{date}}",
     "missingFieldsError": "Thiếu thông tin",
     "yes": "Có",
-    "no": "Không"
+    "no": "Không",
+    "loadMore": "Tải thêm (còn {{remaining}})",
+    "allMarketsShown": "Đã hiển thị tất cả {{count}} thị trường"
   },
   "vault": {
     "title": "Kho bạc",
