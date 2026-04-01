@@ -794,7 +794,7 @@ export default function ProfileNodesPage() {
                         {check.requiredRank}
                       </span>
                     </div>
-                    <div className="text-[11px] text-emerald-400/80">{check.passAction === "UNLOCK_PARTIAL" ? t("profile.passUnlockPartial") : check.passAction === "UNLOCK_ALL" ? t("profile.passUnlockAll") : t("profile.passUnlockFrozen", { amount: 1000 })}</div>
+                    <div className="text-[11px] text-primary/80">{check.passAction === "UNLOCK_PARTIAL" ? t("profile.passUnlockPartial") : check.passAction === "UNLOCK_ALL" ? t("profile.passUnlockAll") : t("profile.passUnlockFrozen", { amount: 1000 })}</div>
                     <div className="text-[11px] text-red-400/80">{check.failAction === "KEEP_LOCKED" ? t("profile.failKeepLocked") : check.failAction === "DESTROY" ? t("profile.failDestroy") : t("profile.failKeepFrozen")}</div>
                     {check.failAction !== "KEEP_FROZEN" && <div className="text-[10px] text-white/25 mt-0.5">{t("profile.rankDropActual")}</div>}
                   </div>
@@ -835,7 +835,7 @@ export default function ProfileNodesPage() {
                     {check.earningRange && (
                       <div className="text-[10px] text-white/30 mb-0.5">{t("profile.checkDayRange", { start: check.earningRange.split("-")[0], end: check.earningRange.split("-")[1] })}</div>
                     )}
-                    <div className="text-[11px] text-emerald-400/80">{check.passAction === "CONTINUE" ? t("profile.passContinue") : t("profile.passUnlockFrozen", { amount: 6000 })}</div>
+                    <div className="text-[11px] text-primary/80">{check.passAction === "CONTINUE" ? t("profile.passContinue") : t("profile.passUnlockFrozen", { amount: 6000 })}</div>
                     <div className="text-[11px] text-red-400/80">{check.failAction === "PAUSE" ? t("profile.failPause") : t("profile.failKeepFrozen")}</div>
                     {check.failAction === "PAUSE" && <div className="text-[10px] text-white/25 mt-0.5">{t("profile.rankDropActual")}</div>}
                   </div>

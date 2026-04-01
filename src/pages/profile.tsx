@@ -2,16 +2,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveAccount } from "thirdweb/react";
 import { useMaPrice } from "@/hooks/use-ma-price";
-import { Copy, Crown, WalletCards, Wallet, ArrowUpFromLine, ChevronRight, Bell, Settings, History, GitBranch, Loader2, Server, TrendingUp, Share2, Link2, ArrowLeftRight, User, Coins } from "lucide-react";
+import { Copy, WalletCards, Wallet, ArrowUpFromLine, ChevronRight, Bell, Settings, History, GitBranch, Server, TrendingUp, Share2, Link2, ArrowLeftRight, User, Coins } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { copyText } from "@/lib/copy";
 import { useMemo, useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { getProfile, getNodeOverview, getVaultPositions, activateVipTrial } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { getProfile, getNodeOverview, getVaultPositions } from "@/lib/api";
 import type { NodeOverview } from "@shared/types";
-import { queryClient } from "@/lib/queryClient";
-import { usePayment, getPaymentStatusLabel } from "@/hooks/use-payment";
-import { VIP_PLANS } from "@/lib/data";
 import { MAReleaseDialog } from "@/components/vault/ma-release-dialog";
 import { supabase } from "@/lib/supabase";
 import type { Profile } from "@shared/types";
@@ -71,46 +68,7 @@ export default function ProfilePage() {
     return yieldSum;
   }, [vaultPositions]);
 
-  const payment = usePayment();
-  const [showVipPlans, setShowVipPlans] = useState(false);
   const [releaseOpen, setReleaseOpen] = useState(false);
-  const [selectedVipPlan, setSelectedVipPlan] = useState<"monthly" | "halfyear" | null>(null);
-
-  const vipMutation = useMutation({
-    mutationFn: async (planKey: "monthly" | "halfyear") => {
-      // Use BSC USDT payment flow (proven working)
-      const result = await payment.payVIPSubscribe(planKey);
-      payment.markSuccess();
-      return result;
-    },
-    onSuccess: () => {
-      toast({ title: t("strategy.vipActivated"), description: t("strategy.vipActivatedDesc") });
-      queryClient.invalidateQueries({ queryKey: ["profile", walletAddr] });
-      setShowVipPlans(false);
-      setSelectedVipPlan(null);
-    },
-    onError: (err: Error) => {
-      const desc = payment.txHash
-        ? `${err.message}\n\nTx: ${payment.txHash}`
-        : err.message;
-      toast({ title: t("profile.vipActivateFailed", "VIP 激活失败"), description: desc, variant: "destructive" });
-      payment.reset();
-      setSelectedVipPlan(null);
-    },
-  });
-
-  const trialMutation = useMutation({
-    mutationFn: async () => {
-      return activateVipTrial(walletAddr);
-    },
-    onSuccess: () => {
-      toast({ title: t("profile.vipTrialActivated", "VIP 试用已激活"), description: t("profile.vipTrialDesc", "7天免费 VIP 跟单体验已开启") });
-      queryClient.invalidateQueries({ queryKey: ["profile", walletAddr] });
-    },
-    onError: (err: Error) => {
-      toast({ title: t("profile.activateFailed", "激活失败"), description: err.message, variant: "destructive" });
-    },
-  });
 
   const deposited = Number(profile?.totalDeposited || 0);
   const withdrawn = Number(profile?.totalWithdrawn || 0);
@@ -387,156 +345,9 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <div
-          className="rounded-2xl overflow-hidden"
-          style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.35)", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}
-        >
-          <div className="p-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Crown className="h-4 w-4 text-yellow-400" />
-              <span className="text-[14px] font-bold text-white">
-                {isConnected && profile?.isVip ? t("profile.vipActive") : t("profile.upgradeToVip")}
-              </span>
-            </div>
-            {isConnected && !profile?.isVip && !showVipPlans && (
-              <div className="flex items-center gap-2">
-                {!profile?.vipTrialUsed && (
-                  <button
-                    className="px-3 py-1.5 rounded-full text-[11px] font-bold text-yellow-400 transition-all hover:bg-yellow-500/10 active:scale-95 disabled:opacity-50"
-                    style={{ border: "1px solid rgba(234,179,8,0.3)" }}
-                    onClick={() => trialMutation.mutate()}
-                    disabled={trialMutation.isPending}
-                  >
-                    {trialMutation.isPending ? t("common.activating", "激活中...") : t("profile.freeTrial", "免费试用7天")}
-                  </button>
-                )}
-                <button
-                  className="px-4 py-1.5 rounded-full text-[12px] font-bold text-black transition-all hover:brightness-110 active:scale-95"
-                  style={{ background: "linear-gradient(135deg, #facc15, #eab308)", boxShadow: "0 2px 8px rgba(234,179,8,0.2)" }}
-                  onClick={() => setShowVipPlans(true)}
-                  data-testid="button-subscribe-vip"
-                >
-                  {t("profile.subscribeVip")}
-                </button>
-              </div>
-            )}
-            {isConnected && profile?.isVip && profile?.vipExpiresAt && (() => {
-              const expires = new Date(profile.vipExpiresAt);
-              const now = new Date();
-              const daysLeft = Math.max(0, Math.ceil((expires.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-              const isActive = daysLeft > 0;
-              return (
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-mono ${isActive ? (daysLeft <= 3 ? "text-red-400" : "text-yellow-400/60") : "text-red-400"}`}>
-                    {isActive ? `${t("profile.daysLeft", "剩余")} ${daysLeft} ${t("profile.days", "天")}` : t("profile.expired", "已过期")}
-                  </span>
-                  <button
-                    className="px-2.5 py-1 rounded-full text-[9px] font-bold text-black"
-                    style={{ background: "linear-gradient(135deg, #facc15, #eab308)" }}
-                    onClick={() => setShowVipPlans(true)}
-                  >
-                    {isActive ? t("profile.renewVip", "续费") : t("profile.upgradeVip", "升级VIP")}
-                  </button>
-                </div>
-              );
-            })()}
-            {!isConnected && (
-              <span className="text-[11px] px-3 py-1 rounded-full text-white/40" style={{ background: "rgba(255,255,255,0.05)" }}>
-                {t("common.connectToUnlock")}
-              </span>
-            )}
-          </div>
-
-          {isConnected && showVipPlans && (
-            <div className="px-4 pb-4 space-y-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-              <div className="pt-3" />
-              <div
-                className={`rounded-xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition-all ${selectedVipPlan === "monthly" ? "ring-1 ring-yellow-400" : ""}`}
-                style={{ border: "1px solid rgba(234,179,8,0.5)", background: "rgba(234,179,8,0.06)" }}
-                onClick={() => setSelectedVipPlan("monthly")}
-              >
-                <div>
-                  <div className="text-[13px] font-bold text-white">VIP {t("profile.vipPlan_monthly")}</div>
-                  <div className="text-[11px] text-white/40 mt-0.5">1 month</div>
-                </div>
-                <div className="text-[16px] font-black text-yellow-400">$49</div>
-              </div>
-              <div
-                className={`rounded-xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition-all ${selectedVipPlan === "halfyear" ? "ring-1 ring-yellow-400" : ""}`}
-                style={{ border: "1px solid rgba(234,179,8,0.5)", background: "rgba(234,179,8,0.06)" }}
-                onClick={() => setSelectedVipPlan("halfyear")}
-              >
-                <div>
-                  <div className="text-[13px] font-bold text-white">VIP {t("profile.vipPlan_halfyear", "Half Year")}</div>
-                  <div className="text-[11px] text-white/40 mt-0.5">6 months</div>
-                </div>
-                <div className="flex items-baseline gap-1.5">
-                  <div className="text-[16px] font-black text-yellow-400">$250</div>
-                  <div className="text-[10px] text-emerald-400 font-bold">{t("profile.discount15", "85折")}</div>
-                </div>
-              </div>
-              <div className="flex gap-2 pt-1">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 text-[12px] rounded-xl h-9"
-                  onClick={() => { setShowVipPlans(false); setSelectedVipPlan(null); }}
-                >
-                  {t("common.cancel")}
-                </Button>
-                <button
-                  className="flex-1 h-9 rounded-xl text-[12px] font-bold text-black transition-all hover:brightness-110 active:scale-95 flex items-center justify-center disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg, #facc15, #eab308)" }}
-                  disabled={!selectedVipPlan}
-                  onClick={() => selectedVipPlan && vipMutation.mutate(selectedVipPlan)}
-                >
-                  {t("profile.payNow")}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Node management + menu items — hidden on desktop (sidebar handles navigation) */}
+        {/* Menu items — hidden on desktop (sidebar handles navigation) */}
         <div className="lg:hidden">
-          <button
-            className="w-full rounded-2xl text-left transition-all active:scale-[0.98] relative overflow-hidden group"
-            style={{
-              background: "linear-gradient(135deg, #1a1408 0%, #2a2010 50%, #1a1408 100%)",
-              border: "1px solid rgba(212,168,50,0.35)",
-              boxShadow: "0 4px 24px rgba(212,168,50,0.12), inset 0 1px 0 rgba(255,255,255,0.05)",
-            }}
-            onClick={() => navigate("/profile/nodes")}
-            data-testid="menu-nodes"
-          >
-            <div className="absolute inset-0 opacity-40" style={{ background: "radial-gradient(ellipse at 80% 20%, rgba(212,168,50,0.2) 0%, transparent 60%)" }} />
-            <div className="absolute -right-4 -bottom-4 w-24 h-24 opacity-20" style={{ background: "radial-gradient(circle, #d4a832, transparent 70%)" }} />
-            <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: "linear-gradient(180deg, hsl(43,74%,58%), hsl(38,70%,46%))" }} />
-
-            <div className="relative p-4 flex items-center gap-3.5">
-              <div
-                className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0"
-                style={{
-                  background: "linear-gradient(135deg, hsl(43,74%,58%) 0%, hsl(38,70%,46%) 100%)",
-                  boxShadow: "0 4px 16px rgba(212,168,50,0.35)",
-                }}
-              >
-                <Server className="h-5.5 w-5.5 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[15px] font-bold text-white tracking-wide">{t("profile.nodeManagement")}</div>
-                <div className="text-[11px] text-white/50 mt-0.5">{t("profile.nodeManagementDesc")}</div>
-              </div>
-              <div
-                className="h-8 w-8 rounded-full flex items-center justify-center shrink-0"
-                style={{ background: "rgba(212,168,50,0.15)", border: "1px solid rgba(212,168,50,0.25)" }}
-              >
-                <ChevronRight className="h-4 w-4 text-primary" />
-              </div>
-            </div>
-          </button>
-
-          <div className="pt-1">
+          <div>
             <div
               className="rounded-2xl overflow-hidden"
               style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.35)", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}

@@ -29,13 +29,12 @@ import { StrategyHeader } from "@/components/strategy/strategy-header";
 import { AiLab } from "@/components/strategy/ai-lab";
 import { CopyTradingFlow } from "@/components/strategy/copy-trading-flow";
 import { TradeMatchingEngine } from "@/components/strategy/trade-matching-engine";
-type TabId = "strategies" | "ailab" | "signals" | "matching";
+type TabId = "strategies" | "ailab" | "signals";
 
 const TABS: { id: TabId; labelKey: string }[] = [
   { id: "strategies", labelKey: "strategy.strategyList" },
   { id: "ailab", labelKey: "strategy.aiLab" },
   { id: "signals", labelKey: "aiLab.signalFeed" },
-  { id: "matching", labelKey: "matchEngine.title" },
 ];
 
 import { EXCHANGES, HEDGE_CONFIG } from "@/lib/data";
@@ -551,11 +550,8 @@ export default function StrategyPage() {
         )}
 
         {activeTab === "signals" && (
-          <SignalFeedTab />
-        )}
-
-        {activeTab === "matching" && (
-          <div style={{ animation: "fadeSlideIn 0.3s ease-out" }}>
+          <div className="space-y-4">
+            <SignalFeedTab />
             <TradeMatchingEngine />
           </div>
         )}

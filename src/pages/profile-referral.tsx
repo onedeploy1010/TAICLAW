@@ -130,9 +130,9 @@ export default function ProfileReferralPage() {
 
   return (
     <div className="min-h-screen pb-24 lg:pb-8 lg:pt-4" style={{ background: "#0a0a0a" }} data-testid="page-profile-referral">
-      <div className="relative overflow-hidden" style={{ background: "linear-gradient(180deg, #0a1a10 0%, #0f2818 30%, #0a1510 60%, #0a0a0a 100%)" }}>
-        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at 70% 20%, rgba(163,230,53,0.12) 0%, transparent 55%)" }} />
-        <div className="absolute top-0 right-0 w-48 h-48 opacity-15" style={{ background: "radial-gradient(circle, rgba(74,222,128,0.5), transparent 70%)", filter: "blur(30px)" }} />
+      <div className="relative overflow-hidden" style={{ background: "linear-gradient(180deg, #1a1408 0%, #28200f 30%, #15120a 60%, #0a0a0a 100%)" }}>
+        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at 70% 20%, rgba(212,168,50,0.12) 0%, transparent 55%)" }} />
+        <div className="absolute top-0 right-0 w-48 h-48 opacity-15" style={{ background: "radial-gradient(circle, rgba(212,168,50,0.5), transparent 70%)", filter: "blur(30px)" }} />
 
         <div className="relative px-4 pt-3 pb-5">
           <div className="flex items-center justify-center relative mb-5 lg:justify-start">
@@ -149,16 +149,16 @@ export default function ProfileReferralPage() {
           {/* Current Level Section */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-1 h-4 rounded-full" style={{ background: "linear-gradient(180deg, #4ade80, #22c55e)" }} />
+              <div className="w-1 h-4 rounded-full" style={{ background: "linear-gradient(180deg, hsl(43,74%,58%), hsl(43,74%,52%))" }} />
               <span className="text-[13px] font-bold text-white">{t("profile.currentLevel")}</span>
             </div>
             <span
               className="text-[13px] font-black px-3 py-1 rounded-lg"
               style={{
-                background: "linear-gradient(135deg, rgba(74,222,128,0.15), rgba(163,230,53,0.1))",
-                border: "1px solid rgba(74,222,128,0.3)",
-                color: "#4ade80",
-                textShadow: "0 0 8px rgba(74,222,128,0.4)",
+                background: "linear-gradient(135deg, rgba(212,168,50,0.15), rgba(212,168,50,0.1))",
+                border: "1px solid rgba(212,168,50,0.3)",
+                color: "hsl(43,74%,58%)",
+                textShadow: "0 0 8px rgba(212,168,50,0.4)",
               }}
             >
               {currentRank}
@@ -172,11 +172,11 @@ export default function ProfileReferralPage() {
               <div
                 className="relative mb-4 rounded-2xl overflow-hidden p-4 sm:p-5"
                 style={{
-                  background: "linear-gradient(145deg, rgba(10,30,18,0.9), rgba(8,20,14,0.95))",
-                  border: "1px solid rgba(74,222,128,0.15)",
+                  background: "linear-gradient(145deg, rgba(30,24,10,0.9), rgba(20,16,8,0.95))",
+                  border: "1px solid rgba(212,168,50,0.15)",
                 }}
               >
-                <div className="absolute top-0 right-0 w-32 h-32 opacity-20" style={{ background: "radial-gradient(circle, rgba(74,222,128,0.5), transparent 70%)", filter: "blur(25px)" }} />
+                <div className="absolute top-0 right-0 w-32 h-32 opacity-20" style={{ background: "radial-gradient(circle, rgba(212,168,50,0.5), transparent 70%)", filter: "blur(25px)" }} />
 
                 {/* Level track */}
                 <div className="relative flex items-center justify-between">
@@ -188,8 +188,8 @@ export default function ProfileReferralPage() {
                     style={{
                       width: rankNum > 0 ? `calc(${((Math.min(rankNum, 7) - 1) / 6) * 100}% - ${rankNum >= 7 ? 0 : 0}px)` : "0%",
                       maxWidth: "calc(100% - 32px)",
-                      background: "linear-gradient(90deg, #22c55e, #4ade80)",
-                      boxShadow: "0 0 6px rgba(74,222,128,0.3)",
+                      background: "linear-gradient(90deg, hsl(43,74%,52%), hsl(43,74%,58%))",
+                      boxShadow: "0 0 6px rgba(212,168,50,0.3)",
                     }}
                   />
 
@@ -203,7 +203,7 @@ export default function ProfileReferralPage() {
                           <div
                             className="absolute w-10 h-10 sm:w-12 sm:h-12 rounded-full"
                             style={{
-                              background: "rgba(74,222,128,0.15)",
+                              background: "rgba(212,168,50,0.15)",
                               animation: "pulse 2.5s ease-in-out infinite",
                               top: "50%",
                               left: "50%",
@@ -215,24 +215,24 @@ export default function ProfileReferralPage() {
                           className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center"
                           style={{
                             background: isCurrent
-                              ? "linear-gradient(135deg, #22c55e, #4ade80)"
+                              ? "linear-gradient(135deg, hsl(43,74%,52%), hsl(43,74%,58%))"
                               : isActive
-                              ? "rgba(74,222,128,0.2)"
+                              ? "rgba(212,168,50,0.2)"
                               : "rgba(255,255,255,0.04)",
                             border: isCurrent
-                              ? "2px solid rgba(74,222,128,0.8)"
+                              ? "2px solid rgba(212,168,50,0.8)"
                               : isActive
-                              ? "1.5px solid rgba(74,222,128,0.3)"
+                              ? "1.5px solid rgba(212,168,50,0.3)"
                               : "1.5px solid rgba(255,255,255,0.08)",
                             boxShadow: isCurrent
-                              ? "0 0 16px rgba(74,222,128,0.4)"
+                              ? "0 0 16px rgba(212,168,50,0.4)"
                               : "none",
                           }}
                         >
                           <span
                             className="text-[10px] sm:text-xs font-black"
                             style={{
-                              color: isCurrent ? "#fff" : isActive ? "#4ade80" : "rgba(255,255,255,0.2)",
+                              color: isCurrent ? "#fff" : isActive ? "hsl(43,74%,58%)" : "rgba(255,255,255,0.2)",
                             }}
                           >
                             {label}
@@ -246,14 +246,14 @@ export default function ProfileReferralPage() {
                 {/* Progress text */}
                 <div className="flex items-center justify-between mt-4">
                   <span className="text-[10px] text-white/30">{t("profile.currentLevel")}</span>
-                  <span className="text-[11px] font-bold text-green-400">{rankNum} / 7</span>
+                  <span className="text-[11px] font-bold text-primary">{rankNum} / 7</span>
                 </div>
                 <div className="w-full h-1 rounded-full overflow-hidden mt-1.5" style={{ background: "rgba(255,255,255,0.05)" }}>
                   <div
                     className="h-full rounded-full transition-all duration-700 relative overflow-hidden"
                     style={{
                       width: `${Math.max((rankNum / 7) * 100, 2)}%`,
-                      background: "linear-gradient(90deg, #22c55e, #4ade80)",
+                      background: "linear-gradient(90deg, hsl(43,74%,52%), hsl(43,74%,58%))",
                     }}
                   >
                     <div
@@ -270,7 +270,7 @@ export default function ProfileReferralPage() {
           })()}
 
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-1 h-4 rounded-full" style={{ background: "linear-gradient(180deg, #4ade80, #22c55e)" }} />
+            <div className="w-1 h-4 rounded-full" style={{ background: "linear-gradient(180deg, hsl(43,74%,58%), hsl(43,74%,52%))" }} />
             <span className="text-[13px] font-bold text-white">{t("profile.rewardSummary", "奖励汇总")}</span>
           </div>
 
@@ -316,14 +316,14 @@ export default function ProfileReferralPage() {
               <span className="text-[13px] font-bold text-white">{t("profile.inviteLink")}</span>
               <button
                 className="text-[11px] font-bold px-3 py-1 rounded-lg transition-all active:scale-95"
-                style={{ background: "rgba(74,222,128,0.12)", border: "1px solid rgba(74,222,128,0.3)", color: "#4ade80" }}
+                style={{ background: "rgba(212,168,50,0.12)", border: "1px solid rgba(212,168,50,0.3)", color: "hsl(43,74%,58%)" }}
                 onClick={() => copyToClipboard(referralLink)}
               >
                 {refCode ? t("common.copy") : t("profile.generateInvite")}
               </button>
             </div>
             <div className="text-[11px] text-white/40 font-mono truncate">{referralLink}</div>
-            <div className="h-px mt-2" style={{ background: "linear-gradient(90deg, transparent, rgba(74,222,128,0.3), transparent)" }} />
+            <div className="h-px mt-2" style={{ background: "linear-gradient(90deg, transparent, rgba(212,168,50,0.3), transparent)" }} />
           </div>
 
           <div>
@@ -331,7 +331,7 @@ export default function ProfileReferralPage() {
               <span className="text-[13px] font-bold text-white">{t("profile.inviteCode")}</span>
               <button
                 className="text-[11px] font-bold px-3 py-1 rounded-lg transition-all active:scale-95"
-                style={{ background: "rgba(74,222,128,0.12)", border: "1px solid rgba(74,222,128,0.3)", color: "#4ade80" }}
+                style={{ background: "rgba(212,168,50,0.12)", border: "1px solid rgba(212,168,50,0.3)", color: "hsl(43,74%,58%)" }}
                 onClick={() => copyToClipboard(refCode || "")}
               >
                 {refCode ? t("common.copy") : t("profile.generateInvite")}
@@ -369,14 +369,14 @@ export default function ProfileReferralPage() {
             <div className="space-y-1.5 text-[11px]">
               <div className="flex justify-between">
                 <span className="text-white/40">{t("profile.personalHolding", "个人持仓")}</span>
-                <span className={Number(rankStatus.personalHolding) >= Number(rankStatus.nextRankConditions.personalHolding) ? "text-green-400" : "text-red-400"}>
+                <span className={Number(rankStatus.personalHolding) >= Number(rankStatus.nextRankConditions.personalHolding) ? "text-primary" : "text-red-400"}>
                   {formatCompact(Number(rankStatus.personalHolding))} / {formatCompact(Number(rankStatus.nextRankConditions.personalHolding))}
                 </span>
               </div>
               {rankStatus.nextRankConditions.requiredReferrals > 0 && (
                 <div className="flex justify-between">
                   <span className="text-white/40">{t("profile.directReferralCount", "直推人数")}</span>
-                  <span className={directSponsorCount >= Number(rankStatus.nextRankConditions.requiredReferrals) ? "text-green-400" : "text-red-400"}>
+                  <span className={directSponsorCount >= Number(rankStatus.nextRankConditions.requiredReferrals) ? "text-primary" : "text-red-400"}>
                     {directSponsorCount} / {rankStatus.nextRankConditions.requiredReferrals}
                   </span>
                 </div>
@@ -389,7 +389,7 @@ export default function ProfileReferralPage() {
               )}
               <div className="flex justify-between">
                 <span className="text-white/40">{t("profile.teamPerformanceLabel", "团队业绩")}</span>
-                <span className={totalTeamDeposits >= Number(rankStatus.nextRankConditions.teamPerformance) ? "text-green-400" : "text-red-400"}>
+                <span className={totalTeamDeposits >= Number(rankStatus.nextRankConditions.teamPerformance) ? "text-primary" : "text-red-400"}>
                   {formatCompact(totalTeamDeposits)} / {formatCompact(Number(rankStatus.nextRankConditions.teamPerformance))}
                 </span>
               </div>
@@ -407,10 +407,10 @@ export default function ProfileReferralPage() {
               className="py-3 rounded-xl text-[13px] font-bold transition-all text-center flex items-center justify-center gap-2"
               style={{
                 border: mainTab === tab.key
-                  ? "1px solid rgba(74,222,128,0.5)"
+                  ? "1px solid rgba(212,168,50,0.5)"
                   : "1px solid rgba(255,255,255,0.3)",
-                color: mainTab === tab.key ? "#4ade80" : "rgba(255,255,255,0.6)",
-                background: mainTab === tab.key ? "rgba(74,222,128,0.1)" : "#181818",
+                color: mainTab === tab.key ? "hsl(43,74%,58%)" : "rgba(255,255,255,0.6)",
+                background: mainTab === tab.key ? "rgba(212,168,50,0.1)" : "#181818",
               }}
               onClick={() => setMainTab(tab.key)}
             >
@@ -424,7 +424,7 @@ export default function ProfileReferralPage() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-1 h-4 rounded-full" style={{ background: "linear-gradient(180deg, #4ade80, #22c55e)" }} />
+                <div className="w-1 h-4 rounded-full" style={{ background: "linear-gradient(180deg, hsl(43,74%,58%), hsl(43,74%,52%))" }} />
                 <span className="text-[13px] font-bold text-white">
                   {t("profile.teamMembersCount", { count: teamData?.teamSize || 0 })}
                 </span>
@@ -433,9 +433,9 @@ export default function ProfileReferralPage() {
                 <button
                   className="text-[10px] px-2.5 py-1 rounded-lg font-bold transition-all"
                   style={{
-                    background: expandedRefs.size > 0 ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)",
-                    border: expandedRefs.size > 0 ? "1px solid rgba(74,222,128,0.25)" : "1px solid rgba(255,255,255,0.12)",
-                    color: expandedRefs.size > 0 ? "#4ade80" : "rgba(255,255,255,0.4)",
+                    background: expandedRefs.size > 0 ? "rgba(212,168,50,0.1)" : "rgba(255,255,255,0.04)",
+                    border: expandedRefs.size > 0 ? "1px solid rgba(212,168,50,0.25)" : "1px solid rgba(255,255,255,0.12)",
+                    color: expandedRefs.size > 0 ? "hsl(43,74%,58%)" : "rgba(255,255,255,0.4)",
                   }}
                   onClick={() => {
                     if (expandedRefs.size > 0) {
@@ -466,9 +466,9 @@ export default function ProfileReferralPage() {
                     onClick={() => setRankFilter(r)}
                     className="shrink-0 px-2 py-1 rounded-md text-[10px] font-bold transition-all"
                     style={{
-                      background: rankFilter === r ? "rgba(74,222,128,0.12)" : "rgba(255,255,255,0.03)",
-                      border: rankFilter === r ? "1px solid rgba(74,222,128,0.3)" : "1px solid rgba(255,255,255,0.08)",
-                      color: rankFilter === r ? "#4ade80" : "rgba(255,255,255,0.35)",
+                      background: rankFilter === r ? "rgba(212,168,50,0.12)" : "rgba(255,255,255,0.03)",
+                      border: rankFilter === r ? "1px solid rgba(212,168,50,0.3)" : "1px solid rgba(255,255,255,0.08)",
+                      color: rankFilter === r ? "hsl(43,74%,58%)" : "rgba(255,255,255,0.35)",
                     }}
                   >
                     {r === "all" ? t("profile.filterAll", "全部") : r === "none" ? t("profile.filterNoRank", "无等级") : r}
@@ -487,9 +487,9 @@ export default function ProfileReferralPage() {
                     onClick={() => setSkipCount(n)}
                     className="text-[10px] px-2 py-1 rounded-md transition-all"
                     style={{
-                      background: skipCount === n ? "rgba(74,222,128,0.15)" : "rgba(255,255,255,0.03)",
-                      border: skipCount === n ? "1px solid rgba(74,222,128,0.3)" : "1px solid rgba(255,255,255,0.08)",
-                      color: skipCount === n ? "#4ade80" : "rgba(255,255,255,0.4)",
+                      background: skipCount === n ? "rgba(212,168,50,0.15)" : "rgba(255,255,255,0.03)",
+                      border: skipCount === n ? "1px solid rgba(212,168,50,0.3)" : "1px solid rgba(255,255,255,0.08)",
+                      color: skipCount === n ? "hsl(43,74%,58%)" : "rgba(255,255,255,0.4)",
                       fontWeight: skipCount === n ? 700 : 400,
                     }}
                   >
@@ -503,7 +503,7 @@ export default function ProfileReferralPage() {
               <div className="flex items-center gap-1 mb-3 flex-wrap text-[12px]">
                 <button
                   className="font-bold transition-colors"
-                  style={{ color: "#4ade80" }}
+                  style={{ color: "hsl(43,74%,58%)" }}
                   onClick={goToRoot}
                 >
                   {t("profile.myTeam")}
@@ -514,7 +514,7 @@ export default function ProfileReferralPage() {
                     {idx < addrStack.length - 1 ? (
                       <button
                         className="font-bold"
-                        style={{ color: "#4ade80" }}
+                        style={{ color: "hsl(43,74%,58%)" }}
                         onClick={() => setAddrStack((prev) => prev.slice(0, idx + 1))}
                       >
                         {item.label}
@@ -599,10 +599,10 @@ export default function ProfileReferralPage() {
                       className="w-full rounded-xl p-3 flex items-center gap-3 text-left transition-all"
                       style={{
                         background: subCount > 0
-                          ? "linear-gradient(135deg, #0f2318, #1a1a1a)"
+                          ? "linear-gradient(135deg, #231e0f, #1a1a1a)"
                           : "#141414",
                         border: subCount > 0
-                          ? "1px solid rgba(74,222,128,0.25)"
+                          ? "1px solid rgba(212,168,50,0.25)"
                           : "1px solid rgba(255,255,255,0.12)",
                       }}
                     >
@@ -610,7 +610,7 @@ export default function ProfileReferralPage() {
                       {subCount > 0 ? (
                         <button onClick={toggleExpand} className="shrink-0 p-0.5 rounded-md transition-colors" style={{ background: "rgba(255,255,255,0.04)" }}>
                           {isExpanded
-                            ? <ChevronDown className="h-3.5 w-3.5 text-green-400" />
+                            ? <ChevronDown className="h-3.5 w-3.5 text-primary" />
                             : <ChevronRight className="h-3.5 w-3.5 text-white/40" />
                           }
                         </button>
@@ -645,7 +645,7 @@ export default function ProfileReferralPage() {
                             )}
                           </div>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-md" style={{ background: subCount > 0 ? "rgba(74,222,128,0.08)" : "rgba(255,255,255,0.04)", color: subCount > 0 ? "rgba(74,222,128,0.7)" : "rgba(255,255,255,0.3)" }}>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-md" style={{ background: subCount > 0 ? "rgba(212,168,50,0.08)" : "rgba(255,255,255,0.04)", color: subCount > 0 ? "rgba(212,168,50,0.7)" : "rgba(255,255,255,0.3)" }}>
                               {t("profile.teamCount", { count: subCount })}
                             </span>
                             <span className="text-[10px] text-white/35">
@@ -660,7 +660,7 @@ export default function ProfileReferralPage() {
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <span
                           className="text-[10px] px-2 py-0.5 rounded-md font-bold"
-                          style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.2)", color: "#4ade80" }}
+                          style={{ background: "rgba(212,168,50,0.1)", border: "1px solid rgba(212,168,50,0.2)", color: "hsl(43,74%,58%)" }}
                         >
                           {ref.rank}
                         </span>
@@ -676,7 +676,7 @@ export default function ProfileReferralPage() {
                       </button>
                     </div>
                     {isExpanded && ref.subReferrals && ref.subReferrals.length > 0 && (
-                      <div className="ml-5 mt-1.5 space-y-1.5 border-l-2 pl-3" style={{ borderColor: "rgba(74,222,128,0.15)" }}>
+                      <div className="ml-5 mt-1.5 space-y-1.5 border-l-2 pl-3" style={{ borderColor: "rgba(212,168,50,0.15)" }}>
                         {ref.subReferrals.map((sub) => {
                           const hasTeam = (sub.subCount || 0) > 0;
                           return (
@@ -684,12 +684,12 @@ export default function ProfileReferralPage() {
                             key={sub.id}
                             className="w-full rounded-lg p-2.5 flex items-center gap-2.5 text-left transition-all active:scale-[0.98]"
                             style={{
-                              background: hasTeam ? "linear-gradient(135deg, rgba(74,222,128,0.04), rgba(255,255,255,0.02))" : "rgba(255,255,255,0.03)",
-                              border: hasTeam ? "1px solid rgba(74,222,128,0.2)" : "1px solid rgba(255,255,255,0.1)",
+                              background: hasTeam ? "linear-gradient(135deg, rgba(212,168,50,0.04), rgba(255,255,255,0.02))" : "rgba(255,255,255,0.03)",
+                              border: hasTeam ? "1px solid rgba(212,168,50,0.2)" : "1px solid rgba(255,255,255,0.1)",
                             }}
                             onClick={() => drillInto(sub.walletAddress, shortenAddress(sub.walletAddress))}
                           >
-                            <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: hasTeam ? "#4ade80" : "rgba(255,255,255,0.2)" }} />
+                            <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: hasTeam ? "hsl(43,74%,58%)" : "rgba(255,255,255,0.2)" }} />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5">
                                 <span className="text-[11px] font-mono text-white/60 truncate">
@@ -707,7 +707,7 @@ export default function ProfileReferralPage() {
                                 )}
                               </div>
                               <div className="flex items-center gap-1.5 mt-0.5">
-                                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: hasTeam ? "rgba(74,222,128,0.08)" : "rgba(255,255,255,0.04)", color: hasTeam ? "rgba(74,222,128,0.7)" : "rgba(255,255,255,0.3)" }}>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: hasTeam ? "rgba(212,168,50,0.08)" : "rgba(255,255,255,0.04)", color: hasTeam ? "rgba(212,168,50,0.7)" : "rgba(255,255,255,0.3)" }}>
                                   {t("profile.teamCount", { count: sub.subCount || 0 })}
                                 </span>
                               </div>
@@ -735,7 +735,7 @@ export default function ProfileReferralPage() {
         {mainTab === "history" && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-1 h-4 rounded-full" style={{ background: "linear-gradient(180deg, #4ade80, #22c55e)" }} />
+              <div className="w-1 h-4 rounded-full" style={{ background: "linear-gradient(180deg, hsl(43,74%,58%), hsl(43,74%,52%))" }} />
               <span className="text-[13px] font-bold text-white">{t("profile.tabHistory")}</span>
             </div>
 
@@ -751,9 +751,9 @@ export default function ProfileReferralPage() {
                   key={f.key}
                   className="px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all"
                   style={{
-                    background: historyFilter === f.key ? "rgba(74,222,128,0.12)" : "rgba(255,255,255,0.04)",
-                    border: historyFilter === f.key ? "1px solid rgba(74,222,128,0.35)" : "1px solid rgba(255,255,255,0.12)",
-                    color: historyFilter === f.key ? "#4ade80" : "rgba(255,255,255,0.45)",
+                    background: historyFilter === f.key ? "rgba(212,168,50,0.12)" : "rgba(255,255,255,0.04)",
+                    border: historyFilter === f.key ? "1px solid rgba(212,168,50,0.35)" : "1px solid rgba(255,255,255,0.12)",
+                    color: historyFilter === f.key ? "hsl(43,74%,58%)" : "rgba(255,255,255,0.45)",
                   }}
                   onClick={() => setHistoryFilter(f.key)}
                 >
