@@ -299,21 +299,6 @@ export function CopyTradingFlow({
             </div>
           </div>
 
-          {/* Revenue sharing */}
-          <div className="rounded-xl bg-white/[0.02] p-4" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
-            <h3 className="text-xs font-bold text-foreground/50 mb-3">{t("copy.revenueShare", "收益分成")}</h3>
-            <div className="flex gap-2">
-              <div className="flex-1 text-center px-3 py-2.5 rounded-lg bg-green-500/8 border border-green-500/15">
-                <p className="text-lg font-black text-green-400">80%</p>
-                <p className="text-[10px] text-foreground/30">{t("copy.userShare", "用户收益")}</p>
-              </div>
-              <div className="flex-1 text-center px-3 py-2.5 rounded-lg bg-blue-500/8 border border-blue-500/15">
-                <p className="text-lg font-black text-blue-400">20%</p>
-                <p className="text-[10px] text-foreground/30">{t("copy.platformShare", "平台分成")}</p>
-              </div>
-            </div>
-          </div>
-
           {/* Activate */}
           {userId && !readOnly && (
             <button

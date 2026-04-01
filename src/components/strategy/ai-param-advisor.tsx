@@ -201,41 +201,6 @@ export function AIParamAdvisor({ selectedModels, selectedStrategies, onApplyPara
         </>
       )}
 
-      {/* Revenue sharing */}
-      <div className="rounded-xl bg-white/[0.02] p-4" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
-        <button
-          onClick={() => setShowRevenue(!showRevenue)}
-          className="w-full flex items-center justify-between"
-        >
-          <h3 className="text-xs font-bold text-foreground/50">{t("strategy.revenueSharing")}</h3>
-          <span className="text-[10px] text-foreground/20">{showRevenue ? t("strategy.collapse") : t("strategy.details")}</span>
-        </button>
-
-        <div className="mt-3 flex gap-2">
-          <div className="flex-1 text-center px-3 py-2.5 rounded-lg bg-green-500/8 border border-green-500/15">
-            <p className="text-lg font-black text-green-400">80%</p>
-            <p className="text-[10px] text-foreground/30 mt-0.5">{t("strategy.userRevenue")}</p>
-          </div>
-          <div className="flex-1 text-center px-3 py-2.5 rounded-lg bg-blue-500/8 border border-blue-500/15">
-            <p className="text-lg font-black text-blue-400">20%</p>
-            <p className="text-[10px] text-foreground/30 mt-0.5">{t("strategy.platformShare")}</p>
-          </div>
-        </div>
-
-        {showRevenue && (
-          <div className="mt-3 space-y-2">
-            <div className="px-3 py-2 rounded-lg bg-white/[0.02]" style={{ border: "1px solid rgba(255,255,255,0.04)" }}>
-              <p className="text-[10px] text-foreground/30 leading-relaxed">
-                {t("strategy.revenueDescription")}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02]" style={{ border: "1px solid rgba(255,255,255,0.04)" }}>
-              <span className="text-[10px] text-foreground/20">{t("strategy.engineWallet")}:</span>
-              <span className="text-[10px] text-foreground/30 font-mono truncate">{ENGINE_WALLET}</span>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
