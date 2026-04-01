@@ -1313,7 +1313,9 @@
     "agoSuffix": "前",
     "riskLabel": "リスク",
     "runeAi": "RUNE AI",
-    "runeAiDesc": "全資産に対するマルチモデル合意 + ディープラーニングメタ戦略"
+    "runeAiDesc": "全資産に対するマルチモデル合意 + ディープラーニングメタ戦略",
+    "simOrders": "取引注文",
+    "livePredictions": "ライブ予測"
   },
   "aiConsole": {
     "console": "コンソール",

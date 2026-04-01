@@ -1313,7 +1313,9 @@
     "agoSuffix": "전",
     "riskLabel": "위험",
     "runeAi": "RUNE AI",
-    "runeAiDesc": "전 자산에 대한 다중 모델 합의 + 딥러닝 메타 전략"
+    "runeAiDesc": "전 자산에 대한 다중 모델 합의 + 딥러닝 메타 전략",
+    "simOrders": "거래 주문",
+    "livePredictions": "실시간 예측"
   },
   "aiConsole": {
     "console": "콘솔",

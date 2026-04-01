@@ -1313,7 +1313,9 @@
     "agoSuffix": "ago",
     "riskLabel": "risk",
     "runeAi": "RUNE AI",
-    "runeAiDesc": "Multi-model consensus with deep learning meta-strategy across all assets"
+    "runeAiDesc": "Multi-model consensus with deep learning meta-strategy across all assets",
+    "simOrders": "Trade Orders",
+    "livePredictions": "Live Predictions"
   },
   "aiConsole": {
     "console": "Console",

@@ -1313,7 +1313,9 @@
     "agoSuffix": "trước",
     "riskLabel": "rủi ro",
     "runeAi": "RUNE AI",
-    "runeAiDesc": "Đồng thuận đa mô hình với chiến lược meta học sâu"
+    "runeAiDesc": "Đồng thuận đa mô hình với chiến lược meta học sâu",
+    "simOrders": "Lệnh giao dịch",
+    "livePredictions": "Dự đoán trực tiếp"
   },
   "aiConsole": {
     "console": "Console",

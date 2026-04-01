@@ -1313,7 +1313,9 @@
     "agoSuffix": "مضت",
     "riskLabel": "المخاطر",
     "runeAi": "RUNE AI",
-    "runeAiDesc": "إجماع متعدد النماذج مع استراتيجية تعلم عميق"
+    "runeAiDesc": "إجماع متعدد النماذج مع استراتيجية تعلم عميق",
+    "simOrders": "الأوامر",
+    "livePredictions": "تنبؤات مباشرة"
   },
   "aiConsole": {
     "console": "Console",

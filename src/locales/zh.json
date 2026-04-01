@@ -1327,7 +1327,9 @@
     "agoSuffix": "前",
     "riskLabel": "风险",
     "runeAi": "RUNE AI",
-    "runeAiDesc": "多模型共识 + 深度学习元策略，覆盖全部资产"
+    "runeAiDesc": "多模型共识 + 深度学习元策略，覆盖全部资产",
+    "simOrders": "交易订单",
+    "livePredictions": "实时预测"
   },
   "aiConsole": {
     "console": "控制台",

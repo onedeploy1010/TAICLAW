@@ -1313,7 +1313,9 @@
     "agoSuffix": "atrás",
     "riskLabel": "riesgo",
     "runeAi": "RUNE AI",
-    "runeAiDesc": "Consenso multi-modelo con meta-estrategia de aprendizaje profundo"
+    "runeAiDesc": "Consenso multi-modelo con meta-estrategia de aprendizaje profundo",
+    "simOrders": "Órdenes",
+    "livePredictions": "Predicciones en Vivo"
   },
   "aiConsole": {
     "console": "Console",
