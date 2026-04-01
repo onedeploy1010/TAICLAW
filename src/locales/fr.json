@@ -345,8 +345,8 @@
     "earlyPenalty": "Pénalité Anticipée (20%)",
     "redeemReceive": "Rachat Reçu",
     "redeeming": "Rachat en cours...",
-    "earlyRedeem": "Rachat Anticipé (reçoit 80% MA)",
-    "redeemFull": "Racheter (100% MA)",
+    "earlyRedeem": "Rachat Anticipé (reçoit 80% RUNE)",
+    "redeemFull": "Racheter (100% RUNE)",
     "profitDistribution": "Distribution des Profits MA",
     "profitDistributionDesc": "Profits retirables, choisissez un plan de libération pour une libération linéaire",
     "goToVault": "Aller au Coffre →"

@@ -345,8 +345,8 @@
     "earlyPenalty": "Penalidade Antecipada (20%)",
     "redeemReceive": "Resgate Recebido",
     "redeeming": "Resgatando...",
-    "earlyRedeem": "Resgate Antecipado (recebe 80% MA)",
-    "redeemFull": "Resgatar (100% MA)",
+    "earlyRedeem": "Resgate Antecipado (recebe 80% RUNE)",
+    "redeemFull": "Resgatar (100% RUNE)",
     "profitDistribution": "Distribuição de Lucros MA",
     "profitDistributionDesc": "Ganhos sacáveis, escolha um plano de liberação para liberação linear",
     "goToVault": "Ir ao Cofre →"

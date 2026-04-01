@@ -346,7 +346,7 @@
     "redeemReceive": "償還受取",
     "redeeming": "償還中...",
     "earlyRedeem": "早期償還 (80% MA受取)",
-    "redeemFull": "償還 (100% MA)",
+    "redeemFull": "償還 (100% RUNE)",
     "profitDistribution": "MA収益配当",
     "profitDistributionDesc": "引き出し可能な収益、リリースプランを選択後に線形リリース",
     "goToVault": "金庫で引き出す →"

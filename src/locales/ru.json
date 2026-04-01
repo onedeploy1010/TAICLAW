@@ -345,8 +345,8 @@
     "earlyPenalty": "Штраф за Досрочность (20%)",
     "redeemReceive": "Получено при Выкупе",
     "redeeming": "Выкуп...",
-    "earlyRedeem": "Досрочный Выкуп (получает 80% MA)",
-    "redeemFull": "Выкупить (100% MA)",
+    "earlyRedeem": "Досрочный Выкуп (получает 80% RUNE)",
+    "redeemFull": "Выкупить (100% RUNE)",
     "profitDistribution": "Распределение Прибыли MA",
     "profitDistributionDesc": "Выводимая прибыль, выберите план освобождения для линейного освобождения",
     "goToVault": "Перейти в Хранилище →"

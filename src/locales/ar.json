@@ -345,8 +345,8 @@
     "earlyPenalty": "غرامة مبكرة (20%)",
     "redeemReceive": "مبلغ الاسترداد",
     "redeeming": "جاري الاسترداد...",
-    "earlyRedeem": "استرداد مبكر (استلام 80% MA)",
-    "redeemFull": "استرداد (100% MA)",
+    "earlyRedeem": "استرداد مبكر (استلام 80% RUNE)",
+    "redeemFull": "استرداد (100% RUNE)",
     "profitDistribution": "توزيع أرباح MA",
     "profitDistributionDesc": "أرباح قابلة للسحب، اختر خطة إصدار للإصدار الخطي",
     "goToVault": "اذهب إلى الخزنة →"

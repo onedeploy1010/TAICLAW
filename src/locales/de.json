@@ -345,8 +345,8 @@
     "earlyPenalty": "Vorzeitige Strafe (20%)",
     "redeemReceive": "Einlösung Erhalten",
     "redeeming": "Einlösung...",
-    "earlyRedeem": "Vorzeitige Einlösung (erhält 80% MA)",
-    "redeemFull": "Einlösen (100% MA)",
+    "earlyRedeem": "Vorzeitige Einlösung (erhält 80% RUNE)",
+    "redeemFull": "Einlösen (100% RUNE)",
     "profitDistribution": "MA-Gewinnverteilung",
     "profitDistributionDesc": "Auszahlbare Gewinne, wählen Sie einen Freigabeplan für lineare Freigabe",
     "goToVault": "Zum Tresor →"

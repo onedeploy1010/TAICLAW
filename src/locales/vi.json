@@ -345,8 +345,8 @@
     "earlyPenalty": "Phí Rút Sớm (20%)",
     "redeemReceive": "Nhận Khi Rút",
     "redeeming": "Đang rút...",
-    "earlyRedeem": "Rút Sớm (nhận 80% MA)",
-    "redeemFull": "Rút (100% MA)",
+    "earlyRedeem": "Rút Sớm (nhận 80% RUNE)",
+    "redeemFull": "Rút (100% RUNE)",
     "profitDistribution": "Phân Phối Lợi Nhuận MA",
     "profitDistributionDesc": "Lợi nhuận có thể rút, chọn kế hoạch phát hành để phát hành tuyến tính",
     "goToVault": "Đi đến Kho →"

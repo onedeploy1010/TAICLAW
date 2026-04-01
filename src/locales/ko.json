@@ -346,7 +346,7 @@
     "redeemReceive": "상환 수령",
     "redeeming": "상환 중...",
     "earlyRedeem": "조기 상환 (80% MA 수령)",
-    "redeemFull": "상환 (100% MA)",
+    "redeemFull": "상환 (100% RUNE)",
     "profitDistribution": "MA 수익 배당",
     "profitDistributionDesc": "인출 가능한 수익, 릴리스 플랜 선택 후 선형 릴리스",
     "goToVault": "금고에서 인출 →"

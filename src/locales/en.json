@@ -345,8 +345,8 @@
     "earlyPenalty": "Early Penalty (20%)",
     "redeemReceive": "Redeem Receive",
     "redeeming": "Redeeming...",
-    "earlyRedeem": "Early Redeem (receive 80% MA)",
-    "redeemFull": "Redeem (100% MA)",
+    "earlyRedeem": "Early Redeem (receive 80% RUNE)",
+    "redeemFull": "Redeem (100% RUNE)",
     "profitDistribution": "RUNE Profit Distribution",
     "profitDistributionDesc": "Claimable earnings, choose a release plan for linear release",
     "goToVault": "Go to Vault to Claim →"

@@ -345,8 +345,8 @@
     "earlyPenalty": "提前罚金 (20%)",
     "redeemReceive": "赎回获得",
     "redeeming": "赎回中...",
-    "earlyRedeem": "提前赎回 (获得80% MA)",
-    "redeemFull": "赎回 (100% MA)",
+    "earlyRedeem": "提前赎回 (获得80% RUNE)",
+    "redeemFull": "赎回 (100% RUNE)",
     "profitDistribution": "RUNE 盈利分红",
     "profitDistributionDesc": "可提取的收益，选择释放方案后进入线性释放",
     "goToVault": "前往金库提取 →"

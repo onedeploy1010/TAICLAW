@@ -345,8 +345,8 @@
     "earlyPenalty": "Penalidad Anticipada (20%)",
     "redeemReceive": "Canje Recibido",
     "redeeming": "Canjeando...",
-    "earlyRedeem": "Canje Anticipado (recibe 80% MA)",
-    "redeemFull": "Canjear (100% MA)",
+    "earlyRedeem": "Canje Anticipado (recibe 80% RUNE)",
+    "redeemFull": "Canjear (100% RUNE)",
     "profitDistribution": "Distribución de Ganancias MA",
     "profitDistributionDesc": "Ganancias retirables, elija un plan de liberación para liberación lineal",
     "goToVault": "Ir a la Bóveda →"
