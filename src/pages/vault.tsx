@@ -373,23 +373,23 @@ export default function Vault() {
           </div>
         </div>
 
-        {/* Deposit / Redeem / Claim buttons */}
+        {/* Deposit / Redeem buttons */}
         <div className="flex gap-2">
           <Button
-            className="flex-1 text-xs h-9"
+            className="flex-1 min-w-0 text-[11px] h-9 px-2"
             style={{ background: "linear-gradient(135deg, hsl(43,74%,58%), hsl(38,70%,46%))", color: "#0a0704" }}
             onClick={() => setDepositOpen(true)}
           >
-            <ArrowDownToLine className="mr-1.5 h-3.5 w-3.5" />
-            {t("vault.depositToVault")}
+            <ArrowDownToLine className="mr-1 h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{t("vault.depositToVault")}</span>
           </Button>
           <Button
             variant="outline"
-            className="flex-1 text-xs h-9"
+            className="flex-1 min-w-0 text-[11px] h-9 px-2"
             onClick={() => setRedeemOpen(true)}
           >
-            <ArrowUpFromLine className="mr-1.5 h-3.5 w-3.5" />
-            {t("vault.redeemFromVault")}
+            <ArrowUpFromLine className="mr-1 h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{t("vault.redeemFromVault")}</span>
           </Button>
         </div>
 
