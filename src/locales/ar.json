@@ -1294,7 +1294,9 @@
     "shortDir": "بيع",
     "neutralDir": "محايد",
     "agoSuffix": "مضت",
-    "riskLabel": "المخاطر"
+    "riskLabel": "المخاطر",
+    "runeAi": "RUNE AI",
+    "runeAiDesc": "إجماع متعدد النماذج مع استراتيجية تعلم عميق"
   },
   "aiConsole": {
     "console": "Console",

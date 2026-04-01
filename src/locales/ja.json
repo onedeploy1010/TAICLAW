@@ -1294,7 +1294,9 @@
     "shortDir": "ショート",
     "neutralDir": "中立",
     "agoSuffix": "前",
-    "riskLabel": "リスク"
+    "riskLabel": "リスク",
+    "runeAi": "RUNE AI",
+    "runeAiDesc": "全資産に対するマルチモデル合意 + ディープラーニングメタ戦略"
   },
   "aiConsole": {
     "console": "コンソール",

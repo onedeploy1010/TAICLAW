@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   TrendingUp, TrendingDown, Minus, Brain, Target,
   BarChart3, Sparkles, ChevronRight, X, Activity,
+  Cpu, Eye, Layers, Search as SearchIcon, Zap,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AiConsoleButton } from "@/components/strategy/ai-thinking-console";
@@ -54,15 +55,15 @@ interface ModelMeta {
   name: string;
   desc: string;
   color: string;
-  icon: string;
+  icon: React.ElementType;
 }
 
 const MODELS: ModelMeta[] = [
-  { key: "GPT-4o", name: "GPT-4o", desc: "Trend follower · Momentum-based analysis", color: "#4ade80", icon: "🧠" },
-  { key: "Claude", name: "Claude", desc: "Risk-aware · Contrarian analysis", color: "#a78bfa", icon: "🔮" },
-  { key: "Gemini", name: "Gemini", desc: "Volatility scalper · Multi-timeframe", color: "#60a5fa", icon: "♊" },
-  { key: "DeepSeek", name: "DeepSeek", desc: "Technical purist · RSI/MACD/BB", color: "#fbbf24", icon: "🔍" },
-  { key: "Llama", name: "Llama", desc: "Momentum chaser · Local AI model", color: "#fb923c", icon: "🦙" },
+  { key: "GPT-4o", name: "GPT-4o", desc: "Trend follower · Momentum-based analysis", color: "#4ade80", icon: Brain },
+  { key: "Claude", name: "Claude", desc: "Risk-aware · Contrarian analysis", color: "#a78bfa", icon: Eye },
+  { key: "Gemini", name: "Gemini", desc: "Volatility scalper · Multi-timeframe", color: "#60a5fa", icon: Layers },
+  { key: "DeepSeek", name: "DeepSeek", desc: "Technical purist · RSI/MACD/BB", color: "#fbbf24", icon: SearchIcon },
+  { key: "Llama", name: "Llama", desc: "Momentum chaser · Local AI model", color: "#fb923c", icon: Zap },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -154,9 +155,9 @@ function ModelCard({
     >
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-2.5">
-          <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 text-lg"
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: `${meta.color}18`, border: `1px solid ${meta.color}35` }}>
-            {meta.icon}
+            <meta.icon className="h-5 w-5" style={{ color: meta.color }} />
           </div>
           <div>
             <div className="text-[13px] font-bold text-foreground/90 leading-tight">{meta.name}</div>
@@ -244,9 +245,9 @@ function ModelDetail({
           style={{ background: "hsl(20,15%,4%)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
-              <div className="h-10 w-10 rounded-xl flex items-center justify-center text-lg"
+              <div className="h-10 w-10 rounded-xl flex items-center justify-center"
                 style={{ background: `${meta.color}18`, border: `1px solid ${meta.color}35` }}>
-                {meta.icon}
+                <meta.icon className="h-5 w-5" style={{ color: meta.color }} />
               </div>
               <div>
                 <div className="text-sm font-bold">{meta.name}</div>

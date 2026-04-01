@@ -1294,7 +1294,9 @@
     "shortDir": "Corto",
     "neutralDir": "Neutral",
     "agoSuffix": "atrás",
-    "riskLabel": "riesgo"
+    "riskLabel": "riesgo",
+    "runeAi": "RUNE AI",
+    "runeAiDesc": "Consenso multi-modelo con meta-estrategia de aprendizaje profundo"
   },
   "aiConsole": {
     "console": "Console",

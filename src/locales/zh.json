@@ -1308,7 +1308,9 @@
     "shortDir": "做空",
     "neutralDir": "中性",
     "agoSuffix": "前",
-    "riskLabel": "风险"
+    "riskLabel": "风险",
+    "runeAi": "RUNE AI",
+    "runeAiDesc": "多模型共识 + 深度学习元策略，覆盖全部资产"
   },
   "aiConsole": {
     "console": "控制台",

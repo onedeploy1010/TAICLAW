@@ -1294,7 +1294,9 @@
     "shortDir": "Bán",
     "neutralDir": "Trung lập",
     "agoSuffix": "trước",
-    "riskLabel": "rủi ro"
+    "riskLabel": "rủi ro",
+    "runeAi": "RUNE AI",
+    "runeAiDesc": "Đồng thuận đa mô hình với chiến lược meta học sâu"
   },
   "aiConsole": {
     "console": "Console",
