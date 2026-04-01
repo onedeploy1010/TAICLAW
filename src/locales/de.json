@@ -103,7 +103,12 @@
     "showLess": "WENIGER ZEIGEN",
     "bullish": "BULLISCH",
     "bearish": "BÄRISCH",
-    "mixed": "GEMISCHT"
+    "mixed": "GEMISCHT",
+    "futuresOI": "Futures Open Interest",
+    "crossExchange": "Börsenübergreifende Preise",
+    "expandMore": "Mehr anzeigen ({{count}})",
+    "collapse": "Einklappen",
+    "goToAnalysis": "Zur Marktanalyse"
   },
   "trade": {
     "bigRoad": "Großer Weg",

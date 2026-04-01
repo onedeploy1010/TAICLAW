@@ -103,7 +103,12 @@
     "showLess": "عرض أقل",
     "bullish": "صاعد",
     "bearish": "هابط",
-    "mixed": "مختلط"
+    "mixed": "مختلط",
+    "futuresOI": "الفائدة المفتوحة للعقود",
+    "crossExchange": "أسعار عبر البورصات",
+    "expandMore": "عرض المزيد ({{count}})",
+    "collapse": "طي",
+    "goToAnalysis": "الذهاب إلى التحليل"
   },
   "trade": {
     "bigRoad": "الطريق الكبير",

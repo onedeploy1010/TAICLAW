@@ -103,7 +103,12 @@
     "showLess": "THU GỌN",
     "bullish": "TĂNG GIÁ",
     "bearish": "GIẢM GIÁ",
-    "mixed": "HỖN HỢP"
+    "mixed": "HỖN HỢP",
+    "futuresOI": "Hợp đồng mở",
+    "crossExchange": "Giá liên sàn",
+    "expandMore": "Xem thêm ({{count}})",
+    "collapse": "Thu gọn",
+    "goToAnalysis": "Đến Phân tích thị trường"
   },
   "trade": {
     "bigRoad": "Đường lớn",

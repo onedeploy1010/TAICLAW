@@ -103,7 +103,12 @@
     "showLess": "收起",
     "bullish": "看涨",
     "bearish": "看跌",
-    "mixed": "中立"
+    "mixed": "中立",
+    "futuresOI": "合约持仓量",
+    "crossExchange": "跨交易所价格",
+    "expandMore": "展开更多 ({{count}})",
+    "collapse": "收起",
+    "goToAnalysis": "前往市场分析"
   },
   "trade": {
     "bigRoad": "大路",

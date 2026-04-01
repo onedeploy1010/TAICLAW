@@ -29,11 +29,13 @@ interface ForecastResponse {
 
 export default function Dashboard() {
   const [, navigate] = useLocation();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const [selectedAsset, setSelectedAsset] = useState("BTC");
   const [selectedTimeframe, setSelectedTimeframe] = useState<ChartTimeframe>("1H");
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [oiExpanded, setOiExpanded] = useState(false);
+  const [epExpanded, setEpExpanded] = useState(false);
 
   const { data: prices, isLoading: pricesLoading } = useCryptoPrices();
   const { data: klineData, isLoading: chartLoading } = useBinanceKlines(selectedAsset, selectedTimeframe);
@@ -163,13 +165,13 @@ export default function Dashboard() {
           <div className="glass-card rounded-2xl p-4 relative overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
             <div className="flex items-center gap-2 mb-3">
               <Activity className="h-4 w-4 text-primary" />
-              <h3 className="text-sm font-bold">Futures Open Interest</h3>
+              <h3 className="text-sm font-bold">{t("dashboard.futuresOI")}</h3>
             </div>
             {oiLoading ? (
               <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-8 rounded bg-muted/20 animate-pulse" />)}</div>
             ) : topOI.length > 0 ? (
               <div className="space-y-2">
-                {topOI.map((item) => {
+                {(oiExpanded ? topOI : topOI.slice(0, 3)).map((item) => {
                   const maxOI = topOI[0].openInterestValue;
                   const pct = (item.openInterestValue / maxOI) * 100;
                   return (
@@ -187,10 +189,14 @@ export default function Dashboard() {
                     </div>
                   );
                 })}
-                <button onClick={() => navigate("/market")} className="text-[11px] text-primary hover:underline mt-1">View more →</button>
+                {topOI.length > 3 && (
+                  <button onClick={() => setOiExpanded(v => !v)} className="text-[11px] text-primary hover:underline mt-1">
+                    {oiExpanded ? t("dashboard.collapse") : t("dashboard.expandMore", { count: topOI.length - 3 })}
+                  </button>
+                )}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground">No data</p>
+              <p className="text-xs text-muted-foreground">{t("common.noData")}</p>
             )}
           </div>
         </div>
@@ -202,18 +208,18 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Cross-Exchange Prices mini-table */}
+      {/* Cross-Exchange Prices */}
       <div className="px-4 lg:px-0">
         <div className="glass-card rounded-2xl p-4 relative overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex items-center gap-2 mb-3">
             <Globe className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-bold">Cross-Exchange Prices</h3>
+            <h3 className="text-sm font-bold">{t("dashboard.crossExchange")}</h3>
           </div>
           {epLoading ? (
             <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-6 rounded bg-muted/20 animate-pulse" />)}</div>
           ) : selectedCoinExchanges ? (
             <div className="space-y-1">
-              {selectedCoinExchanges.exchanges.slice(0, 5).map((row) => {
+              {selectedCoinExchanges.exchanges.slice(0, epExpanded ? 20 : 5).map((row) => {
                 const isPos = row.change24h >= 0;
                 return (
                   <div key={row.exchange} className="flex items-center justify-between text-xs py-1" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
@@ -230,12 +236,32 @@ export default function Dashboard() {
                   </div>
                 );
               })}
-              <button onClick={() => navigate("/market")} className="text-[11px] text-primary hover:underline mt-1">View more →</button>
+              {selectedCoinExchanges.exchanges.length > 5 && (
+                <button onClick={() => setEpExpanded(v => !v)} className="text-[11px] text-primary hover:underline mt-1">
+                  {epExpanded ? t("dashboard.collapse") : t("dashboard.expandMore", { count: selectedCoinExchanges.exchanges.length - 5 })}
+                </button>
+              )}
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">No data</p>
+            <p className="text-xs text-muted-foreground">{t("common.noData")}</p>
           )}
         </div>
+      </div>
+
+      {/* Analysis Page Button */}
+      <div className="px-4 lg:px-0 pb-2">
+        <button
+          onClick={() => navigate(`/market?coin=${selectedAsset}`)}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-bold transition-all active:scale-[0.98]"
+          style={{
+            background: "linear-gradient(135deg, rgba(212,168,50,0.12), rgba(212,168,50,0.06))",
+            border: "1px solid rgba(212,168,50,0.2)",
+            color: "hsl(43,74%,52%)",
+          }}
+        >
+          <BarChart3 className="h-4 w-4" />
+          {t("dashboard.goToAnalysis")}
+        </button>
       </div>
     </div>
   );

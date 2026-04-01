@@ -103,7 +103,12 @@
     "showLess": "MOSTRAR MENOS",
     "bullish": "ALCISTA",
     "bearish": "BAJISTA",
-    "mixed": "MIXTO"
+    "mixed": "MIXTO",
+    "futuresOI": "Interés Abierto de Futuros",
+    "crossExchange": "Precios entre Exchanges",
+    "expandMore": "Ver más ({{count}})",
+    "collapse": "Colapsar",
+    "goToAnalysis": "Ir al Análisis de Mercado"
   },
   "trade": {
     "bigRoad": "Camino Grande",

@@ -103,7 +103,12 @@
     "showLess": "閉じる",
     "bullish": "強気",
     "bearish": "弱気",
-    "mixed": "中立"
+    "mixed": "中立",
+    "futuresOI": "先物建玉",
+    "crossExchange": "取引所間価格",
+    "expandMore": "もっと見る ({{count}})",
+    "collapse": "閉じる",
+    "goToAnalysis": "市場分析へ"
   },
   "trade": {
     "bigRoad": "ビッグロード",

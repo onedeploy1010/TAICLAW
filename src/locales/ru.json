@@ -103,7 +103,12 @@
     "showLess": "СВЕРНУТЬ",
     "bullish": "БЫЧИЙ",
     "bearish": "МЕДВЕЖИЙ",
-    "mixed": "СМЕШАННЫЙ"
+    "mixed": "СМЕШАННЫЙ",
+    "futuresOI": "Открытый интерес фьючерсов",
+    "crossExchange": "Цены на биржах",
+    "expandMore": "Показать больше ({{count}})",
+    "collapse": "Свернуть",
+    "goToAnalysis": "Перейти к анализу"
   },
   "trade": {
     "bigRoad": "Большая Дорога",

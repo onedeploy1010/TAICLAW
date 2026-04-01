@@ -103,7 +103,12 @@
     "showLess": "SHOW LESS",
     "bullish": "BULLISH",
     "bearish": "BEARISH",
-    "mixed": "MIXED"
+    "mixed": "MIXED",
+    "futuresOI": "Futures Open Interest",
+    "crossExchange": "Cross-Exchange Prices",
+    "expandMore": "Expand more ({{count}})",
+    "collapse": "Collapse",
+    "goToAnalysis": "Go to Market Analysis"
   },
   "trade": {
     "bigRoad": "Big Road",

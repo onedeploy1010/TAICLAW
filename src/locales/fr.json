@@ -103,7 +103,12 @@
     "showLess": "RÉDUIRE",
     "bullish": "HAUSSIER",
     "bearish": "BAISSIER",
-    "mixed": "MIXTE"
+    "mixed": "MIXTE",
+    "futuresOI": "Intérêt Ouvert Futures",
+    "crossExchange": "Prix inter-bourses",
+    "expandMore": "Voir plus ({{count}})",
+    "collapse": "Réduire",
+    "goToAnalysis": "Aller à l'Analyse"
   },
   "trade": {
     "bigRoad": "Grande Route",

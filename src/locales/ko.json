@@ -103,7 +103,12 @@
     "showLess": "접기",
     "bullish": "강세",
     "bearish": "약세",
-    "mixed": "혼합"
+    "mixed": "혼합",
+    "futuresOI": "선물 미결제약정",
+    "crossExchange": "거래소 간 가격",
+    "expandMore": "더 보기 ({{count}})",
+    "collapse": "접기",
+    "goToAnalysis": "시장 분석으로 이동"
   },
   "trade": {
     "bigRoad": "빅로드",
