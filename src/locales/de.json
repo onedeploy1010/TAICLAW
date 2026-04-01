@@ -70,7 +70,8 @@
     "vault": "Tresor",
     "strategy": "Strategie",
     "profile": "Profil",
-    "market": "Markt"
+    "market": "Markt",
+    "nodes": "Knoten"
   },
   "dashboard": {
     "depthRatio": "Tiefenverhältnis",
@@ -260,7 +261,19 @@
     "totalEarned": "Gesamt Verdient",
     "yieldLocked": "Ertrag (Gesperrt)",
     "day": "Tag",
-    "dayCycle": "-Tage-Zyklus"
+    "dayCycle": "-Tage-Zyklus",
+    "strategyVaults": "Strategie-Tresore",
+    "trendVault": "Trend-Tresor",
+    "reversionVault": "Rückkehr-Tresor",
+    "breakoutVault": "Ausbruch-Tresor",
+    "momentumVault": "Momentum-Tresor",
+    "swingVault": "Swing-Tresor",
+    "runeAiVault": "RUNE AI Tresor",
+    "apyRange": "{{min}}-{{max}}% APY",
+    "tvlLabel": "TVL",
+    "minDepositLabel": "Min ${{amount}}",
+    "lockPeriodLabel": "{{days}}T Sperre",
+    "hotBadge": "Beliebt"
   },
   "deposit": {
     "inputError": "Eingabefehler",
@@ -964,7 +977,9 @@
     "directReward": "Direktempfehlungs-Belohnung",
     "teamDiff": "Team-Differenzial",
     "sameRank": "Gleicher Rang",
-    "override": "Überbrückung"
+    "override": "Überbrückung",
+    "runeToken": "RUNE Token",
+    "runeTokenDesc": "RUNE Token Guthaben und Operationen anzeigen"
   },
   "market": {
     "marketAnalysis": "Marktanalyse",

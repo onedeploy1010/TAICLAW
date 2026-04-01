@@ -70,7 +70,8 @@
     "vault": "金库",
     "strategy": "策略",
     "profile": "我的",
-    "market": "市场"
+    "market": "市场",
+    "nodes": "节点"
   },
   "dashboard": {
     "depthRatio": "深度比率",
@@ -260,7 +261,19 @@
     "progress": "进度",
     "perDay": "日",
     "totalEarned": "累计收益",
-    "yieldLocked": "收益(锁仓)"
+    "yieldLocked": "收益(锁仓)",
+    "strategyVaults": "策略金库",
+    "trendVault": "趋势跟踪金库",
+    "reversionVault": "均值回归金库",
+    "breakoutVault": "突破金库",
+    "momentumVault": "动量金库",
+    "swingVault": "波段金库",
+    "runeAiVault": "RUNE AI 金库",
+    "apyRange": "{{min}}-{{max}}% 年化",
+    "tvlLabel": "锁仓量",
+    "minDepositLabel": "最低 ${{amount}}",
+    "lockPeriodLabel": "{{days}}天锁定",
+    "hotBadge": "热门"
   },
   "deposit": {
     "inputError": "输入错误",
@@ -1010,7 +1023,9 @@
     "upgradeVip": "升级VIP",
     "vipActivateFailed": "VIP 激活失败",
     "vipTrialActivated": "VIP 试用已激活",
-    "vipTrialDesc": "7天免费 VIP 跟单体验已开启"
+    "vipTrialDesc": "7天免费 VIP 跟单体验已开启",
+    "runeToken": "RUNE 代币",
+    "runeTokenDesc": "查看 RUNE 代币余额和操作"
   },
   "market": {
     "marketAnalysis": "市场分析",

@@ -70,7 +70,8 @@
     "vault": "الخزنة",
     "strategy": "الاستراتيجية",
     "profile": "الملف الشخصي",
-    "market": "السوق"
+    "market": "السوق",
+    "nodes": "العُقد"
   },
   "dashboard": {
     "depthRatio": "نسبة العمق",
@@ -260,7 +261,19 @@
     "totalEarned": "إجمالي المكتسب",
     "yieldLocked": "العائد (مقفل)",
     "day": "يوم",
-    "dayCycle": " يوم دورة"
+    "dayCycle": " يوم دورة",
+    "strategyVaults": "خزائن الاستراتيجية",
+    "trendVault": "خزينة الاتجاه",
+    "reversionVault": "خزينة العودة",
+    "breakoutVault": "خزينة الاختراق",
+    "momentumVault": "خزينة الزخم",
+    "swingVault": "خزينة السوينج",
+    "runeAiVault": "خزينة RUNE AI",
+    "apyRange": "{{min}}-{{max}}% APY",
+    "tvlLabel": "TVL",
+    "minDepositLabel": "الحد الأدنى ${{amount}}",
+    "lockPeriodLabel": "{{days}} يوم قفل",
+    "hotBadge": "رائج"
   },
   "deposit": {
     "inputError": "خطأ في الإدخال",
@@ -964,7 +977,9 @@
     "directReward": "مكافأة الإحالة المباشرة",
     "teamDiff": "تفاضل الفريق",
     "sameRank": "نفس الرتبة",
-    "override": "تجاوز"
+    "override": "تجاوز",
+    "runeToken": "رمز RUNE",
+    "runeTokenDesc": "عرض رصيد وعمليات رمز RUNE"
   },
   "market": {
     "marketAnalysis": "تحليل السوق",

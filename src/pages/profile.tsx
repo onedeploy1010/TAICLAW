@@ -20,7 +20,7 @@ import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 
 const MENU_ITEMS = [
-  { labelKey: "profile.maToken", icon: Coins, path: "/profile/ma", descKey: "profile.maTokenDesc" },
+  { labelKey: "profile.runeToken", icon: Coins, path: "/profile/ma", descKey: "profile.runeTokenDesc" },
   { labelKey: "profile.swap", icon: ArrowLeftRight, path: "/profile/swap", descKey: "profile.swapDesc" },
   { labelKey: "profile.transactionHistory", icon: History, path: "/profile/transactions", descKey: "profile.transactionHistoryDesc" },
   { labelKey: "profile.notifications", icon: Bell, path: "/profile/notifications", descKey: "profile.notificationsDesc" },
@@ -148,7 +148,7 @@ export default function ProfilePage() {
     if (!referralLink) return;
     if (typeof navigator !== "undefined" && navigator.share) {
       navigator.share({
-        title: "TAICLAW",
+        title: "RUNE PROTOCOL",
         text: t("profile.inviteFriendsDesc"),
         url: referralLink,
       }).catch(() => {});
@@ -162,13 +162,13 @@ export default function ProfilePage() {
   return (
     <div className="pb-24 lg:pb-8 lg:pt-4" data-testid="page-profile" style={{ background: "#060606" }}>
 
-      <div className="relative overflow-hidden" style={{ background: "linear-gradient(180deg, #0d1f12 0%, #060606 100%)" }}>
-        <div className="absolute inset-0 opacity-30" style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(74,222,128,0.15) 0%, transparent 70%)" }} />
+      <div className="relative overflow-hidden" style={{ background: "linear-gradient(180deg, #1a1408 0%, #060606 100%)" }}>
+        <div className="absolute inset-0 opacity-30" style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(212,168,50,0.15) 0%, transparent 70%)" }} />
         <div className="relative px-4 pt-6 pb-5">
           <div className="flex items-center gap-3 mb-4">
             <div
               className="h-12 w-12 rounded-full flex items-center justify-center shrink-0"
-              style={{ background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)", boxShadow: "0 0 20px rgba(74,222,128,0.25)" }}
+              style={{ background: "linear-gradient(135deg, hsl(43,74%,58%), hsl(38,70%,46%))", boxShadow: "0 0 20px rgba(212,168,50,0.25)" }}
             >
               <User className="h-6 w-6 text-white" />
             </div>
@@ -242,7 +242,7 @@ export default function ProfilePage() {
           className="rounded-2xl relative overflow-hidden"
           style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.35)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}
         >
-          <div className="absolute top-0 right-0 w-40 h-40 opacity-[0.05]" style={{ background: "radial-gradient(circle, #4ade80, transparent 70%)" }} />
+          <div className="absolute top-0 right-0 w-40 h-40 opacity-[0.05]" style={{ background: "radial-gradient(circle, #d4a832, transparent 70%)" }} />
 
           <div className="p-4 relative">
             <div className="flex items-center justify-between gap-3">
@@ -258,7 +258,7 @@ export default function ProfilePage() {
               </div>
               <div
                 className="h-11 w-11 rounded-2xl flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, rgba(74,222,128,0.2), rgba(74,222,128,0.05))", border: "1px solid rgba(74,222,128,0.15)" }}
+                style={{ background: "linear-gradient(135deg, rgba(212,168,50,0.2), rgba(212,168,50,0.05))", border: "1px solid rgba(212,168,50,0.15)" }}
               >
                 <Wallet className="h-5 w-5 text-primary" />
               </div>
@@ -273,7 +273,7 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div
                       className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: "linear-gradient(135deg, rgba(74,222,128,0.2), rgba(74,222,128,0.05))", border: "1px solid rgba(74,222,128,0.15)" }}
+                      style={{ background: "linear-gradient(135deg, rgba(212,168,50,0.2), rgba(212,168,50,0.05))", border: "1px solid rgba(212,168,50,0.15)" }}
                     >
                       <TrendingUp className="h-4 w-4 text-primary" />
                     </div>
@@ -335,7 +335,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2 mb-3">
               <div
                 className="h-7 w-7 rounded-lg flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, rgba(74,222,128,0.2), rgba(74,222,128,0.05))", border: "1px solid rgba(74,222,128,0.15)" }}
+                style={{ background: "linear-gradient(135deg, rgba(212,168,50,0.2), rgba(212,168,50,0.05))", border: "1px solid rgba(212,168,50,0.15)" }}
               >
                 <Link2 className="h-3.5 w-3.5 text-primary" />
               </div>
@@ -358,7 +358,7 @@ export default function ProfilePage() {
               <button
                 onClick={shareReferralLink}
                 className="shrink-0 px-3.5 py-2.5 rounded-xl text-black font-medium transition-all hover:brightness-110 active:scale-95"
-                style={{ background: "linear-gradient(135deg, #4ade80, #22c55e)", boxShadow: "0 2px 8px rgba(74,222,128,0.25)" }}
+                style={{ background: "linear-gradient(135deg, hsl(43,74%,58%), hsl(38,70%,46%))", boxShadow: "0 2px 8px rgba(212,168,50,0.25)" }}
               >
                 <Share2 className="h-4 w-4" />
               </button>
@@ -373,7 +373,7 @@ export default function ProfilePage() {
             >
               <div
                 className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: "linear-gradient(135deg, rgba(74,222,128,0.2), rgba(74,222,128,0.05))", border: "1px solid rgba(74,222,128,0.15)" }}
+                style={{ background: "linear-gradient(135deg, rgba(212,168,50,0.2), rgba(212,168,50,0.05))", border: "1px solid rgba(212,168,50,0.15)" }}
               >
                 <GitBranch className="h-3.5 w-3.5 text-primary" />
               </div>
@@ -501,23 +501,23 @@ export default function ProfilePage() {
           <button
             className="w-full rounded-2xl text-left transition-all active:scale-[0.98] relative overflow-hidden group"
             style={{
-              background: "linear-gradient(135deg, #0a2614 0%, #143d20 50%, #0d2a15 100%)",
-              border: "1px solid rgba(74,222,128,0.35)",
-              boxShadow: "0 4px 24px rgba(74,222,128,0.12), inset 0 1px 0 rgba(255,255,255,0.05)",
+              background: "linear-gradient(135deg, #1a1408 0%, #2a2010 50%, #1a1408 100%)",
+              border: "1px solid rgba(212,168,50,0.35)",
+              boxShadow: "0 4px 24px rgba(212,168,50,0.12), inset 0 1px 0 rgba(255,255,255,0.05)",
             }}
             onClick={() => navigate("/profile/nodes")}
             data-testid="menu-nodes"
           >
-            <div className="absolute inset-0 opacity-40" style={{ background: "radial-gradient(ellipse at 80% 20%, rgba(74,222,128,0.2) 0%, transparent 60%)" }} />
-            <div className="absolute -right-4 -bottom-4 w-24 h-24 opacity-20" style={{ background: "radial-gradient(circle, #22c55e, transparent 70%)" }} />
-            <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: "linear-gradient(180deg, #4ade80, #22c55e)" }} />
+            <div className="absolute inset-0 opacity-40" style={{ background: "radial-gradient(ellipse at 80% 20%, rgba(212,168,50,0.2) 0%, transparent 60%)" }} />
+            <div className="absolute -right-4 -bottom-4 w-24 h-24 opacity-20" style={{ background: "radial-gradient(circle, #d4a832, transparent 70%)" }} />
+            <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: "linear-gradient(180deg, hsl(43,74%,58%), hsl(38,70%,46%))" }} />
 
             <div className="relative p-4 flex items-center gap-3.5">
               <div
                 className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0"
                 style={{
-                  background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
-                  boxShadow: "0 4px 16px rgba(34,197,94,0.35)",
+                  background: "linear-gradient(135deg, hsl(43,74%,58%) 0%, hsl(38,70%,46%) 100%)",
+                  boxShadow: "0 4px 16px rgba(212,168,50,0.35)",
                 }}
               >
                 <Server className="h-5.5 w-5.5 text-white" />
@@ -528,7 +528,7 @@ export default function ProfilePage() {
               </div>
               <div
                 className="h-8 w-8 rounded-full flex items-center justify-center shrink-0"
-                style={{ background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.25)" }}
+                style={{ background: "rgba(212,168,50,0.15)", border: "1px solid rgba(212,168,50,0.25)" }}
               >
                 <ChevronRight className="h-4 w-4 text-primary" />
               </div>

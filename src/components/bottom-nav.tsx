@@ -1,5 +1,5 @@
 import { useLocation, Link } from "wouter";
-import { Home, BarChart3, Brain, User } from "lucide-react";
+import { Home, BarChart3, Brain, Server } from "lucide-react";
 
 const tabs = [
   { path: "/", icon: Home, id: "home" },
@@ -18,7 +18,7 @@ const tabs = [
     ),
   },
   { path: "/strategy", icon: Brain, id: "strategy" },
-  { path: "/profile", icon: User, id: "profile" },
+  { path: "/profile/nodes", icon: Server, id: "nodes" },
 ];
 
 export function BottomNav() {

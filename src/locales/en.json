@@ -70,7 +70,8 @@
     "vault": "Vault",
     "strategy": "Strategy",
     "profile": "Profile",
-    "market": "Market"
+    "market": "Market",
+    "nodes": "Nodes"
   },
   "dashboard": {
     "depthRatio": "Depth Ratio",
@@ -260,7 +261,19 @@
     "progress": "Progress",
     "perDay": "day",
     "totalEarned": "Total Earned",
-    "yieldLocked": "Yield (Locked)"
+    "yieldLocked": "Yield (Locked)",
+    "strategyVaults": "Strategy Vaults",
+    "trendVault": "Trend Following Vault",
+    "reversionVault": "Mean Reversion Vault",
+    "breakoutVault": "Breakout Vault",
+    "momentumVault": "Momentum Vault",
+    "swingVault": "Swing Vault",
+    "runeAiVault": "RUNE AI Vault",
+    "apyRange": "{{min}}-{{max}}% APY",
+    "tvlLabel": "TVL",
+    "minDepositLabel": "Min ${{amount}}",
+    "lockPeriodLabel": "{{days}}D Lock",
+    "hotBadge": "Hot"
   },
   "deposit": {
     "inputError": "Input Error",
@@ -994,7 +1007,9 @@
     "upgradeVip": "Upgrade VIP",
     "vipActivateFailed": "VIP Activation Failed",
     "vipTrialActivated": "VIP Trial Activated",
-    "vipTrialDesc": "7-day free VIP copy trading enabled"
+    "vipTrialDesc": "7-day free VIP copy trading enabled",
+    "runeToken": "RUNE Token",
+    "runeTokenDesc": "View RUNE token balance and operations"
   },
   "market": {
     "marketAnalysis": "Market Analysis",

@@ -70,7 +70,8 @@
     "vault": "Kho bạc",
     "strategy": "Chiến lược",
     "profile": "Hồ sơ",
-    "market": "Thị trường"
+    "market": "Thị trường",
+    "nodes": "Nút"
   },
   "dashboard": {
     "depthRatio": "Tỷ lệ chiều sâu",
@@ -260,7 +261,19 @@
     "totalEarned": "Tổng đã nhận",
     "yieldLocked": "Lợi suất (Đã khóa)",
     "day": "Ngày",
-    "dayCycle": " ngày chu kỳ"
+    "dayCycle": " ngày chu kỳ",
+    "strategyVaults": "Kho Chiến Lược",
+    "trendVault": "Kho Xu Hướng",
+    "reversionVault": "Kho Hồi Quy",
+    "breakoutVault": "Kho Phá Vỡ",
+    "momentumVault": "Kho Động Lượng",
+    "swingVault": "Kho Swing",
+    "runeAiVault": "Kho RUNE AI",
+    "apyRange": "{{min}}-{{max}}% APY",
+    "tvlLabel": "TVL",
+    "minDepositLabel": "Tối thiểu ${{amount}}",
+    "lockPeriodLabel": "Khóa {{days}} ngày",
+    "hotBadge": "Nóng"
   },
   "deposit": {
     "inputError": "Lỗi Nhập Liệu",
@@ -964,7 +977,9 @@
     "directReward": "Thưởng Giới Thiệu",
     "teamDiff": "Chênh Lệch Đội",
     "sameRank": "Cùng Hạng",
-    "override": "Vượt Cấp"
+    "override": "Vượt Cấp",
+    "runeToken": "Token RUNE",
+    "runeTokenDesc": "Xem số dư và hoạt động token RUNE"
   },
   "market": {
     "marketAnalysis": "Phân tích thị trường",

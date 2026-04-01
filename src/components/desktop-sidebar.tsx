@@ -20,6 +20,7 @@ const mainNavItems = [
     ),
   },
   { path: "/strategy", icon: Brain, labelKey: "nav.strategy" },
+  { path: "/profile/nodes", icon: Server, labelKey: "nav.nodes" },
   { path: "/market", icon: TrendingUp, labelKey: "nav.market" },
   { path: "/profile", icon: User, labelKey: "nav.profile" },
 ];
@@ -106,7 +107,7 @@ export function DesktopSidebar() {
       <div className="border-t border-border/20 px-4 py-3">
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${account ? "bg-primary animate-pulse" : "bg-foreground/20"}`}
-            style={account ? { boxShadow: "0 0 6px rgba(212,175,55,0.45)" } : undefined}
+            style={account ? { boxShadow: "0 0 6px rgba(212,168,50,0.45)" } : undefined}
           />
           <span className="text-xs text-foreground/40 truncate">
             {account ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` : t("common.notConnected")}

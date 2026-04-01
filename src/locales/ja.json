@@ -70,7 +70,8 @@
     "vault": "ボールト",
     "strategy": "戦略",
     "profile": "マイページ",
-    "market": "マーケット"
+    "market": "マーケット",
+    "nodes": "ノード"
   },
   "dashboard": {
     "depthRatio": "デプス比率",
@@ -260,7 +261,19 @@
     "totalEarned": "累計収益",
     "yieldLocked": "収益（ロック中）",
     "day": "日",
-    "dayCycle": "日サイクル"
+    "dayCycle": "日サイクル",
+    "strategyVaults": "戦略ボールト",
+    "trendVault": "トレンドフォローボールト",
+    "reversionVault": "平均回帰ボールト",
+    "breakoutVault": "ブレイクアウトボールト",
+    "momentumVault": "モメンタムボールト",
+    "swingVault": "スイングボールト",
+    "runeAiVault": "RUNE AI ボールト",
+    "apyRange": "{{min}}-{{max}}% APY",
+    "tvlLabel": "TVL",
+    "minDepositLabel": "最低 ${{amount}}",
+    "lockPeriodLabel": "{{days}}日ロック",
+    "hotBadge": "人気"
   },
   "deposit": {
     "inputError": "入力エラー",
@@ -964,7 +977,9 @@
     "directReward": "直接紹介報酬",
     "teamDiff": "チーム差額",
     "sameRank": "同ランク報酬",
-    "override": "越級報酬"
+    "override": "越級報酬",
+    "runeToken": "RUNEトークン",
+    "runeTokenDesc": "RUNEトークン残高と操作を表示"
   },
   "market": {
     "marketAnalysis": "市場分析",

@@ -70,7 +70,8 @@
     "vault": "Bóveda",
     "strategy": "Estrategia",
     "profile": "Perfil",
-    "market": "Mercado"
+    "market": "Mercado",
+    "nodes": "Nodos"
   },
   "dashboard": {
     "depthRatio": "Ratio de Profundidad",
@@ -260,7 +261,19 @@
     "totalEarned": "Total Ganado",
     "yieldLocked": "Rendimiento (Bloqueado)",
     "day": "Día",
-    "dayCycle": " días ciclo"
+    "dayCycle": " días ciclo",
+    "strategyVaults": "Bóvedas de Estrategia",
+    "trendVault": "Bóveda Tendencia",
+    "reversionVault": "Bóveda Reversión",
+    "breakoutVault": "Bóveda Ruptura",
+    "momentumVault": "Bóveda Momentum",
+    "swingVault": "Bóveda Swing",
+    "runeAiVault": "Bóveda RUNE AI",
+    "apyRange": "{{min}}-{{max}}% APY",
+    "tvlLabel": "TVL",
+    "minDepositLabel": "Mín ${{amount}}",
+    "lockPeriodLabel": "{{days}}D Bloqueo",
+    "hotBadge": "Popular"
   },
   "deposit": {
     "inputError": "Error de Entrada",
@@ -964,7 +977,9 @@
     "directReward": "Recompensa de Referido Directo",
     "teamDiff": "Diferencial del Equipo",
     "sameRank": "Mismo Rango",
-    "override": "Anulación"
+    "override": "Anulación",
+    "runeToken": "Token RUNE",
+    "runeTokenDesc": "Ver saldo y operaciones del token RUNE"
   },
   "market": {
     "marketAnalysis": "Análisis de Mercado",

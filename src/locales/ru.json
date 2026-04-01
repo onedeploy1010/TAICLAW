@@ -70,7 +70,8 @@
     "vault": "Хранилище",
     "strategy": "Стратегия",
     "profile": "Профиль",
-    "market": "Рынок"
+    "market": "Рынок",
+    "nodes": "Ноды"
   },
   "dashboard": {
     "depthRatio": "Коэффициент Глубины",
@@ -260,7 +261,19 @@
     "totalEarned": "Всего Заработано",
     "yieldLocked": "Доход (Заблокировано)",
     "day": "День",
-    "dayCycle": "-дневный цикл"
+    "dayCycle": "-дневный цикл",
+    "strategyVaults": "Стратегические Хранилища",
+    "trendVault": "Хранилище Тренда",
+    "reversionVault": "Хранилище Реверсии",
+    "breakoutVault": "Хранилище Пробоя",
+    "momentumVault": "Хранилище Моментума",
+    "swingVault": "Хранилище Свинга",
+    "runeAiVault": "Хранилище RUNE AI",
+    "apyRange": "{{min}}-{{max}}% APY",
+    "tvlLabel": "TVL",
+    "minDepositLabel": "Мин ${{amount}}",
+    "lockPeriodLabel": "{{days}}Д Блокировка",
+    "hotBadge": "Горячий"
   },
   "deposit": {
     "inputError": "Ошибка Ввода",
@@ -964,7 +977,9 @@
     "directReward": "Награда за Прямой Реферал",
     "teamDiff": "Командный Дифференциал",
     "sameRank": "Одинаковый Ранг",
-    "override": "Оверрайд"
+    "override": "Оверрайд",
+    "runeToken": "Токен RUNE",
+    "runeTokenDesc": "Просмотр баланса и операций токена RUNE"
   },
   "market": {
     "marketAnalysis": "Анализ Рынка",

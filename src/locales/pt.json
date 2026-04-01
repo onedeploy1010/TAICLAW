@@ -70,7 +70,8 @@
     "vault": "Cofre",
     "strategy": "Estratégia",
     "profile": "Perfil",
-    "market": "Mercado"
+    "market": "Mercado",
+    "nodes": "Nós"
   },
   "dashboard": {
     "depthRatio": "Razão de Profundidade",
@@ -260,7 +261,19 @@
     "totalEarned": "Total Ganho",
     "yieldLocked": "Rendimento (Bloqueado)",
     "day": "Dia",
-    "dayCycle": " dias de ciclo"
+    "dayCycle": " dias de ciclo",
+    "strategyVaults": "Cofres de Estratégia",
+    "trendVault": "Cofre Tendência",
+    "reversionVault": "Cofre Reversão",
+    "breakoutVault": "Cofre Rompimento",
+    "momentumVault": "Cofre Momentum",
+    "swingVault": "Cofre Swing",
+    "runeAiVault": "Cofre RUNE AI",
+    "apyRange": "{{min}}-{{max}}% APY",
+    "tvlLabel": "TVL",
+    "minDepositLabel": "Mín ${{amount}}",
+    "lockPeriodLabel": "{{days}}D Bloqueio",
+    "hotBadge": "Em Alta"
   },
   "deposit": {
     "inputError": "Erro de Entrada",
@@ -964,7 +977,9 @@
     "directReward": "Recompensa de Indicação Direta",
     "teamDiff": "Diferencial da Equipe",
     "sameRank": "Mesmo Nível",
-    "override": "Substituição"
+    "override": "Substituição",
+    "runeToken": "Token RUNE",
+    "runeTokenDesc": "Ver saldo e operações do token RUNE"
   },
   "market": {
     "marketAnalysis": "Análise de Mercado",

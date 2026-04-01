@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Lock, ArrowDownToLine, ArrowUpFromLine, Sparkles, AlertCircle, Loader2, ChevronRight } from "lucide-react";
+import { Lock, ArrowDownToLine, ArrowUpFromLine, Sparkles, AlertCircle, Loader2, ChevronRight, TrendingUp, GitBranch, Zap, Rocket, Activity, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VaultChart } from "@/components/vault/vault-chart";
 import { VaultStats } from "@/components/vault/vault-stats";
@@ -120,6 +120,95 @@ export default function Vault() {
   const walletAddress = account?.address || "";
   const { toast } = useToast();
   const { formatMA, usdcToMA, price: maPrice } = useMaPrice();
+
+  const strategyVaults = useMemo(() => {
+    // Seeded pseudo-random for stable TVL values
+    const seed = (s: number) => {
+      let x = Math.sin(s) * 10000;
+      return x - Math.floor(x);
+    };
+    return [
+      {
+        key: "trend",
+        nameKey: "vault.trendVault",
+        icon: TrendingUp,
+        accent: "rgba(34,197,94,0.8)",
+        accentBg: "rgba(34,197,94,0.08)",
+        accentBorder: "rgba(34,197,94,0.2)",
+        apyMin: 12,
+        apyMax: 18,
+        tvl: Math.floor(seed(1) * 500000 + 800000),
+        minDeposit: 100,
+        lockDays: 30,
+      },
+      {
+        key: "reversion",
+        nameKey: "vault.reversionVault",
+        icon: GitBranch,
+        accent: "rgba(59,130,246,0.8)",
+        accentBg: "rgba(59,130,246,0.08)",
+        accentBorder: "rgba(59,130,246,0.2)",
+        apyMin: 8,
+        apyMax: 14,
+        tvl: Math.floor(seed(2) * 400000 + 600000),
+        minDeposit: 50,
+        lockDays: 14,
+      },
+      {
+        key: "breakout",
+        nameKey: "vault.breakoutVault",
+        icon: Zap,
+        accent: "rgba(234,179,8,0.8)",
+        accentBg: "rgba(234,179,8,0.08)",
+        accentBorder: "rgba(234,179,8,0.2)",
+        apyMin: 15,
+        apyMax: 25,
+        tvl: Math.floor(seed(3) * 300000 + 500000),
+        minDeposit: 200,
+        lockDays: 45,
+      },
+      {
+        key: "momentum",
+        nameKey: "vault.momentumVault",
+        icon: Rocket,
+        accent: "rgba(249,115,22,0.8)",
+        accentBg: "rgba(249,115,22,0.08)",
+        accentBorder: "rgba(249,115,22,0.2)",
+        apyMin: 10,
+        apyMax: 20,
+        tvl: Math.floor(seed(4) * 350000 + 700000),
+        minDeposit: 150,
+        lockDays: 30,
+      },
+      {
+        key: "swing",
+        nameKey: "vault.swingVault",
+        icon: Activity,
+        accent: "rgba(168,85,247,0.8)",
+        accentBg: "rgba(168,85,247,0.08)",
+        accentBorder: "rgba(168,85,247,0.2)",
+        apyMin: 9,
+        apyMax: 16,
+        tvl: Math.floor(seed(5) * 450000 + 550000),
+        minDeposit: 75,
+        lockDays: 21,
+      },
+      {
+        key: "runeai",
+        nameKey: "vault.runeAiVault",
+        icon: Flame,
+        accent: "rgba(212,168,50,0.9)",
+        accentBg: "rgba(212,168,50,0.10)",
+        accentBorder: "rgba(212,168,50,0.3)",
+        apyMin: 18,
+        apyMax: 35,
+        tvl: Math.floor(seed(6) * 600000 + 1200000),
+        minDeposit: 500,
+        lockDays: 90,
+        hot: true,
+      },
+    ];
+  }, []);
 
   const [depositOpen, setDepositOpen] = useState(false);
   const [redeemOpen, setRedeemOpen] = useState(false);
@@ -238,6 +327,64 @@ export default function Vault() {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
+
+      {/* Strategy Vault Cards */}
+      <div className="px-4 lg:px-0">
+        <h3 className="text-base font-bold mb-3 flex items-center gap-2">
+          <Sparkles className="h-4 w-4" style={{ color: "rgba(212,168,50,0.9)" }} />
+          {t("vault.strategyVaults", "Strategy Vaults")}
+        </h3>
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+          {strategyVaults.map((vault, idx) => {
+            const Icon = vault.icon;
+            return (
+              <div
+                key={vault.key}
+                className="relative rounded-xl p-3 space-y-2 overflow-hidden"
+                style={{
+                  background: vault.accentBg,
+                  border: `1px solid ${vault.accentBorder}`,
+                  animation: `fadeSlideIn 0.3s ease-out ${idx * 0.06}s both`,
+                }}
+              >
+                {vault.hot && (
+                  <Badge
+                    className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 border-0 font-bold"
+                    style={{ background: "rgba(212,168,50,0.25)", color: "rgba(212,168,50,1)" }}
+                  >
+                    {t("vault.hotBadge", "Hot")}
+                  </Badge>
+                )}
+                <div className="flex items-center gap-2">
+                  <div
+                    className="flex items-center justify-center w-7 h-7 rounded-lg"
+                    style={{ background: vault.accentBg, border: `1px solid ${vault.accentBorder}` }}
+                  >
+                    <Icon className="h-3.5 w-3.5" style={{ color: vault.accent }} />
+                  </div>
+                  <span className="text-xs font-bold leading-tight" style={{ color: vault.accent }}>
+                    {t(vault.nameKey, vault.nameKey)}
+                  </span>
+                </div>
+                <div className="text-lg font-black font-mono" style={{ color: vault.accent }}>
+                  {t("vault.apyRange", "{{min}}-{{max}}% APY", { min: vault.apyMin, max: vault.apyMax })}
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-foreground/40">
+                  <span>{t("vault.tvl", "TVL")}</span>
+                  <span className="font-mono font-semibold text-foreground/60">${(vault.tvl / 1000).toFixed(0)}K</span>
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-foreground/40">
+                  <span>{t("vault.minDeposit", "Min ${{amount}}", { amount: vault.minDeposit })}</span>
+                  <span className="flex items-center gap-1">
+                    <Lock className="h-2.5 w-2.5" />
+                    {t("vault.lockPeriod", "{{days}}D Lock", { days: vault.lockDays })}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       <VaultChart />
 

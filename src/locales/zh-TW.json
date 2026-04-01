@@ -70,7 +70,8 @@
     "vault": "金庫",
     "strategy": "策略",
     "profile": "我的",
-    "market": "市場"
+    "market": "市場",
+    "nodes": "節點"
   },
   "dashboard": {
     "depthRatio": "深度比率",
@@ -260,7 +261,19 @@
     "totalEarned": "累計收益",
     "yieldLocked": "收益(鎖倉)",
     "day": "天",
-    "dayCycle": "天週期"
+    "dayCycle": "天週期",
+    "strategyVaults": "策略金庫",
+    "trendVault": "趨勢跟蹤金庫",
+    "reversionVault": "均值回歸金庫",
+    "breakoutVault": "突破金庫",
+    "momentumVault": "動量金庫",
+    "swingVault": "波段金庫",
+    "runeAiVault": "RUNE AI 金庫",
+    "apyRange": "{{min}}-{{max}}% 年化",
+    "tvlLabel": "鎖倉量",
+    "minDepositLabel": "最低 ${{amount}}",
+    "lockPeriodLabel": "{{days}}天鎖定",
+    "hotBadge": "熱門"
   },
   "deposit": {
     "inputError": "輸入錯誤",
@@ -964,7 +977,9 @@
     "directReward": "直推獎勵",
     "teamDiff": "團隊級差",
     "sameRank": "同級獎勵",
-    "override": "越級獎勵"
+    "override": "越級獎勵",
+    "runeToken": "RUNE 代幣",
+    "runeTokenDesc": "查看 RUNE 代幣餘額和操作"
   },
   "market": {
     "marketAnalysis": "市場分析",

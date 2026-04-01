@@ -70,7 +70,8 @@
     "vault": "볼트",
     "strategy": "전략",
     "profile": "마이페이지",
-    "market": "마켓"
+    "market": "마켓",
+    "nodes": "노드"
   },
   "dashboard": {
     "depthRatio": "뎁스 비율",
@@ -260,7 +261,19 @@
     "totalEarned": "누적 수익",
     "yieldLocked": "수익(잠김)",
     "day": "일",
-    "dayCycle": "일 주기"
+    "dayCycle": "일 주기",
+    "strategyVaults": "전략 볼트",
+    "trendVault": "추세 추종 볼트",
+    "reversionVault": "평균 회귀 볼트",
+    "breakoutVault": "돌파 볼트",
+    "momentumVault": "모멘텀 볼트",
+    "swingVault": "스윙 볼트",
+    "runeAiVault": "RUNE AI 볼트",
+    "apyRange": "{{min}}-{{max}}% APY",
+    "tvlLabel": "TVL",
+    "minDepositLabel": "최소 ${{amount}}",
+    "lockPeriodLabel": "{{days}}일 잠금",
+    "hotBadge": "인기"
   },
   "deposit": {
     "inputError": "입력 오류",
@@ -964,7 +977,9 @@
     "directReward": "직접 추천 보상",
     "teamDiff": "팀 차등",
     "sameRank": "동급",
-    "override": "월등"
+    "override": "월등",
+    "runeToken": "RUNE 토큰",
+    "runeTokenDesc": "RUNE 토큰 잔액 및 운용 조회"
   },
   "market": {
     "marketAnalysis": "시장 분석",

@@ -104,33 +104,45 @@ export function AiThinkingConsole({ model, color, isVisible }: { model: string; 
     if (isVisible) {
       activeRef.current = true;
       setLines([]);
+      setTypingLine(null);
+      setCharIdx(0);
       queueRef.current = [];
-      enqueueBlock();
+      // Small delay then enqueue first block
+      setTimeout(() => {
+        if (activeRef.current) enqueueBlock();
+      }, 300);
     } else {
       activeRef.current = false;
       setTypingLine(null);
       setCharIdx(0);
     }
-  }, [isVisible, enqueueBlock]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVisible, model]);
 
-  // Process queue — type out one line at a time
+  // Process queue — type out one line at a time, loop forever
   useEffect(() => {
     if (!activeRef.current) return;
 
     if (!typingLine) {
-      // Get next from queue
       if (queueRef.current.length === 0) {
-        // Generate a new block after a pause
+        // Queue empty — generate a new analysis block after pause
         const timer = setTimeout(() => {
-          if (activeRef.current) enqueueBlock();
-        }, 2000);
+          if (activeRef.current) {
+            enqueueBlock();
+            // Force re-render to pick up new queue items
+            setCharIdx(c => c);
+          }
+        }, 2500);
         return () => clearTimeout(timer);
       }
       const next = queueRef.current.shift()!;
       if (next.type === "thinking") {
-        // Pause between blocks
+        // Pause between analysis blocks
         const timer = setTimeout(() => {
-          if (activeRef.current && queueRef.current.length === 0) enqueueBlock();
+          if (activeRef.current) {
+            if (queueRef.current.length === 0) enqueueBlock();
+            setCharIdx(c => c); // trigger re-render
+          }
         }, 3000);
         return () => clearTimeout(timer);
       }
@@ -139,16 +151,17 @@ export function AiThinkingConsole({ model, color, isVisible }: { model: string; 
       return;
     }
 
-    // Type characters
+    // Type characters one by one
     if (charIdx < typingLine.text.length) {
       const speed = typingLine.type === "system" ? 12 : typingLine.type === "result" ? 20 : 15;
       const timer = setTimeout(() => setCharIdx(c => c + 1), speed);
       return () => clearTimeout(timer);
     } else {
-      // Line complete
-      const delay = typingLine.type === "result" ? 800 : typingLine.type === "signal" ? 500 : 100;
+      // Line fully typed — commit and move to next
+      const delay = typingLine.type === "result" ? 800 : typingLine.type === "signal" ? 500 : 80;
+      const completedLine = typingLine;
       const timer = setTimeout(() => {
-        setLines(prev => [...prev.slice(-50), typingLine!]); // Keep max 50 lines
+        setLines(prev => [...prev.slice(-60), completedLine]);
         setTypingLine(null);
         setCharIdx(0);
       }, delay);
