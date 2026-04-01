@@ -1,16 +1,15 @@
 /**
  * AI Thinking Console — Continuous AI conversation with auto-generated analysis
- * Opens as a dialog, generates new analysis lines continuously (non-hardcoded)
+ * Opens as a dialog, generates new analysis lines continuously
  */
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useReducer } from "react";
 import { useTranslation } from "react-i18next";
 import { Terminal, X, Brain } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface ThinkingLine {
-  type: "system" | "analysis" | "signal" | "result" | "thinking";
+  type: "system" | "analysis" | "signal" | "result";
   text: string;
-  ts: string;
 }
 
 const ASSETS = ["BTC", "ETH", "SOL", "BNB", "DOGE", "XRP", "ADA", "AVAX", "LINK", "DOT"];
@@ -20,159 +19,128 @@ function ts() {
   const n = new Date();
   return `${n.getHours().toString().padStart(2, "0")}:${n.getMinutes().toString().padStart(2, "0")}:${n.getSeconds().toString().padStart(2, "0")}`;
 }
-
 function rng(min: number, max: number) { return +(min + Math.random() * (max - min)).toFixed(2); }
 function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 
-function generateAnalysisBlock(model: string, t: (k: string, o?: any) => string): ThinkingLine[] {
+function generateBlock(model: string, t: (k: string, o?: any) => string): ThinkingLine[] {
   const asset = pick(ASSETS);
   const tf = pick(TIMEFRAMES);
   const pair = `${asset}/USDT`;
   const timestamp = ts();
-
   const rsiVal = rng(25, 82);
   const emaAligned = Math.random() > 0.35;
   const volumePct = Math.floor(rng(8, 65));
   const bidAsk = rng(0.75, 1.65);
   const fgIndex = Math.floor(rng(15, 85));
   const fgLabel = fgIndex < 25 ? "Fear" : fgIndex < 45 ? "Neutral" : fgIndex < 75 ? "Greed" : "Extreme Greed";
-  const fundRate = rng(-0.03, 0.05);
   const confidence = Math.floor(rng(52, 88));
   const isBullish = (emaAligned && rsiVal < 70 && bidAsk > 1.0) || confidence > 70;
   const targetPct = rng(0.8, 5.2);
 
   const lines: ThinkingLine[] = [
-    { type: "system", text: `[${timestamp}] ${model} ${t("aiConsole.loadingMarket", { pair })}`, ts: timestamp },
-    { type: "analysis", text: `> ${t("aiConsole.fetchCandles", { tf, count: Math.floor(rng(100, 300)) })}`, ts: timestamp },
+    { type: "system", text: `[${timestamp}] ${model} ${t("aiConsole.loadingMarket", { pair })}` },
+    { type: "analysis", text: `> ${t("aiConsole.fetchCandles", { tf, count: Math.floor(rng(100, 300)) })}` },
   ];
 
-  // Dynamically pick 3-5 random indicators
   const indicators = [
-    () => ({ type: "analysis" as const, text: `> ${emaAligned ? t("aiConsole.emaBullish") : t("aiConsole.emaCompute")}`, ts: timestamp }),
-    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.rsiMomentum", { val: rsiVal.toFixed(1) })}`, ts: timestamp }),
-    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.volumeAbove", { pct: volumePct.toString() })}`, ts: timestamp }),
-    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.orderBook", { ratio: bidAsk.toFixed(2) })}`, ts: timestamp }),
-    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.fearGreed", { val: fgIndex.toString(), label: fgLabel })}`, ts: timestamp }),
-    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.fundingRate", { rate: fundRate.toFixed(3) })}`, ts: timestamp }),
-    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.macdExpand")}`, ts: timestamp }),
-    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.ichimoku")}`, ts: timestamp }),
-    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.bbSqueeze")}`, ts: timestamp }),
-    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.adxStrong", { val: Math.floor(rng(18, 45)).toString() })}`, ts: timestamp }),
-    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.obvAccum")}`, ts: timestamp }),
-    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.microstructure", { ratio: rng(0.4, 0.7).toFixed(2) })}`, ts: timestamp }),
-    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.relVolume", { val: rng(0.8, 2.5).toFixed(1) })}`, ts: timestamp }),
+    () => ({ type: "analysis" as const, text: `> ${emaAligned ? t("aiConsole.emaBullish") : t("aiConsole.emaCompute")}` }),
+    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.rsiMomentum", { val: rsiVal.toFixed(1) })}` }),
+    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.volumeAbove", { pct: volumePct.toString() })}` }),
+    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.orderBook", { ratio: bidAsk.toFixed(2) })}` }),
+    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.fearGreed", { val: fgIndex.toString(), label: fgLabel })}` }),
+    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.fundingRate", { rate: rng(-0.03, 0.05).toFixed(3) })}` }),
+    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.macdExpand")}` }),
+    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.ichimoku")}` }),
+    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.bbSqueeze")}` }),
+    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.adxStrong", { val: Math.floor(rng(18, 45)).toString() })}` }),
+    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.obvAccum")}` }),
+    () => ({ type: "analysis" as const, text: `> ${t("aiConsole.relVolume", { val: rng(0.8, 2.5).toFixed(1) })}` }),
   ];
 
-  // Shuffle and pick 3-5
   const shuffled = indicators.sort(() => Math.random() - 0.5);
   const count = 3 + Math.floor(Math.random() * 3);
-  for (let i = 0; i < count && i < shuffled.length; i++) {
-    lines.push(shuffled[i]());
-  }
+  for (let i = 0; i < count && i < shuffled.length; i++) lines.push(shuffled[i]());
 
-  const score = rng(4, 9);
-  lines.push({ type: "signal", text: `> ${t("aiConsole.multiScore", { score: score.toFixed(1) })}`, ts: timestamp });
-
-  if (isBullish) {
-    lines.push({ type: "result", text: `✓ ${t("aiConsole.consensusBull", { conf: confidence.toString(), target: targetPct.toFixed(1) })}`, ts: timestamp });
-  } else {
-    lines.push({ type: "result", text: `✓ ${t("aiConsole.consensusBear", { conf: confidence.toString() })}`, ts: timestamp });
-  }
-
-  // Add a short pause before next cycle
-  lines.push({ type: "thinking", text: "", ts: timestamp });
+  lines.push({ type: "signal", text: `> ${t("aiConsole.multiScore", { score: rng(4, 9).toFixed(1) })}` });
+  lines.push({
+    type: "result",
+    text: isBullish
+      ? `✓ ${t("aiConsole.consensusBull", { conf: confidence.toString(), target: targetPct.toFixed(1) })}`
+      : `✓ ${t("aiConsole.consensusBear", { conf: confidence.toString() })}`,
+  });
 
   return lines;
 }
 
+// ─── Main Console Component ───────────────────────────────────────────────────
+
 export function AiThinkingConsole({ model, color, isVisible }: { model: string; color: string; isVisible: boolean }) {
   const { t } = useTranslation();
-  const [lines, setLines] = useState<ThinkingLine[]>([]);
-  const [typingLine, setTypingLine] = useState<ThinkingLine | null>(null);
-  const [charIdx, setCharIdx] = useState(0);
-  const queueRef = useRef<ThinkingLine[]>([]);
+  const [displayedLines, setDisplayedLines] = useState<ThinkingLine[]>([]);
+  const [currentText, setCurrentText] = useState("");
+  const [currentType, setCurrentType] = useState<string>("system");
+  const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const activeRef = useRef(false);
+  const cancelRef = useRef(false);
 
-  const enqueueBlock = useCallback(() => {
-    const block = generateAnalysisBlock(model, t);
-    queueRef.current.push(...block);
-  }, [model, t]);
-
-  // Start/stop based on visibility
   useEffect(() => {
-    if (isVisible) {
-      activeRef.current = true;
-      setLines([]);
-      setTypingLine(null);
-      setCharIdx(0);
-      queueRef.current = [];
-      // Small delay then enqueue first block
-      setTimeout(() => {
-        if (activeRef.current) enqueueBlock();
-      }, 300);
-    } else {
-      activeRef.current = false;
-      setTypingLine(null);
-      setCharIdx(0);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isVisible, model]);
-
-  // Process queue — type out one line at a time, loop forever
-  useEffect(() => {
-    if (!activeRef.current) return;
-
-    if (!typingLine) {
-      if (queueRef.current.length === 0) {
-        // Queue empty — generate a new analysis block after pause
-        const timer = setTimeout(() => {
-          if (activeRef.current) {
-            enqueueBlock();
-            // Force re-render to pick up new queue items
-            setCharIdx(c => c);
-          }
-        }, 2500);
-        return () => clearTimeout(timer);
-      }
-      const next = queueRef.current.shift()!;
-      if (next.type === "thinking") {
-        // Pause between analysis blocks
-        const timer = setTimeout(() => {
-          if (activeRef.current) {
-            if (queueRef.current.length === 0) enqueueBlock();
-            setCharIdx(c => c); // trigger re-render
-          }
-        }, 3000);
-        return () => clearTimeout(timer);
-      }
-      setTypingLine(next);
-      setCharIdx(0);
+    if (!isVisible) {
+      cancelRef.current = true;
+      setDisplayedLines([]);
+      setCurrentText("");
+      setIsTyping(false);
       return;
     }
 
-    // Type characters one by one
-    if (charIdx < typingLine.text.length) {
-      const speed = typingLine.type === "system" ? 12 : typingLine.type === "result" ? 20 : 15;
-      const timer = setTimeout(() => setCharIdx(c => c + 1), speed);
-      return () => clearTimeout(timer);
-    } else {
-      // Line fully typed — commit and move to next
-      const delay = typingLine.type === "result" ? 800 : typingLine.type === "signal" ? 500 : 80;
-      const completedLine = typingLine;
-      const timer = setTimeout(() => {
-        setLines(prev => [...prev.slice(-60), completedLine]);
-        setTypingLine(null);
-        setCharIdx(0);
-      }, delay);
-      return () => clearTimeout(timer);
+    cancelRef.current = false;
+    setDisplayedLines([]);
+    setCurrentText("");
+
+    let isMounted = true;
+
+    async function typeLines(lines: ThinkingLine[]) {
+      for (const line of lines) {
+        if (cancelRef.current || !isMounted) return;
+        setCurrentType(line.type);
+        // Type character by character
+        for (let i = 0; i <= line.text.length; i++) {
+          if (cancelRef.current || !isMounted) return;
+          setCurrentText(line.text.slice(0, i));
+          const speed = line.type === "system" ? 12 : line.type === "result" ? 20 : 15;
+          await new Promise(r => setTimeout(r, speed));
+        }
+        // Line complete — add to displayed
+        setDisplayedLines(prev => [...prev.slice(-60), line]);
+        setCurrentText("");
+        const pause = line.type === "result" ? 800 : line.type === "signal" ? 400 : 80;
+        await new Promise(r => setTimeout(r, pause));
+      }
     }
-  }, [typingLine, charIdx, enqueueBlock]);
+
+    async function loop() {
+      setIsTyping(true);
+      while (!cancelRef.current && isMounted) {
+        const block = generateBlock(model, t);
+        await typeLines(block);
+        if (cancelRef.current || !isMounted) break;
+        // Pause between blocks
+        await new Promise(r => setTimeout(r, 2500));
+      }
+      setIsTyping(false);
+    }
+
+    loop();
+
+    return () => {
+      isMounted = false;
+      cancelRef.current = true;
+    };
+  }, [isVisible, model, t]);
 
   // Auto-scroll
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [lines, charIdx]);
+  }, [displayedLines, currentText]);
 
   const lineColor = (type: string) =>
     type === "system" ? "text-muted-foreground/50" :
@@ -186,17 +154,20 @@ export function AiThinkingConsole({ model, color, isVisible }: { model: string; 
         <Terminal className="h-3 w-3" style={{ color }} />
         <span className="text-[10px] font-mono font-bold" style={{ color }}>{model} {t("aiConsole.console")}</span>
         <div className="flex-1" />
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-        <span className="text-[9px] font-mono text-muted-foreground/40">{t("aiConsole.analyzing")}</span>
+        {isTyping && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+        <span className="text-[9px] font-mono text-muted-foreground/40">{isTyping ? t("aiConsole.analyzing") : t("aiConsole.done")}</span>
       </div>
-      <div ref={scrollRef} className="px-3 py-2 h-[220px] overflow-y-auto font-mono text-[10px] leading-relaxed space-y-0.5 scrollbar-hide">
-        {lines.map((line, i) => (
+      <div ref={scrollRef} className="px-3 py-2 h-[240px] overflow-y-auto font-mono text-[10px] leading-relaxed space-y-0.5 scrollbar-hide">
+        {displayedLines.map((line, i) => (
           <div key={i} className={lineColor(line.type)}>{line.text}</div>
         ))}
-        {typingLine && (
-          <div className={lineColor(typingLine.type)}>
-            {typingLine.text.slice(0, charIdx)}<span className="animate-pulse" style={{ color }}>▊</span>
+        {currentText && (
+          <div className={lineColor(currentType)}>
+            {currentText}<span className="animate-pulse" style={{ color }}>▊</span>
           </div>
+        )}
+        {displayedLines.length === 0 && !currentText && (
+          <div className="text-muted-foreground/30 animate-pulse">Initializing {model}...</div>
         )}
       </div>
     </div>
@@ -214,11 +185,7 @@ export function AiConsoleButton({ model, color }: { model: string; color: string
       <button
         onClick={() => setOpen(true)}
         className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-[12px] font-bold transition-all active:scale-[0.98]"
-        style={{
-          background: "rgba(0,0,0,0.35)",
-          border: `1px solid ${color}25`,
-          color: color,
-        }}
+        style={{ background: "rgba(0,0,0,0.35)", border: `1px solid ${color}25`, color }}
       >
         <Brain className="h-3.5 w-3.5" />
         {t("aiConsole.console")}

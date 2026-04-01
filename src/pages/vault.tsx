@@ -369,18 +369,46 @@ export default function Vault() {
                 </div>
                 {v.hot && <Badge className="text-[9px] border-0" style={{ background: `${v.accent}20`, color: v.accent }}>{t("vault.hotBadge")}</Badge>}
               </div>
-              <div className="grid grid-cols-3 gap-2 mb-3">
-                <div className="rounded-lg p-2.5 text-center animate-count-up stagger-1" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div className="text-[15px] font-black tabular-nums" style={{ color: v.accent }}>{v.apyMin}-{v.apyMax}%</div>
-                  <div className="text-[9px] text-muted-foreground mt-0.5">APY</div>
+              {/* Stats Row */}
+              <div className="grid grid-cols-4 gap-1.5 mb-3">
+                {[
+                  { label: "APY", value: `${v.apyMin}-${v.apyMax}%`, color: v.accent },
+                  { label: t("vault.tvlLabel"), value: `$${(v.tvl / 1000).toFixed(0)}K`, color: undefined },
+                  { label: t("vault.lock"), value: `${v.lockDays}D`, color: undefined },
+                  { label: "Min", value: `$${v.minDeposit}`, color: undefined },
+                ].map((s, si) => (
+                  <div key={s.label} className={`rounded-lg p-2 text-center animate-count-up stagger-${si + 1}`} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div className="text-[13px] font-black tabular-nums" style={{ color: s.color || "rgba(255,255,255,0.8)" }}>{s.value}</div>
+                    <div className="text-[8px] text-muted-foreground mt-0.5 uppercase">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Mini Performance Chart — seeded per vault */}
+              <div className="rounded-lg p-3" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] text-muted-foreground font-medium">{t("vault.vaultDetails")}</span>
+                  <span className="text-[10px] font-bold" style={{ color: v.accent }}>+{((v.apyMin + v.apyMax) / 2 / 12).toFixed(1)}% /mo</span>
                 </div>
-                <div className="rounded-lg p-2.5 text-center animate-count-up stagger-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div className="text-[15px] font-black tabular-nums text-foreground/80">${(v.tvl / 1000).toFixed(0)}K</div>
-                  <div className="text-[9px] text-muted-foreground mt-0.5">{t("vault.tvlLabel")}</div>
+                <div className="flex items-end gap-[2px] h-12">
+                  {Array.from({ length: 24 }).map((_, i) => {
+                    const seed = v.key.charCodeAt(0) * 100 + i;
+                    const h = 20 + ((Math.sin(seed * 9301 + 49297) % 1 + 1) % 1) * 80;
+                    const isRecent = i >= 20;
+                    return (
+                      <div key={i} className="flex-1 rounded-sm transition-all" style={{
+                        height: `${h}%`,
+                        background: isRecent
+                          ? `linear-gradient(180deg, ${v.accent}, ${v.accent}40)`
+                          : "rgba(255,255,255,0.06)",
+                        opacity: isRecent ? 1 : 0.5 + (i / 24) * 0.5,
+                      }} />
+                    );
+                  })}
                 </div>
-                <div className="rounded-lg p-2.5 text-center animate-count-up stagger-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div className="text-[15px] font-black tabular-nums text-foreground/80">{v.lockDays}D</div>
-                  <div className="text-[9px] text-muted-foreground mt-0.5">{t("vault.lock")}</div>
+                <div className="flex justify-between mt-1.5 text-[8px] text-muted-foreground/40">
+                  <span>24d ago</span>
+                  <span>{t("common.live")}</span>
                 </div>
               </div>
             </div>
@@ -388,10 +416,12 @@ export default function Vault() {
         })()}
       </div>
 
-      <VaultChart />
+      {/* Global Vault Stats */}
+      <div className="px-4 lg:px-0">
+        <VaultChart />
+      </div>
 
       <div className="px-4 lg:px-0">
-        <h3 className="text-base font-bold mb-3">{t("vault.vaultDetails")}</h3>
         <VaultStats />
       </div>
 
