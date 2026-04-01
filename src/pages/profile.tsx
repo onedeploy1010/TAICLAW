@@ -20,6 +20,7 @@ import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 
 const MENU_ITEMS = [
+  { labelKey: "profile.myNodesLabel", icon: Server, path: "/profile/nodes", descKey: "profile.nodeManagementDesc" },
   { labelKey: "profile.runeToken", icon: Coins, path: "/profile/ma", descKey: "profile.runeTokenDesc" },
   { labelKey: "profile.swap", icon: ArrowLeftRight, path: "/profile/swap", descKey: "profile.swapDesc" },
   { labelKey: "profile.transactionHistory", icon: History, path: "/profile/transactions", descKey: "profile.transactionHistoryDesc" },

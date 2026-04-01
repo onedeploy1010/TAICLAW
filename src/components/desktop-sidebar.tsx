@@ -20,7 +20,6 @@ const mainNavItems = [
     ),
   },
   { path: "/strategy", icon: Brain, labelKey: "nav.strategy" },
-  { path: "/profile/nodes", icon: Server, labelKey: "nav.nodes" },
   { path: "/market", icon: TrendingUp, labelKey: "nav.market" },
   { path: "/profile", icon: User, labelKey: "nav.profile" },
 ];

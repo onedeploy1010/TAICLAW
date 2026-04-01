@@ -1,13 +1,13 @@
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { Compass, CandlestickChart, Vault, Cpu, Hexagon } from "lucide-react";
+import { Compass, CandlestickChart, Vault, Cpu, User } from "lucide-react";
 
 const tabs = [
   { path: "/", icon: Compass, id: "home", labelKey: "nav.home" },
   { path: "/trade", icon: CandlestickChart, id: "trade", labelKey: "nav.trade" },
   { path: "/vault", icon: Vault, id: "vault", labelKey: "nav.vault" },
   { path: "/strategy", icon: Cpu, id: "strategy", labelKey: "nav.strategy" },
-  { path: "/profile/nodes", icon: Hexagon, id: "nodes", labelKey: "nav.nodes" },
+  { path: "/profile", icon: User, id: "profile", labelKey: "nav.profile" },
 ];
 
 export function BottomNav() {
