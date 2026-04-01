@@ -281,7 +281,14 @@
     "tvlLabel": "TVL",
     "minDepositLabel": "Min ${{amount}}",
     "lockPeriodLabel": "{{days}}D Lock",
-    "hotBadge": "Hot"
+    "hotBadge": "Hot",
+    "binanceVault": "Binance Vault",
+    "bybitVault": "Bybit Vault",
+    "okxVault": "OKX Vault",
+    "hyperliquidVault": "HyperLiquid Vault",
+    "dydxVault": "dYdX Vault",
+    "flexible": "Flexible · No Lock",
+    "daily": "Daily"
   },
   "deposit": {
     "inputError": "Input Error",

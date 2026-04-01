@@ -281,7 +281,14 @@
     "tvlLabel": "TVL",
     "minDepositLabel": "Mín ${{amount}}",
     "lockPeriodLabel": "{{days}}D Bloqueio",
-    "hotBadge": "Em Alta"
+    "hotBadge": "Em Alta",
+    "binanceVault": "Cofre Binance",
+    "bybitVault": "Cofre Bybit",
+    "okxVault": "Cofre OKX",
+    "hyperliquidVault": "Cofre HyperLiquid",
+    "dydxVault": "Cofre dYdX",
+    "flexible": "Flexível · Sem Bloqueio",
+    "daily": "Diário"
   },
   "deposit": {
     "inputError": "Erro de Entrada",

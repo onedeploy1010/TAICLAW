@@ -281,7 +281,14 @@
     "tvlLabel": "TVL",
     "minDepositLabel": "最低 ${{amount}}",
     "lockPeriodLabel": "{{days}}日ロック",
-    "hotBadge": "人気"
+    "hotBadge": "人気",
+    "binanceVault": "Binance ボールト",
+    "bybitVault": "Bybit ボールト",
+    "okxVault": "OKX ボールト",
+    "hyperliquidVault": "HyperLiquid ボールト",
+    "dydxVault": "dYdX ボールト",
+    "flexible": "フレキシブル · ロックなし",
+    "daily": "日次"
   },
   "deposit": {
     "inputError": "入力エラー",

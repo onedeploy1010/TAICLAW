@@ -281,7 +281,14 @@
     "tvlLabel": "TVL",
     "minDepositLabel": "Tối thiểu ${{amount}}",
     "lockPeriodLabel": "Khóa {{days}} ngày",
-    "hotBadge": "Nóng"
+    "hotBadge": "Nóng",
+    "binanceVault": "Kho Binance",
+    "bybitVault": "Kho Bybit",
+    "okxVault": "Kho OKX",
+    "hyperliquidVault": "Kho HyperLiquid",
+    "dydxVault": "Kho dYdX",
+    "flexible": "Linh hoạt · Không khóa",
+    "daily": "Hàng ngày"
   },
   "deposit": {
     "inputError": "Lỗi Nhập Liệu",

@@ -281,7 +281,14 @@
     "tvlLabel": "TVL",
     "minDepositLabel": "الحد الأدنى ${{amount}}",
     "lockPeriodLabel": "{{days}} يوم قفل",
-    "hotBadge": "رائج"
+    "hotBadge": "رائج",
+    "binanceVault": "خزينة Binance",
+    "bybitVault": "خزينة Bybit",
+    "okxVault": "خزينة OKX",
+    "hyperliquidVault": "خزينة HyperLiquid",
+    "dydxVault": "خزينة dYdX",
+    "flexible": "مرن · بدون قفل",
+    "daily": "يومي"
   },
   "deposit": {
     "inputError": "خطأ في الإدخال",

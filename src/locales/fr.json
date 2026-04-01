@@ -281,7 +281,14 @@
     "tvlLabel": "TVL",
     "minDepositLabel": "Min ${{amount}}",
     "lockPeriodLabel": "{{days}}J Verrouillage",
-    "hotBadge": "Populaire"
+    "hotBadge": "Populaire",
+    "binanceVault": "Coffre Binance",
+    "bybitVault": "Coffre Bybit",
+    "okxVault": "Coffre OKX",
+    "hyperliquidVault": "Coffre HyperLiquid",
+    "dydxVault": "Coffre dYdX",
+    "flexible": "Flexible · Sans Verrouillage",
+    "daily": "Journalier"
   },
   "deposit": {
     "inputError": "Erreur de Saisie",

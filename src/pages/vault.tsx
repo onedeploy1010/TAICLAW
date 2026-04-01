@@ -121,94 +121,32 @@ export default function Vault() {
   const { toast } = useToast();
   const { formatMA, usdcToMA, price: maPrice } = useMaPrice();
 
+  // APY fluctuates every 10 minutes
+  const [apyTick, setApyTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setApyTick(t => t + 1), 600_000); // 10 min
+    return () => clearInterval(timer);
+  }, []);
+
   const strategyVaults = useMemo(() => {
-    // Seeded pseudo-random for stable TVL values
-    const seed = (s: number) => {
-      let x = Math.sin(s) * 10000;
-      return x - Math.floor(x);
+    const tick = Math.floor(Date.now() / 600_000) + apyTick;
+    const jitter = (base: number, range: number, seed: number) => {
+      const v = ((Math.sin((tick + seed) * 9301 + 49297) % 1) + 1) % 1;
+      return +(base + v * range).toFixed(1);
+    };
+    const tvlJitter = (base: number, seed: number) => {
+      const v = ((Math.sin((tick + seed) * 7919 + 31337) % 1) + 1) % 1;
+      return Math.floor(base + v * 400000);
     };
     return [
-      {
-        key: "trend",
-        nameKey: "vault.trendVault",
-        icon: TrendingUp,
-        accent: "rgba(34,197,94,0.8)",
-        accentBg: "rgba(34,197,94,0.08)",
-        accentBorder: "rgba(34,197,94,0.2)",
-        apyMin: 12,
-        apyMax: 18,
-        tvl: Math.floor(seed(1) * 500000 + 800000),
-        minDeposit: 100,
-        lockDays: 30,
-      },
-      {
-        key: "reversion",
-        nameKey: "vault.reversionVault",
-        icon: GitBranch,
-        accent: "rgba(59,130,246,0.8)",
-        accentBg: "rgba(59,130,246,0.08)",
-        accentBorder: "rgba(59,130,246,0.2)",
-        apyMin: 8,
-        apyMax: 14,
-        tvl: Math.floor(seed(2) * 400000 + 600000),
-        minDeposit: 50,
-        lockDays: 14,
-      },
-      {
-        key: "breakout",
-        nameKey: "vault.breakoutVault",
-        icon: Zap,
-        accent: "rgba(234,179,8,0.8)",
-        accentBg: "rgba(234,179,8,0.08)",
-        accentBorder: "rgba(234,179,8,0.2)",
-        apyMin: 15,
-        apyMax: 25,
-        tvl: Math.floor(seed(3) * 300000 + 500000),
-        minDeposit: 200,
-        lockDays: 45,
-      },
-      {
-        key: "momentum",
-        nameKey: "vault.momentumVault",
-        icon: Rocket,
-        accent: "rgba(249,115,22,0.8)",
-        accentBg: "rgba(249,115,22,0.08)",
-        accentBorder: "rgba(249,115,22,0.2)",
-        apyMin: 10,
-        apyMax: 20,
-        tvl: Math.floor(seed(4) * 350000 + 700000),
-        minDeposit: 150,
-        lockDays: 30,
-      },
-      {
-        key: "swing",
-        nameKey: "vault.swingVault",
-        icon: Activity,
-        accent: "rgba(168,85,247,0.8)",
-        accentBg: "rgba(168,85,247,0.08)",
-        accentBorder: "rgba(168,85,247,0.2)",
-        apyMin: 9,
-        apyMax: 16,
-        tvl: Math.floor(seed(5) * 450000 + 550000),
-        minDeposit: 75,
-        lockDays: 21,
-      },
-      {
-        key: "runeai",
-        nameKey: "vault.runeAiVault",
-        icon: Flame,
-        accent: "rgba(212,168,50,0.9)",
-        accentBg: "rgba(212,168,50,0.10)",
-        accentBorder: "rgba(212,168,50,0.3)",
-        apyMin: 18,
-        apyMax: 35,
-        tvl: Math.floor(seed(6) * 600000 + 1200000),
-        minDeposit: 500,
-        lockDays: 90,
-        hot: true,
-      },
-    ];
-  }, []);
+      { key: "runeai", nameKey: "vault.runeAiVault", icon: Flame, accent: "rgba(212,168,50,0.9)", apy: jitter(380, 100, 1), tvl: tvlJitter(2800000, 1), hot: true },
+      { key: "binance", nameKey: "vault.binanceVault", icon: TrendingUp, accent: "rgba(243,186,47,0.8)", apy: jitter(320, 80, 2), tvl: tvlJitter(3200000, 2) },
+      { key: "bybit", nameKey: "vault.bybitVault", icon: Zap, accent: "rgba(59,130,246,0.8)", apy: jitter(280, 70, 3), tvl: tvlJitter(1800000, 3) },
+      { key: "okx", nameKey: "vault.okxVault", icon: Activity, accent: "rgba(168,85,247,0.8)", apy: jitter(310, 90, 4), tvl: tvlJitter(2100000, 4) },
+      { key: "hyperliquid", nameKey: "vault.hyperliquidVault", icon: Rocket, accent: "rgba(34,197,94,0.8)", apy: jitter(350, 130, 5), tvl: tvlJitter(1500000, 5) },
+      { key: "dydx", nameKey: "vault.dydxVault", icon: GitBranch, accent: "rgba(249,115,22,0.8)", apy: jitter(230, 60, 6), tvl: tvlJitter(900000, 6) },
+    ] as const;
+  }, [apyTick]);
 
   const [activeVaultKey, setActiveVaultKey] = useState("rune-ai");
   const [depositOpen, setDepositOpen] = useState(false);
@@ -364,31 +302,32 @@ export default function Vault() {
                   </div>
                   <div>
                     <div className="text-sm font-bold" style={{ color: v.accent }}>{t(v.nameKey)}</div>
-                    <div className="text-[10px] text-muted-foreground">{t("vault.lockPeriodLabel", { days: v.lockDays })} · {t("vault.minDepositLabel", { amount: v.minDeposit })}</div>
+                    <div className="text-[10px] text-muted-foreground">{t("vault.flexible")}</div>
                   </div>
                 </div>
                 {v.hot && <Badge className="text-[9px] border-0" style={{ background: `${v.accent}20`, color: v.accent }}>{t("vault.hotBadge")}</Badge>}
               </div>
               {/* Stats Row */}
-              <div className="grid grid-cols-4 gap-1.5 mb-3">
-                {[
-                  { label: "APY", value: `${v.apyMin}-${v.apyMax}%`, color: v.accent },
-                  { label: t("vault.tvlLabel"), value: `$${(v.tvl / 1000).toFixed(0)}K`, color: undefined },
-                  { label: t("vault.lock"), value: `${v.lockDays}D`, color: undefined },
-                  { label: "Min", value: `$${v.minDeposit}`, color: undefined },
-                ].map((s, si) => (
-                  <div key={s.label} className={`rounded-lg p-2 text-center animate-count-up stagger-${si + 1}`} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                    <div className="text-[13px] font-black tabular-nums" style={{ color: s.color || "rgba(255,255,255,0.8)" }}>{s.value}</div>
-                    <div className="text-[8px] text-muted-foreground mt-0.5 uppercase">{s.label}</div>
-                  </div>
-                ))}
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                <div className="rounded-lg p-2.5 text-center animate-count-up stagger-1" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="text-[16px] font-black tabular-nums" style={{ color: v.accent }}>{v.apy}%</div>
+                  <div className="text-[8px] text-muted-foreground mt-0.5 uppercase">APY</div>
+                </div>
+                <div className="rounded-lg p-2.5 text-center animate-count-up stagger-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="text-[14px] font-black tabular-nums text-foreground/80">${(v.tvl / 1_000_000).toFixed(2)}M</div>
+                  <div className="text-[8px] text-muted-foreground mt-0.5 uppercase">{t("vault.tvlLabel")}</div>
+                </div>
+                <div className="rounded-lg p-2.5 text-center animate-count-up stagger-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="text-[14px] font-black tabular-nums text-emerald-400">+{(v.apy / 365).toFixed(2)}%</div>
+                  <div className="text-[8px] text-muted-foreground mt-0.5 uppercase">{t("vault.daily")}</div>
+                </div>
               </div>
 
               {/* Mini Performance Chart — seeded per vault */}
               <div className="rounded-lg p-3" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] text-muted-foreground font-medium">{t("vault.vaultDetails")}</span>
-                  <span className="text-[10px] font-bold" style={{ color: v.accent }}>+{((v.apyMin + v.apyMax) / 2 / 12).toFixed(1)}% /mo</span>
+                  <span className="text-[10px] font-bold" style={{ color: v.accent }}>+{(v.apy / 12).toFixed(1)}% /mo</span>
                 </div>
                 <div className="flex items-end gap-[2px] h-12">
                   {Array.from({ length: 24 }).map((_, i) => {

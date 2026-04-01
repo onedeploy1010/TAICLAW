@@ -281,7 +281,14 @@
     "tvlLabel": "TVL",
     "minDepositLabel": "Мин ${{amount}}",
     "lockPeriodLabel": "{{days}}Д Блокировка",
-    "hotBadge": "Горячий"
+    "hotBadge": "Горячий",
+    "binanceVault": "Хранилище Binance",
+    "bybitVault": "Хранилище Bybit",
+    "okxVault": "Хранилище OKX",
+    "hyperliquidVault": "Хранилище HyperLiquid",
+    "dydxVault": "Хранилище dYdX",
+    "flexible": "Гибкий · Без блокировки",
+    "daily": "Ежедневно"
   },
   "deposit": {
     "inputError": "Ошибка Ввода",

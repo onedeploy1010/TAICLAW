@@ -281,7 +281,14 @@
     "tvlLabel": "鎖倉量",
     "minDepositLabel": "最低 ${{amount}}",
     "lockPeriodLabel": "{{days}}天鎖定",
-    "hotBadge": "熱門"
+    "hotBadge": "熱門",
+    "binanceVault": "幣安金庫",
+    "bybitVault": "Bybit 金庫",
+    "okxVault": "OKX 金庫",
+    "hyperliquidVault": "HyperLiquid 金庫",
+    "dydxVault": "dYdX 金庫",
+    "flexible": "靈活 · 無鎖定",
+    "daily": "日收益"
   },
   "deposit": {
     "inputError": "輸入錯誤",

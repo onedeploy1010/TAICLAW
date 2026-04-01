@@ -281,7 +281,14 @@
     "tvlLabel": "TVL",
     "minDepositLabel": "Mín ${{amount}}",
     "lockPeriodLabel": "{{days}}D Bloqueo",
-    "hotBadge": "Popular"
+    "hotBadge": "Popular",
+    "binanceVault": "Bóveda Binance",
+    "bybitVault": "Bóveda Bybit",
+    "okxVault": "Bóveda OKX",
+    "hyperliquidVault": "Bóveda HyperLiquid",
+    "dydxVault": "Bóveda dYdX",
+    "flexible": "Flexible · Sin Bloqueo",
+    "daily": "Diario"
   },
   "deposit": {
     "inputError": "Error de Entrada",

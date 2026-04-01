@@ -281,7 +281,14 @@
     "tvlLabel": "TVL",
     "minDepositLabel": "최소 ${{amount}}",
     "lockPeriodLabel": "{{days}}일 잠금",
-    "hotBadge": "인기"
+    "hotBadge": "인기",
+    "binanceVault": "바이낸스 볼트",
+    "bybitVault": "바이비트 볼트",
+    "okxVault": "OKX 볼트",
+    "hyperliquidVault": "하이퍼리퀴드 볼트",
+    "dydxVault": "dYdX 볼트",
+    "flexible": "유연 · 잠금 없음",
+    "daily": "일일"
   },
   "deposit": {
     "inputError": "입력 오류",

@@ -640,7 +640,7 @@ function VaultRedeemSection() {
                   redeeming === pos.id ? "bg-white/5 text-white/20" : "bg-primary/10 text-primary hover:bg-primary/20"
                 )}
               >
-                {redeeming === pos.id ? t("ma.redeeming", "赎回中...") : isEarly ? t("ma.earlyRedeem", "提前赎回 (获得80% MA)") : t("ma.redeemFull", "赎回 (100% MA)")}
+                {redeeming === pos.id ? t("ma.redeeming", "赎回中...") : isEarly ? t("ma.earlyRedeem", "提前赎回 (获得80% RUNE)") : t("ma.redeemFull", "赎回 (100% RUNE)")}
               </button>
             </div>
           );
