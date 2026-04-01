@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -145,7 +145,7 @@ export default function Vault() {
       { key: "okx", nameKey: "vault.okxVault", icon: Activity, accent: "rgba(168,85,247,0.8)", apy: jitter(310, 90, 4), tvl: tvlJitter(2100000, 4) },
       { key: "hyperliquid", nameKey: "vault.hyperliquidVault", icon: Rocket, accent: "rgba(34,197,94,0.8)", apy: jitter(350, 130, 5), tvl: tvlJitter(1500000, 5) },
       { key: "dydx", nameKey: "vault.dydxVault", icon: GitBranch, accent: "rgba(249,115,22,0.8)", apy: jitter(230, 60, 6), tvl: tvlJitter(900000, 6) },
-    ] as const;
+    ] as Array<{ key: string; nameKey: string; icon: React.ElementType; accent: string; apy: number; tvl: number; hot?: boolean }>;
   }, [apyTick]);
 
   const [activeVaultKey, setActiveVaultKey] = useState("rune-ai");

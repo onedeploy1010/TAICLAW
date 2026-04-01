@@ -1315,7 +1315,8 @@
     "runeAi": "RUNE AI",
     "runeAiDesc": "多模型共識 + 深度學習元策略，覆蓋全部資產",
     "simOrders": "交易訂單",
-    "livePredictions": "即時預測"
+    "livePredictions": "即時預測",
+    "predVerify": "預測驗證"
   },
   "aiConsole": {
     "console": "控制台",

@@ -1315,7 +1315,8 @@
     "runeAi": "RUNE AI",
     "runeAiDesc": "Multi-Modell-Konsens mit Deep-Learning-Meta-Strategie",
     "simOrders": "Orders",
-    "livePredictions": "Live Prognosen"
+    "livePredictions": "Live Prognosen",
+    "predVerify": "Prognosen"
   },
   "aiConsole": {
     "console": "Console",

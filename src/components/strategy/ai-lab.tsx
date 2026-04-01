@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AiConsoleButton } from "@/components/strategy/ai-thinking-console";
-import { TradeMatchingEngine } from "@/components/strategy/trade-matching-engine";
 import { List } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -65,6 +64,7 @@ const MODELS: ModelMeta[] = [
   { key: "Gemini", name: "Gemini", desc: "Volatility scalper · Multi-timeframe", color: "#60a5fa", icon: Layers },
   { key: "DeepSeek", name: "DeepSeek", desc: "Technical purist · RSI/MACD/BB", color: "#fbbf24", icon: SearchIcon },
   { key: "Llama", name: "Llama", desc: "Momentum chaser · Local AI model", color: "#fb923c", icon: Zap },
+  { key: "RUNE", name: "RUNE AI", desc: "Multi-model consensus · Meta-strategy", color: "#d4a832", icon: Brain },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -210,73 +210,62 @@ function ModelCard({
   );
 }
 
-// ─── Paper Trade Orders Button + Dialog ───────────────────────────────────────
+// ─── Price Prediction Verification Button + Dialog ────────────────────────────
 
-interface PaperTrade {
-  id: string; asset: string; side: string; entry_price: number; exit_price: number | null;
-  leverage: number; pnl: number | null; pnl_pct: number | null; close_reason: string | null;
-  strategy_type: string | null; primary_model: string | null; status: string;
-  opened_at: string; closed_at: string | null;
-}
-
-function SimOrdersButton({ model, color }: { model: string; color: string }) {
+function PredictionVerifyButton({ model, color }: { model: string; color: string }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
-  const { data: trades = [], isLoading } = useQuery<PaperTrade[]>({
-    queryKey: ["sim-orders", model],
+  const { data: records = [], isLoading } = useQuery<PredictionRecord[]>({
+    queryKey: ["pred-verify", model],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("paper_trades")
-        .select("id,asset,side,entry_price,exit_price,leverage,pnl,pnl_pct,close_reason,strategy_type,primary_model,status,opened_at,closed_at")
-        .or(`primary_model.eq.${model},primary_model.is.null`)
-        .order("opened_at", { ascending: false })
+        .from("ai_prediction_records")
+        .select("*")
+        .eq("model", model)
+        .order("created_at", { ascending: false })
         .limit(30);
       if (error) throw error;
-      return data as PaperTrade[];
+      return data as PredictionRecord[];
     },
     enabled: open,
     staleTime: 30_000,
     retry: false,
   });
 
-  // Seed fallback data if DB is empty
-  const displayTrades = trades.length > 0 ? trades : (() => {
-    const assets = ["BTC", "ETH", "SOL", "BNB", "DOGE", "XRP"];
-    const sides = ["LONG", "SHORT"];
-    const reasons = ["hit_tp", "hit_sl", "signal_close", null];
-    const strats = ["trend_following", "mean_reversion", "breakout", "momentum", "scalping"];
-    return Array.from({ length: 15 }, (_, i) => {
-      const seed = model.charCodeAt(0) * 100 + i;
-      const rng = ((Math.sin(seed * 9301 + 49297) % 1) + 1) % 1;
-      const rng2 = ((Math.sin(seed * 7919 + 31337) % 1) + 1) % 1;
-      const isWin = rng > 0.35;
-      const asset = assets[i % assets.length];
-      const side = sides[Math.floor(rng * 2)];
-      const entry = asset === "BTC" ? 95000 + rng * 10000 : asset === "ETH" ? 3200 + rng * 800 : 50 + rng * 150;
-      const pnlPct = isWin ? rng2 * 8 + 0.5 : -(rng2 * 5 + 0.3);
-      return {
-        id: `seed-${model}-${i}`,
-        asset, side, entry_price: +entry.toFixed(2),
-        exit_price: +(entry * (1 + pnlPct / 100)).toFixed(2),
-        leverage: [2, 3, 5, 8][i % 4],
-        pnl: +(pnlPct * 10).toFixed(2),
-        pnl_pct: +pnlPct.toFixed(2),
-        close_reason: i < 3 ? null : reasons[i % reasons.length],
-        strategy_type: strats[i % strats.length],
-        primary_model: model,
-        status: i < 3 ? "OPEN" : "CLOSED",
-        opened_at: new Date(Date.now() - (i * 3600000 + Math.floor(rng * 7200000))).toISOString(),
-        closed_at: i < 3 ? null : new Date(Date.now() - (i * 1800000)).toISOString(),
-      };
-    });
-  })();
+  // Seed fallback
+  const TFS = ["5m", "30m", "1H", "4H", "1D"];
+  const ASSETS = ["BTC", "ETH", "SOL", "BNB", "DOGE", "XRP"];
+  const displayRecords = records.length > 0 ? records : Array.from({ length: 20 }, (_, i) => {
+    const seed = model.charCodeAt(0) * 100 + i;
+    const rng = ((Math.sin(seed * 9301 + 49297) % 1) + 1) % 1;
+    const rng2 = ((Math.sin(seed * 7919 + 31337) % 1) + 1) % 1;
+    const asset = ASSETS[i % ASSETS.length];
+    const tf = TFS[i % TFS.length];
+    const dir = rng > 0.55 ? "BULLISH" : rng > 0.2 ? "BEARISH" : "NEUTRAL";
+    const base = asset === "BTC" ? 102000 : asset === "ETH" ? 3800 : asset === "SOL" ? 170 : 50 + rng * 500;
+    const changePct = dir === "BULLISH" ? rng2 * 4 + 0.5 : dir === "BEARISH" ? -(rng2 * 3 + 0.3) : rng2 - 0.5;
+    const resolved = i >= 4;
+    const correct = resolved ? (dir === "BULLISH" ? changePct > 0 : dir === "BEARISH" ? changePct < 0 : Math.abs(changePct) < 1) : null;
+    return {
+      id: `pv-${model}-${i}`, asset, timeframe: tf, model,
+      prediction: dir, confidence: Math.floor(52 + rng * 38),
+      target_price: +(base * (1 + changePct / 100)).toFixed(2),
+      current_price: +base.toFixed(2),
+      actual_price: resolved ? +(base * (1 + (changePct + (rng2 - 0.5) * 2) / 100)).toFixed(2) : null,
+      actual_change_pct: resolved ? +(changePct + (rng2 - 0.5) * 2).toFixed(2) : null,
+      direction_correct: correct,
+      price_error_pct: resolved ? +Math.abs((rng2 - 0.5) * 3).toFixed(2) : null,
+      status: resolved ? "resolved" : "pending",
+      created_at: new Date(Date.now() - i * 1800000).toISOString(),
+      resolved_at: resolved ? new Date(Date.now() - i * 900000).toISOString() : null,
+    } as PredictionRecord;
+  });
 
-  const openTrades = displayTrades.filter(t => t.status === "OPEN");
-  const closedTrades = displayTrades.filter(t => t.status === "CLOSED");
-  const winCount = closedTrades.filter(t => (t.pnl ?? 0) > 0).length;
-  const winRate = closedTrades.length > 0 ? (winCount / closedTrades.length * 100) : 0;
-  const totalPnl = closedTrades.reduce((s, t) => s + (t.pnl ?? 0), 0);
+  const resolved = displayRecords.filter(r => r.status === "resolved");
+  const correct = resolved.filter(r => r.direction_correct === true).length;
+  const accuracy = resolved.length > 0 ? (correct / resolved.length * 100) : 0;
+  const pending = displayRecords.filter(r => r.status === "pending").length;
 
   return (
     <>
@@ -284,7 +273,7 @@ function SimOrdersButton({ model, color }: { model: string; color: string }) {
         className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-[12px] font-bold transition-all active:scale-[0.98]"
         style={{ background: `${color}12`, border: `1px solid ${color}25`, color }}>
         <List className="h-3.5 w-3.5" />
-        {t("aiLab.simOrders", "Trade Orders")}
+        {t("aiLab.predVerify", "Predictions")}
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -292,21 +281,21 @@ function SimOrdersButton({ model, color }: { model: string; color: string }) {
           style={{ background: "linear-gradient(160deg, hsl(22,20%,4%), hsl(20,15%,3%))", border: `1px solid ${color}22`, maxHeight: "85vh" }}>
           <div className="flex items-center justify-between px-4 pt-3 pb-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
             <div className="flex items-center gap-2">
-              <List className="h-4 w-4" style={{ color }} />
-              <span className="text-sm font-bold">{model} {t("aiLab.simOrders", "Trade Orders")}</span>
+              <Target className="h-4 w-4" style={{ color }} />
+              <span className="text-sm font-bold">{model} {t("aiLab.predVerify", "Predictions")}</span>
             </div>
             <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Stats summary */}
+          {/* Stats */}
           <div className="px-4 py-2 grid grid-cols-4 gap-1.5">
             {[
-              { label: "Open", value: openTrades.length.toString(), clr: color },
-              { label: "Closed", value: closedTrades.length.toString(), clr: undefined },
-              { label: "Win", value: `${winRate.toFixed(0)}%`, clr: winRate >= 50 ? "#4ade80" : "#f87171" },
-              { label: "PnL", value: `${totalPnl >= 0 ? "+" : ""}${totalPnl.toFixed(1)}`, clr: totalPnl >= 0 ? "#4ade80" : "#f87171" },
+              { label: t("aiLab.tradesLabel"), value: displayRecords.length.toString(), clr: color },
+              { label: "Pending", value: pending.toString(), clr: "#fbbf24" },
+              { label: "Correct", value: correct.toString(), clr: "#4ade80" },
+              { label: t("aiLab.winRateLabel"), value: `${accuracy.toFixed(0)}%`, clr: accuracy >= 55 ? "#4ade80" : "#f87171" },
             ].map(s => (
               <div key={s.label} className="rounded-lg p-1.5 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
                 <div className="text-[12px] font-bold tabular-nums" style={{ color: s.clr || "rgba(255,255,255,0.7)" }}>{s.value}</div>
@@ -315,48 +304,43 @@ function SimOrdersButton({ model, color }: { model: string; color: string }) {
             ))}
           </div>
 
-          {/* Order list */}
+          {/* Prediction list */}
           <div className="overflow-y-auto max-h-[55vh] px-4 pb-4 space-y-1">
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)
-            ) : displayTrades.map((tr, i) => {
-              const isOpen = tr.status === "OPEN";
-              const isWin = (tr.pnl ?? 0) > 0;
+            ) : displayRecords.map((rec, i) => {
+              const isPending = rec.status === "pending";
+              const isCorrect = rec.direction_correct === true;
+              const changePct = rec.current_price > 0 ? ((rec.target_price - rec.current_price) / rec.current_price * 100) : 0;
               return (
-                <div key={tr.id} className="flex items-center gap-2 rounded-lg px-3 py-2"
+                <div key={rec.id} className="flex items-center gap-2 rounded-lg px-3 py-2"
                   style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", animation: `fadeSlideIn 0.25s ease-out ${i * 0.03}s both` }}>
-                  {/* Side badge */}
-                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
-                    tr.side === "LONG" ? "text-emerald-400 bg-emerald-500/10" : "text-red-400 bg-red-500/10"
-                  }`}>{tr.side === "LONG" ? "L" : "S"}</span>
+                  {/* Status dot */}
+                  <div className={`h-2 w-2 rounded-full shrink-0 ${isPending ? "bg-yellow-400 animate-pulse" : isCorrect ? "bg-emerald-400" : "bg-red-400"}`} />
 
-                  {/* Asset + leverage */}
+                  {/* Asset + timeframe */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1">
-                      <span className="text-[11px] font-bold text-foreground/80">{tr.asset}</span>
-                      <span className="text-[9px] text-muted-foreground">{tr.leverage}x</span>
-                      {isOpen && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+                      <span className="text-[11px] font-bold text-foreground/80">{rec.asset}</span>
+                      <span className="text-[9px] px-1 py-0 rounded bg-white/[0.05] text-muted-foreground">{rec.timeframe}</span>
+                      <DirBadge dir={rec.prediction} />
                     </div>
                     <div className="text-[9px] text-muted-foreground/40 truncate">
-                      ${tr.entry_price.toLocaleString()}{tr.exit_price ? ` → $${tr.exit_price.toLocaleString()}` : ""}
-                      {tr.strategy_type ? ` · ${tr.strategy_type.replace(/_/g, " ")}` : ""}
+                      ${rec.current_price.toLocaleString()} → ${rec.target_price.toLocaleString()}
+                      {rec.actual_price ? ` (actual: $${rec.actual_price.toLocaleString()})` : ""}
                     </div>
                   </div>
 
-                  {/* PnL */}
+                  {/* Result */}
                   <div className="text-right shrink-0">
-                    {isOpen ? (
-                      <span className="text-[10px] font-bold" style={{ color }}>OPEN</span>
+                    {isPending ? (
+                      <span className="text-[10px] font-bold text-yellow-400">{rec.confidence}%</span>
                     ) : (
-                      <>
-                        <div className={`text-[11px] font-bold tabular-nums ${isWin ? "text-emerald-400" : "text-red-400"}`}>
-                          {isWin ? "+" : ""}{(tr.pnl ?? 0).toFixed(2)}
-                        </div>
-                        <div className={`text-[9px] tabular-nums ${isWin ? "text-emerald-400/60" : "text-red-400/60"}`}>
-                          {isWin ? "+" : ""}{(tr.pnl_pct ?? 0).toFixed(2)}%
-                        </div>
-                      </>
+                      <span className={`text-[10px] font-bold ${isCorrect ? "text-emerald-400" : "text-red-400"}`}>
+                        {isCorrect ? "✓" : "✗"} {changePct >= 0 ? "+" : ""}{changePct.toFixed(1)}%
+                      </span>
                     )}
+                    <div className="text-[8px] text-muted-foreground/30">{timeSince(rec.created_at)}</div>
                   </div>
                 </div>
               );
@@ -545,7 +529,7 @@ function ModelDetail({
         {/* Action Buttons */}
         <div className="px-4 pb-3 flex gap-2">
           <div className="flex-1"><AiConsoleButton model={meta.key} color={meta.color} /></div>
-          <div className="flex-1"><SimOrdersButton model={meta.key} color={meta.color} /></div>
+          <div className="flex-1"><PredictionVerifyButton model={meta.key} color={meta.color} /></div>
         </div>
 
         {/* Prediction History */}
@@ -710,48 +694,6 @@ export function AiLab() {
           ))}
         </div>
       )}
-
-      {/* Recent Predictions Feed */}
-      <div>
-        <div className="flex items-center gap-2 mb-2.5">
-          <Activity className="h-3.5 w-3.5 text-primary" />
-          <span className="text-[12px] font-semibold text-foreground/70">{t("aiLab.signalFeed")}</span>
-          <span className="text-[10px] text-muted-foreground ml-auto">{t("aiLab.capturedCount", { count: predictions.length || 84 })}</span>
-        </div>
-        <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
-          {predictions.length > 0 ? (
-            predictions.slice(0, 8).map((p, i) => (
-              <div key={p.id} className="flex items-center gap-2 px-3 py-2"
-                style={{ borderBottom: i < 7 ? "1px solid rgba(255,255,255,0.04)" : "none", background: "rgba(255,255,255,0.015)" }}>
-                <DirBadge dir={p.prediction} />
-                <span className="text-[11px] font-bold text-foreground/70 w-10 shrink-0">{p.asset}</span>
-                <span className="text-[10px] text-muted-foreground/50 flex-1 truncate">{p.model} · {p.confidence}%</span>
-                <span className="text-[10px] text-muted-foreground/30 shrink-0">{timeSince(p.created_at)}</span>
-              </div>
-            ))
-          ) : (
-            [
-              { dir: "BULLISH", asset: "BTC", model: "GPT-4o", conf: 78, time: "2m" },
-              { dir: "BEARISH", asset: "ETH", model: "Claude", conf: 65, time: "5m" },
-              { dir: "BULLISH", asset: "SOL", model: "Gemini", conf: 71, time: "8m" },
-              { dir: "BULLISH", asset: "BNB", model: "DeepSeek", conf: 63, time: "14m" },
-              { dir: "BEARISH", asset: "DOGE", model: "Llama", conf: 59, time: "19m" },
-              { dir: "BULLISH", asset: "XRP", model: "GPT-4o", conf: 74, time: "31m" },
-            ].map((sig, i, arr) => (
-              <div key={sig.asset} className="flex items-center gap-2 px-3 py-2"
-                style={{ borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", background: "rgba(255,255,255,0.015)" }}>
-                <DirBadge dir={sig.dir} />
-                <span className="text-[11px] font-bold text-foreground/70 w-10 shrink-0">{sig.asset}</span>
-                <span className="text-[10px] text-muted-foreground/50 flex-1 truncate">{sig.model} · {sig.conf}%</span>
-                <span className="text-[10px] text-muted-foreground/30 shrink-0">{sig.time} {t("aiLab.agoSuffix")}</span>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Trade Matching Engine */}
-      <TradeMatchingEngine />
 
       {/* Detail Sheet */}
       {selected && selectedMeta && (
