@@ -14,7 +14,7 @@ import {
   BarChart3, Sparkles, ChevronRight, X, Activity,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { AiThinkingConsole } from "@/components/strategy/ai-thinking-console";
+import { AiConsoleButton } from "@/components/strategy/ai-thinking-console";
 import { TradeMatchingEngine } from "@/components/strategy/trade-matching-engine";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -293,9 +293,9 @@ function ModelDetail({
           </div>
         </div>
 
-        {/* AI Thinking Console */}
+        {/* AI Console Button */}
         <div className="px-4 pb-3">
-          <AiThinkingConsole model={meta.key} color={meta.color} isVisible={true} />
+          <AiConsoleButton model={meta.key} color={meta.color} />
         </div>
 
         {/* Prediction History */}

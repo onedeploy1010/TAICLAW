@@ -109,16 +109,16 @@ function StrategyListTab({ walletAddr, onFollowStrategy }: { walletAddr: string;
   return (
     <div className="space-y-4" style={{ animation: "fadeSlideIn 0.4s ease-out 0.1s both" }}>
       {/* Global Stats */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-1.5">
         {[
           { label: t("aiLab.positionsLabel"), value: globalOpen.toString(), color: "hsl(43,74%,52%)" },
           { label: t("aiLab.winRateLabel"), value: `${globalWinRate.toFixed(1)}%`, color: globalWinRate >= 60 ? "#4ade80" : "hsl(43,74%,52%)" },
-          { label: t("aiLab.totalPnlLabel"), value: `${globalPnl >= 0 ? "+" : ""}${globalPnl.toFixed(2)}`, color: globalPnl >= 0 ? "#4ade80" : "#f87171" },
+          { label: t("aiLab.totalPnlLabel"), value: `${globalPnl >= 0 ? "+" : ""}${globalPnl.toFixed(1)}`, color: globalPnl >= 0 ? "#4ade80" : "#f87171" },
           { label: t("aiLab.signalsLabel"), value: (allSignals.length || 84).toString(), color: "#60a5fa" },
         ].map(s => (
-          <div key={s.label} className="rounded-xl p-2.5 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-            <div className="text-[14px] font-black tabular-nums" style={{ color: s.color }}>{s.value}</div>
-            <div className="text-[9px] text-muted-foreground mt-0.5 uppercase tracking-wide">{s.label}</div>
+          <div key={s.label} className="rounded-lg p-2 text-center min-w-0" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="text-[13px] font-black tabular-nums truncate" style={{ color: s.color }}>{s.value}</div>
+            <div className="text-[8px] text-muted-foreground mt-0.5 uppercase tracking-wide truncate">{s.label}</div>
           </div>
         ))}
       </div>
@@ -146,28 +146,28 @@ function StrategyListTab({ walletAddr, onFollowStrategy }: { walletAddr: string;
 
             return (
               <div key={strat.key}
-                className="rounded-2xl p-4 transition-all duration-200 hover:scale-[1.015] active:scale-[0.99]"
+                className="rounded-xl p-3 transition-all duration-200 hover:scale-[1.015] active:scale-[0.99]"
                 style={{
                   background: "linear-gradient(145deg, rgba(22,16,8,0.98), rgba(14,10,4,0.99))",
                   border: `1px solid ${isActive ? `${strat.color}30` : "rgba(255,255,255,0.08)"}`,
                   boxShadow: isActive ? `0 0 20px ${strat.color}0a` : "0 2px 12px rgba(0,0,0,0.4)",
                 }}
               >
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${strat.color}18`, border: `1px solid ${strat.color}35` }}>
-                      <Icon className="h-5 w-5" style={{ color: strat.color }} />
-                    </div>
-                    <div>
-                      <div className="text-[13px] font-bold text-foreground/90 leading-tight">{t(strat.nameKey)}</div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">{strat.timeframe} · {strat.assets.slice(0, 2).join(", ")}</div>
-                    </div>
+                <div className="flex items-center gap-2 mb-2.5">
+                  <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${strat.color}18`, border: `1px solid ${strat.color}35` }}>
+                    <Icon className="h-4 w-4" style={{ color: strat.color }} />
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {isActive && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />}
-                    <Badge className={`text-[10px] border ${RISK_COLORS[strat.risk]} no-default-hover-elevate no-default-active-elevate`}>
-                      {t(`aiLab.risk${strat.risk.charAt(0).toUpperCase() + strat.risk.slice(1)}`)}
-                    </Badge>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[12px] font-bold text-foreground/90 leading-tight truncate">{t(strat.nameKey)}</span>
+                      {isActive && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />}
+                    </div>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-[9px] text-muted-foreground">{strat.timeframe}</span>
+                      <Badge className={`text-[8px] px-1 py-0 border ${RISK_COLORS[strat.risk]} no-default-hover-elevate no-default-active-elevate`}>
+                        {t(`aiLab.risk${strat.risk.charAt(0).toUpperCase() + strat.risk.slice(1)}`)}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
 
@@ -200,7 +200,7 @@ function StrategyListTab({ walletAddr, onFollowStrategy }: { walletAddr: string;
                 {/* Follow Button */}
                 <button
                   onClick={() => onFollowStrategy(strat.key)}
-                  className="w-full mt-3 flex items-center justify-center gap-2 rounded-xl py-2.5 text-[12px] font-bold transition-all active:scale-[0.98]"
+                  className="w-full mt-2.5 flex items-center justify-center gap-1.5 rounded-lg py-2 text-[11px] font-bold transition-all active:scale-[0.98]"
                   style={{ background: `linear-gradient(135deg, ${strat.color}22, ${strat.color}10)`, border: `1px solid ${strat.color}35`, color: strat.color }}
                 >
                   {t("aiLab.followStrategy")}
