@@ -87,6 +87,8 @@
   --neon-glow-sm: 0 0 6px rgba(212, 168, 50, 0.25), 0 0 16px rgba(212, 168, 50, 0.09);
   --neon-glow-intense: 0 0 12px rgba(212, 168, 50, 0.50), 0 0 36px rgba(212, 168, 50, 0.22), 0 0 72px rgba(212, 168, 50, 0.09);
   --gem-rgb: 212, 168, 50;
+  --accent-red-rgb: 220, 38, 38;
+  --accent-red-glow: 0 0 8px rgba(220, 38, 38, 0.25), 0 0 20px rgba(220, 38, 38, 0.08);
 }
 
 .dark {
@@ -745,22 +747,93 @@
   }
 }
 
+/* ═══════ Page Transition & Card Animations ═══════ */
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideUpBounce {
+  0% { opacity: 0; transform: translateY(24px); }
+  60% { transform: translateY(-4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes goldGlowPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(212,168,50,0.15), 0 0 24px rgba(212,168,50,0.05); }
+  50% { box-shadow: 0 0 16px rgba(212,168,50,0.3), 0 0 40px rgba(212,168,50,0.1); }
+}
+
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px) scale(0.8); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes tabSlide {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes cardReveal {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-slide-right { animation: slideInRight 0.4s ease-out both; }
+.animate-slide-left { animation: slideInLeft 0.4s ease-out both; }
+.animate-scale-in { animation: scaleIn 0.35s ease-out both; }
+.animate-slide-up-bounce { animation: slideUpBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.animate-gold-glow { animation: goldGlowPulse 3s ease-in-out infinite; }
+.animate-count-up { animation: countUp 0.4s ease-out both; }
+.animate-tab-slide { animation: tabSlide 0.3s ease-out both; }
+.animate-card-reveal { animation: cardReveal 0.4s ease-out both; }
+
+/* Stagger delays for lists */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.4s; }
+
+/* Scroll snap for horizontal tabs */
+.scroll-snap-x {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.scroll-snap-x > * {
+  scroll-snap-align: start;
+}
+
 /* ═══════ Bottom Nav — Floating Pill ═══════ */
 
 .floating-nav {
   background: linear-gradient(
     180deg,
-    rgba(22, 32, 28, 0.92) 0%,
-    rgba(14, 22, 18, 0.96) 100%
+    rgba(20, 16, 8, 0.94) 0%,
+    rgba(12, 10, 4, 0.97) 100%
   );
   backdrop-filter: blur(24px) saturate(1.4);
   -webkit-backdrop-filter: blur(24px) saturate(1.4);
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(212, 168, 50, 0.08);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.5),
     0 2px 8px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .floating-nav-item {
@@ -769,14 +842,18 @@
   background: transparent;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease;
+}
+.floating-nav-item:active {
+  transform: scale(0.9);
 }
 
 .floating-nav-active {
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(212, 168, 50, 0.08);
   box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.4),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.03),
-    0 0 12px rgba(0, 231, 160, 0.06);
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02),
+    0 0 12px rgba(212, 168, 50, 0.1);
 }
 
 /* ═══════ Exchange Depth — Gem Indicator ═══════ */

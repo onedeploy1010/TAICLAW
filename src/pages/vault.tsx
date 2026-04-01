@@ -335,14 +335,14 @@ export default function Vault() {
           <Sparkles className="h-4 w-4" style={{ color: "rgba(212,168,50,0.9)" }} />
           <h3 className="text-base font-bold">{t("vault.strategyVaults")}</h3>
         </div>
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-2">
-          {strategyVaults.map((v) => {
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide scroll-snap-x pb-2">
+          {strategyVaults.map((v, i) => {
             const Icon = v.icon;
             const active = activeVaultKey === v.key;
             return (
               <button key={v.key} onClick={() => setActiveVaultKey(v.key)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold whitespace-nowrap shrink-0 transition-all ${active ? "text-black" : "text-muted-foreground"}`}
-                style={active ? { background: `linear-gradient(135deg, ${v.accent}, ${v.accent}cc)`, boxShadow: `0 0 12px ${v.accent}30` } : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold whitespace-nowrap shrink-0 transition-all animate-tab-slide stagger-${i + 1} ${active ? "text-black" : "text-muted-foreground hover:text-foreground"}`}
+                style={active ? { background: `linear-gradient(135deg, ${v.accent}, ${v.accent}cc)`, boxShadow: `0 0 14px ${v.accent}35` } : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <Icon className="h-3 w-3" />
                 {t(v.nameKey).replace(/ Vault| 金库| 金庫/g, "")}
                 {v.hot && <span className="text-[8px] px-1 rounded bg-black/20">🔥</span>}
@@ -356,7 +356,7 @@ export default function Vault() {
           const v = strategyVaults.find(x => x.key === activeVaultKey) || strategyVaults[0];
           const Icon = v.icon;
           return (
-            <div className="rounded-xl p-4 mt-1" style={{ background: "linear-gradient(145deg, rgba(22,16,8,0.98), rgba(14,10,4,0.99))", border: `1px solid ${v.accent}20`, boxShadow: `0 0 20px ${v.accent}08` }}>
+            <div key={v.key} className="rounded-xl p-4 mt-1 animate-scale-in" style={{ background: "linear-gradient(145deg, rgba(22,16,8,0.98), rgba(14,10,4,0.99))", border: `1px solid ${v.accent}20`, boxShadow: `0 0 20px ${v.accent}08` }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: `${v.accent}18`, border: `1px solid ${v.accent}30` }}>
@@ -370,15 +370,15 @@ export default function Vault() {
                 {v.hot && <Badge className="text-[9px] border-0" style={{ background: `${v.accent}20`, color: v.accent }}>{t("vault.hotBadge")}</Badge>}
               </div>
               <div className="grid grid-cols-3 gap-2 mb-3">
-                <div className="rounded-lg p-2.5 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="rounded-lg p-2.5 text-center animate-count-up stagger-1" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                   <div className="text-[15px] font-black tabular-nums" style={{ color: v.accent }}>{v.apyMin}-{v.apyMax}%</div>
                   <div className="text-[9px] text-muted-foreground mt-0.5">APY</div>
                 </div>
-                <div className="rounded-lg p-2.5 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="rounded-lg p-2.5 text-center animate-count-up stagger-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                   <div className="text-[15px] font-black tabular-nums text-foreground/80">${(v.tvl / 1000).toFixed(0)}K</div>
                   <div className="text-[9px] text-muted-foreground mt-0.5">{t("vault.tvlLabel")}</div>
                 </div>
-                <div className="rounded-lg p-2.5 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="rounded-lg p-2.5 text-center animate-count-up stagger-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                   <div className="text-[15px] font-black tabular-nums text-foreground/80">{v.lockDays}D</div>
                   <div className="text-[9px] text-muted-foreground mt-0.5">{t("vault.lock")}</div>
                 </div>
