@@ -146,14 +146,15 @@ function StrategyListTab({ walletAddr, onFollowStrategy }: { walletAddr: string;
 
             return (
               <div key={strat.key}
-                className="rounded-xl p-3 transition-all duration-200 hover:scale-[1.015] active:scale-[0.99]"
+                className="flex flex-col rounded-xl p-3 transition-all duration-200 hover:scale-[1.015] active:scale-[0.99]"
                 style={{
                   background: "linear-gradient(145deg, rgba(22,16,8,0.98), rgba(14,10,4,0.99))",
                   border: `1px solid ${isActive ? `${strat.color}30` : "rgba(255,255,255,0.08)"}`,
                   boxShadow: isActive ? `0 0 20px ${strat.color}0a` : "0 2px 12px rgba(0,0,0,0.4)",
                 }}
               >
-                <div className="flex items-center gap-2 mb-2.5">
+                {/* Header — fixed height */}
+                <div className="flex items-center gap-2 h-10">
                   <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${strat.color}18`, border: `1px solid ${strat.color}35` }}>
                     <Icon className="h-4 w-4" style={{ color: strat.color }} />
                   </div>
@@ -164,7 +165,7 @@ function StrategyListTab({ walletAddr, onFollowStrategy }: { walletAddr: string;
                     </div>
                     <div className="flex items-center gap-1 mt-0.5">
                       <span className="text-[9px] text-muted-foreground">{strat.timeframe}</span>
-                      <Badge className={`text-[8px] px-1 py-0 border ${RISK_COLORS[strat.risk]} no-default-hover-elevate no-default-active-elevate`}>
+                      <Badge className={`text-[8px] px-1 py-0 leading-none border ${RISK_COLORS[strat.risk]} no-default-hover-elevate no-default-active-elevate`}>
                         {t(`aiLab.risk${strat.risk.charAt(0).toUpperCase() + strat.risk.slice(1)}`)}
                       </Badge>
                     </div>
@@ -172,35 +173,35 @@ function StrategyListTab({ walletAddr, onFollowStrategy }: { walletAddr: string;
                 </div>
 
                 {/* Win Rate Bar */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 mt-2">
                   <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
                     <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(winRate, 100)}%`, background: winRate >= 70 ? "hsl(143,60%,45%)" : winRate >= 55 ? "hsl(43,74%,52%)" : "hsl(0,65%,45%)" }} />
                   </div>
-                  <span className="text-[11px] tabular-nums font-bold" style={{ color: winRate >= 70 ? "#4ade80" : winRate >= 55 ? "hsl(43,74%,52%)" : "#f87171" }}>{winRate.toFixed(1)}%</span>
+                  <span className="text-[11px] tabular-nums font-bold shrink-0" style={{ color: winRate >= 70 ? "#4ade80" : winRate >= 55 ? "hsl(43,74%,52%)" : "#f87171" }}>{winRate.toFixed(1)}%</span>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-2 mt-2.5">
-                  <div><div className="text-[9px] text-muted-foreground uppercase tracking-wide mb-0.5">{t("aiLab.positionsLabel")}</div><div className="text-[13px] font-bold tabular-nums" style={{ color: openCount > 0 ? strat.color : undefined }}>{openCount}</div></div>
-                  <div><div className="text-[9px] text-muted-foreground uppercase tracking-wide mb-0.5">{t("aiLab.tradesLabel")}</div><div className="text-[13px] font-bold tabular-nums">{totalCount}</div></div>
-                  <div><div className="text-[9px] text-muted-foreground uppercase tracking-wide mb-0.5">{t("aiLab.pnlLabel")}</div><div className={`text-[13px] font-bold tabular-nums ${totalPnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>{totalPnl >= 0 ? "+" : ""}{totalPnl.toFixed(2)}</div></div>
+                {/* Stats — flex-1 to fill space */}
+                <div className="grid grid-cols-3 gap-1 mt-2 flex-1">
+                  <div><div className="text-[8px] text-muted-foreground uppercase tracking-wide">{t("aiLab.positionsLabel")}</div><div className="text-[12px] font-bold tabular-nums" style={{ color: openCount > 0 ? strat.color : undefined }}>{openCount}</div></div>
+                  <div><div className="text-[8px] text-muted-foreground uppercase tracking-wide">{t("aiLab.tradesLabel")}</div><div className="text-[12px] font-bold tabular-nums">{totalCount}</div></div>
+                  <div><div className="text-[8px] text-muted-foreground uppercase tracking-wide">{t("aiLab.pnlLabel")}</div><div className={`text-[12px] font-bold tabular-nums ${totalPnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>{totalPnl >= 0 ? "+" : ""}{totalPnl.toFixed(1)}</div></div>
                 </div>
 
-                {/* Latest Signal */}
-                <div className="mt-2.5 rounded-lg px-2.5 py-2 flex items-center justify-between gap-2" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <Sparkles className="h-3 w-3 shrink-0" style={{ color: strat.color }} />
-                    <span className="text-[11px] text-muted-foreground truncate">{sigAsset} · <span className="font-medium text-foreground/60">{sigConf}%</span></span>
+                {/* Latest Signal — fixed height */}
+                <div className="mt-2 rounded-md px-2 py-1.5 flex items-center justify-between gap-1 h-8" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div className="flex items-center gap-1 min-w-0">
+                    <Sparkles className="h-2.5 w-2.5 shrink-0" style={{ color: strat.color }} />
+                    <span className="text-[10px] text-muted-foreground truncate">{sigAsset} {sigConf}%</span>
                   </div>
-                  <span className={`inline-flex items-center gap-0.5 font-bold rounded text-[10px] px-1.5 py-0.5 ${sigDir === "BULLISH" ? "text-emerald-400 bg-emerald-500/10" : sigDir === "BEARISH" ? "text-red-400 bg-red-500/10" : "text-foreground/40 bg-white/[0.05]"}`}>
-                    {sigDir === "BULLISH" ? <><TrendingUp className="h-2.5 w-2.5" />{t("aiLab.longDir")}</> : sigDir === "BEARISH" ? <><TrendingDown className="h-2.5 w-2.5" />{t("aiLab.shortDir")}</> : <><Minus className="h-2.5 w-2.5" />{t("aiLab.neutralDir")}</>}
+                  <span className={`inline-flex items-center gap-0.5 font-bold rounded text-[9px] px-1 py-0.5 shrink-0 ${sigDir === "BULLISH" ? "text-emerald-400 bg-emerald-500/10" : sigDir === "BEARISH" ? "text-red-400 bg-red-500/10" : "text-foreground/40 bg-white/[0.05]"}`}>
+                    {sigDir === "BULLISH" ? <TrendingUp className="h-2.5 w-2.5" /> : sigDir === "BEARISH" ? <TrendingDown className="h-2.5 w-2.5" /> : <Minus className="h-2.5 w-2.5" />}
                   </span>
                 </div>
 
-                {/* Follow Button */}
+                {/* Follow Button — always at bottom */}
                 <button
                   onClick={() => onFollowStrategy(strat.key)}
-                  className="w-full mt-2.5 flex items-center justify-center gap-1.5 rounded-lg py-2 text-[11px] font-bold transition-all active:scale-[0.98]"
+                  className="w-full mt-2 flex items-center justify-center gap-1.5 rounded-lg py-2 text-[11px] font-bold transition-all active:scale-[0.98]"
                   style={{ background: `linear-gradient(135deg, ${strat.color}22, ${strat.color}10)`, border: `1px solid ${strat.color}35`, color: strat.color }}
                 >
                   {t("aiLab.followStrategy")}
