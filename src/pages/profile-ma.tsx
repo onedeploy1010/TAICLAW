@@ -374,9 +374,9 @@ function MASwap() {
           />
           <div className="flex items-center gap-1 bg-white/10 rounded-lg px-2 py-1 shrink-0">
             <div className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold", isSwapped ? "bg-yellow-500/20 text-yellow-400" : "bg-primary/20 text-primary")}>
-              {isSwapped ? "$" : "M"}
+              {isSwapped ? "$" : "R"}
             </div>
-            <span className="text-[11px] font-medium">{isSwapped ? outputToken : "MA"}</span>
+            <span className="text-[11px] font-medium">{isSwapped ? outputToken : "RUNE"}</span>
           </div>
         </div>
 
@@ -402,7 +402,7 @@ function MASwap() {
             </div>
           <div className="flex items-center gap-1 bg-white/10 rounded-lg px-2 py-1 shrink-0">
             <div className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold", isSwapped ? "bg-primary/20 text-primary" : "bg-yellow-500/20 text-yellow-400")}>
-              {isSwapped ? "M" : "$"}
+              {isSwapped ? "R" : "$"}
             </div>
             {!isSwapped ? (
               <select value={outputToken} onChange={(e) => setOutputToken(e.target.value as any)}
@@ -410,7 +410,7 @@ function MASwap() {
                 <option value="USDT">USDT</option>
                 <option value="USDC">USDC</option>
               </select>
-            ) : <span className="text-[11px] font-medium">MA</span>}
+            ) : <span className="text-[11px] font-medium">RUNE</span>}
           </div>
         </div>
 
