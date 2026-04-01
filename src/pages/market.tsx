@@ -8,8 +8,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatUSD, formatCompact } from "@/lib/constants";
 import { ArrowLeft, ChevronLeft, ChevronRight, Activity, Flame, Eye, Globe, Calendar, TrendingUp, TrendingDown } from "lucide-react";
 import { useLocation } from "wouter";
-import { fetchMarketCalendar, fetchFearGreedHistory, fetchSentiment, fetchFuturesOI, fetchExchangePrices } from "@/lib/api";
+import { fetchMarketCalendar, fetchFearGreedHistory, fetchSentiment, fetchFuturesOI, fetchExchangePrices, fetchExchangeDepth } from "@/lib/api";
+import { useOrderBook } from "@/hooks/use-crypto-price";
 import { ExchangeLogo } from "@/components/exchange-logo";
+import { DepthBar } from "@/components/dashboard/depth-bar";
+import { ExchangeDepth } from "@/components/dashboard/exchange-depth";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -394,12 +397,42 @@ export default function MarketPage() {
   const { data: futuresData, isLoading: oiLoading } = useQuery<FuturesOIData>({ queryKey: ["market-futures-oi"], queryFn: fetchFuturesOI, staleTime: 60 * 1000 });
   const { data: exchangePrices, isLoading: epLoading } = useQuery<CoinExchangeData[]>({ queryKey: ["market-exchange-prices"], queryFn: fetchExchangePrices, staleTime: 60 * 1000 });
 
+  const { data: orderBook, isLoading: bookLoading } = useOrderBook(selectedCoinTab);
+  const { data: exchangeDepthData, isLoading: exchangeDepthLoading } = useQuery<{
+    exchanges: Array<{ name: string; buy: number; sell: number }>;
+    aggregatedBuy: number;
+    aggregatedSell: number;
+    fearGreedIndex: number;
+    fearGreedLabel: string;
+    longShortRatio: number;
+    timestamp: number;
+  }>({
+    queryKey: ["exchange-depth", selectedCoinTab],
+    queryFn: async () => {
+      const depth = await fetchExchangeDepth(selectedCoinTab);
+      return {
+        exchanges: depth.exchanges.map(e => ({ name: e.name, buy: e.buyPercent, sell: e.sellPercent })),
+        aggregatedBuy: depth.buyPercent,
+        aggregatedSell: depth.sellPercent,
+        fearGreedIndex: depth.fearGreedIndex,
+        fearGreedLabel: depth.fearGreedLabel,
+        longShortRatio: depth.buyPercent / (depth.sellPercent || 1),
+        timestamp: Date.now(),
+      };
+    },
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+  });
+
+  const depthBuy = exchangeDepthData ? String(exchangeDepthData.aggregatedBuy) : (orderBook?.buyPercent || "50.0");
+  const depthSell = exchangeDepthData ? String(exchangeDepthData.aggregatedSell) : (orderBook?.sellPercent || "50.0");
+
   const selectedCoinExchanges = exchangePrices?.find(c => c.symbol === selectedCoinTab);
 
   return (
     <div className="space-y-4 pb-24 lg:pb-8 lg:px-6 lg:pt-4" data-testid="page-market">
       {/* ═══ Section 1: Header + Coin Tabs + Calendar ═══ */}
-      <div className="gradient-green-dark rounded-b-2xl p-4 pt-2" style={{ animation: "fadeSlideIn 0.5s ease-out" }}>
+      <div className="rounded-b-2xl p-4 pt-2" style={{ background: "linear-gradient(145deg, rgba(22,16,8,0.95), rgba(14,10,4,0.98))", animation: "fadeSlideIn 0.5s ease-out" }}>
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <Button size="icon" variant="ghost" onClick={() => navigate("/")} data-testid="button-back-home" className="lg:hidden"><ArrowLeft className="h-4 w-4" /></Button>
           <h1 className="text-lg font-bold">{t("market.marketAnalysis")}</h1>
@@ -502,6 +535,27 @@ export default function MarketPage() {
             <FearGreedChart data={fgHistory.chartData} coinSymbol={selectedCoinTab} />
           </CardContent></Card>
         ) : null}
+      </div>
+
+      {/* ═══ Section 3: Order Book Depth ═══ */}
+      <div className="px-4 lg:px-0" style={{ animation: "fadeSlideIn 0.65s ease-out" }}>
+        <SectionHeader
+          icon={Activity}
+          title={t("market.orderBookDepth", { defaultValue: "Order Book Depth" })}
+          badge={selectedCoinTab}
+        />
+        <div className="space-y-4">
+          <DepthBar
+            buyPercent={depthBuy}
+            sellPercent={depthSell}
+            isLoading={bookLoading && exchangeDepthLoading}
+            fearGreedIndex={exchangeDepthData?.fearGreedIndex}
+            fearGreedLabel={exchangeDepthData?.fearGreedLabel}
+          />
+          <div className="glass-card rounded-2xl p-4 relative overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+            <ExchangeDepth symbol={selectedCoinTab} />
+          </div>
+        </div>
       </div>
 
       {/* ═══ Section 4: Market Sentiment ═══ */}

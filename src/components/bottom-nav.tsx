@@ -1,28 +1,18 @@
 import { useLocation, Link } from "wouter";
-import { Home, BarChart3, Brain, Server } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Compass, CandlestickChart, Vault, Cpu, Hexagon } from "lucide-react";
 
 const tabs = [
-  { path: "/", icon: Home, id: "home" },
-  { path: "/trade", icon: BarChart3, id: "trade" },
-  {
-    path: "/vault",
-    id: "vault",
-    icon: () => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-[22px] w-[22px]">
-        <circle cx="12" cy="8" r="5" />
-        <circle cx="12" cy="8" r="2" />
-        <path d="M12 13v3" />
-        <path d="M8 21h8" />
-        <path d="M10 18h4" />
-      </svg>
-    ),
-  },
-  { path: "/strategy", icon: Brain, id: "strategy" },
-  { path: "/profile/nodes", icon: Server, id: "nodes" },
+  { path: "/", icon: Compass, id: "home", labelKey: "nav.home" },
+  { path: "/trade", icon: CandlestickChart, id: "trade", labelKey: "nav.trade" },
+  { path: "/vault", icon: Vault, id: "vault", labelKey: "nav.vault" },
+  { path: "/strategy", icon: Cpu, id: "strategy", labelKey: "nav.strategy" },
+  { path: "/profile/nodes", icon: Hexagon, id: "nodes", labelKey: "nav.nodes" },
 ];
 
 export function BottomNav() {
   const [location] = useLocation();
+  const { t } = useTranslation();
 
   return (
     <nav
@@ -30,8 +20,14 @@ export function BottomNav() {
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       data-testid="bottom-nav"
     >
-      <div
-        className="floating-nav pointer-events-auto flex items-center mx-4 mb-3 sm:mb-4 px-2 sm:px-3 py-2 sm:py-2.5 gap-1 sm:gap-2 w-[calc(100%-2rem)] max-w-md"
+      <div className="pointer-events-auto flex items-center justify-around mx-3 mb-2.5 px-1 py-1.5 w-[calc(100%-1.5rem)] max-w-md rounded-2xl"
+        style={{
+          background: "linear-gradient(180deg, rgba(18,14,8,0.95) 0%, rgba(10,8,4,0.98) 100%)",
+          backdropFilter: "blur(20px) saturate(1.5)",
+          WebkitBackdropFilter: "blur(20px) saturate(1.5)",
+          border: "1px solid rgba(212,168,50,0.06)",
+          boxShadow: "0 -4px 24px rgba(0,0,0,0.4), 0 0 1px rgba(212,168,50,0.08), inset 0 1px 0 rgba(255,255,255,0.03)",
+        }}
       >
         {tabs.map((tab) => {
           const isActive = tab.path === "/" ? location === "/" : location.startsWith(tab.path);
@@ -39,23 +35,32 @@ export function BottomNav() {
           return (
             <Link key={tab.path} href={tab.path} className="flex-1 flex justify-center">
               <button
-                className={`floating-nav-item relative flex items-center justify-center rounded-2xl transition-all duration-300 ${
-                  isActive ? "floating-nav-active" : ""
-                }`}
-                style={{
-                  width: isActive ? 52 : 44,
-                  height: isActive ? 44 : 40,
-                }}
+                className="relative flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-300"
+                style={isActive ? {
+                  background: "rgba(212,168,50,0.08)",
+                } : undefined}
                 data-testid={`nav-${tab.id}`}
               >
-                <Icon
-                  className={`transition-all duration-300 ${
-                    isActive
-                      ? "h-[22px] w-[22px] text-primary"
-                      : "h-5 w-5 text-[rgba(180,195,190,0.5)]"
-                  }`}
-                  style={isActive ? { filter: "drop-shadow(0 0 8px rgba(212,168,50,0.5))" } : undefined}
-                />
+                <div className="relative">
+                  <Icon
+                    className={`transition-all duration-300 ${
+                      isActive
+                        ? "h-[20px] w-[20px] text-primary"
+                        : "h-[18px] w-[18px] text-foreground/25"
+                    }`}
+                    strokeWidth={isActive ? 2.2 : 1.6}
+                    style={isActive ? { filter: "drop-shadow(0 0 6px rgba(212,168,50,0.5))" } : undefined}
+                  />
+                  {isActive && (
+                    <span className="absolute -top-0.5 -right-0.5 h-1 w-1 rounded-full bg-primary animate-pulse"
+                      style={{ boxShadow: "0 0 4px rgba(212,168,50,0.6)" }} />
+                  )}
+                </div>
+                <span className={`text-[9px] font-medium leading-none transition-all duration-300 ${
+                  isActive ? "text-primary" : "text-foreground/20"
+                }`}>
+                  {t(tab.labelKey)}
+                </span>
               </button>
             </Link>
           );
