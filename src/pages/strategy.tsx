@@ -493,22 +493,18 @@ export default function StrategyPage() {
       <StrategyHeader />
 
       <div className="px-4 space-y-3">
-        <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-1" data-testid="strategy-tabs">
+        <div className="flex gap-0 bg-card border border-border rounded-lg overflow-hidden" data-testid="strategy-tabs">
           {TABS.map((tab) => (
             <button
               key={tab.id}
-              className={`px-3 py-2 rounded-lg text-[11px] font-bold whitespace-nowrap shrink-0 transition-all ${
+              className={`flex-1 py-2.5 text-xs font-bold text-center transition-all ${
                 activeTab === tab.id
                   ? "text-black"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground/70"
               }`}
               style={activeTab === tab.id ? {
                 background: "linear-gradient(135deg, hsl(43,74%,58%), hsl(38,70%,46%))",
-                boxShadow: "0 0 10px rgba(212,168,50,0.25)",
-              } : {
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.06)",
-              }}
+              } : {}}
               onClick={() => setActiveTab(tab.id)}
               data-testid={`tab-${tab.id}`}
             >
