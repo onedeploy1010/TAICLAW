@@ -20,20 +20,21 @@ export function BottomNav() {
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       data-testid="bottom-nav"
     >
-      <div className="pointer-events-auto flex items-center justify-around mx-3 mb-2.5 px-2 py-2 w-[calc(100%-1.5rem)] max-w-md rounded-2xl"
+      <div className="pointer-events-auto relative flex items-center justify-around mx-3 mb-2.5 px-2 py-2 w-[calc(100%-1.5rem)] max-w-md rounded-2xl"
         style={{
           background: "linear-gradient(180deg, rgba(16,12,6,0.96) 0%, rgba(8,6,2,0.99) 100%)",
           backdropFilter: "blur(24px) saturate(1.6)",
           WebkitBackdropFilter: "blur(24px) saturate(1.6)",
-          border: "1px solid rgba(212,168,50,0.12)",
-          boxShadow: "0 -6px 30px rgba(0,0,0,0.5), 0 0 1px rgba(212,168,50,0.15), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 20px rgba(220,38,38,0.04)",
+          border: "1px solid rgba(212,168,50,0.15)",
+          boxShadow: "0 -6px 30px rgba(0,0,0,0.5), 0 0 1px rgba(212,168,50,0.2), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 20px rgba(220,38,38,0.06)",
+          animation: "borderGlow 3s ease-in-out infinite",
         }}
       >
         {tabs.map((tab) => {
           const isActive = tab.path === "/" ? location === "/" : location.startsWith(tab.path);
           const Icon = tab.icon;
           return (
-            <Link key={tab.path} href={tab.path} className="flex-1 flex justify-center">
+            <Link key={tab.path} href={tab.path} className="flex-1 flex justify-center relative z-10">
               <button
                 className="relative flex flex-col items-center gap-1 py-1.5 px-2 rounded-xl transition-all duration-300"
                 style={isActive ? {
@@ -69,17 +70,6 @@ export function BottomNav() {
           );
         })}
 
-        {/* Animated border glow */}
-        <div className="absolute inset-0 rounded-2xl pointer-events-none"
-          style={{
-            background: "transparent",
-            border: "1px solid transparent",
-            backgroundImage: "linear-gradient(rgba(16,12,6,0.96), rgba(8,6,2,0.99)), linear-gradient(135deg, rgba(212,168,50,0.2), rgba(220,38,38,0.15), rgba(212,168,50,0.2))",
-            backgroundOrigin: "border-box",
-            backgroundClip: "padding-box, border-box",
-            animation: "borderGlow 3s ease-in-out infinite",
-          }}
-        />
       </div>
     </nav>
   );
