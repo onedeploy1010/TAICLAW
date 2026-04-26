@@ -1,12 +1,13 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 
 async function proxyFetch(url: string): Promise<any> {
-  const { data, error } = await supabase.functions.invoke("api-proxy", {
-    body: { url },
+  const res = await fetch("/api/proxy", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
   });
-  if (error) throw error;
-  return data;
+  if (!res.ok) throw new Error(`Proxy error ${res.status}`);
+  return res.json();
 }
 
 export interface CryptoPrice {

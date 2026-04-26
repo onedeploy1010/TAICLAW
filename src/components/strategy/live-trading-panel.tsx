@@ -7,11 +7,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { createClient } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://jqgimdgtpwnunrlwexib.supabase.co";
-const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpxZ2ltZGd0cHdudW5ybHdleGliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4Mjg5OTAsImV4cCI6MjA4NjQwNDk5MH0.0b1K4Td9vkNYy40etWSbcqgg2fdpkjkD7_Z6Z1KJHUQ";
 
 interface TradeSignal {
   id: string;
@@ -47,76 +43,41 @@ export function LiveTradingPanel() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [connected, setConnected] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const supabaseRef = useRef(createClient(SUPABASE_URL, SUPABASE_ANON));
 
-  // Subscribe to real-time signals
+  // Fetch signals + positions via polling
   useEffect(() => {
-    const supabase = supabaseRef.current;
-
-    // Subscribe to broadcast channel
-    const channel = supabase
-      .channel("trade-signals")
-      .on("broadcast", { event: "new_signal" }, (payload) => {
-        const signal = payload.payload as TradeSignal;
-        setSignals(prev => [signal, ...prev].slice(0, 50));
-      })
-      .subscribe((status) => {
-        setConnected(status === "SUBSCRIBED");
-      });
-
-    // Also subscribe to DB changes for persistence
-    const dbChannel = supabase
-      .channel("trade-signals-db")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "trade_signals" }, (payload) => {
-        setSignals(prev => {
-          if (prev.some(s => s.id === payload.new.id)) return prev;
-          return [payload.new as TradeSignal, ...prev].slice(0, 50);
-        });
-      })
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-      dbChannel.unsubscribe();
-    };
-  }, []);
-
-  // Fetch initial signals + positions
-  useEffect(() => {
-    const supabase = supabaseRef.current;
-
-    async function fetchInitial() {
-      const [{ data: sigs }, { data: pos }] = await Promise.all([
-        supabase
-          .from("trade_signals")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(20),
-        supabase
-          .from("paper_trades")
-          .select("*")
-          .eq("status", "OPEN")
-          .order("opened_at", { ascending: false }),
-      ]);
-
-      if (sigs) setSignals(sigs);
-      if (pos) setPositions(pos.map(p => ({
-        id: p.id,
-        asset: p.asset,
-        side: p.side,
-        entry_price: p.entry_price,
-        size: p.size,
-        leverage: p.leverage,
-        unrealized_pnl: 0,
-        unrealized_pnl_pct: 0,
-        status: p.status,
-      })));
+    async function fetchData() {
+      try {
+        const [sigs, pos] = await Promise.all([
+          fetch("/api/trade-signals").then(r => r.json()).catch(() => []),
+          fetch("/api/open-positions").then(r => r.json()).catch(() => []),
+        ]);
+        if (Array.isArray(sigs)) {
+          setSignals(sigs);
+          setConnected(true);
+        }
+        if (Array.isArray(pos)) {
+          setPositions(pos.map((p: any) => ({
+            id: p.id,
+            asset: p.asset,
+            side: p.side,
+            entry_price: p.entry_price ?? p.entryPrice,
+            size: p.size,
+            leverage: p.leverage,
+            unrealized_pnl: p.unrealized_pnl ?? 0,
+            unrealized_pnl_pct: p.unrealized_pnl_pct ?? 0,
+            status: p.status,
+          })));
+        }
+      } catch {
+        setConnected(false);
+      }
     }
 
-    fetchInitial();
+    fetchData();
 
     if (autoRefresh) {
-      const interval = setInterval(fetchInitial, 30000);
+      const interval = setInterval(fetchData, 30000);
       return () => clearInterval(interval);
     }
   }, [autoRefresh]);

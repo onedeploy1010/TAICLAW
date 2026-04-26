@@ -10,7 +10,6 @@ import { useQuery } from "@tanstack/react-query";
 import { getProfile, getNodeOverview, getVaultPositions } from "@/lib/api";
 import type { NodeOverview } from "@shared/types";
 import { MAReleaseDialog } from "@/components/vault/ma-release-dialog";
-import { supabase } from "@/lib/supabase";
 import type { Profile } from "@shared/types";
 
 import { useLocation } from "wouter";
@@ -82,9 +81,7 @@ export default function ProfilePage() {
     queryKey: ["claimed-yield", walletAddr],
     queryFn: async () => {
       if (!walletAddr) return 0;
-      const { data: prof } = await supabase.from("profiles").select("id").eq("wallet_address", walletAddr).single();
-      if (!prof) return 0;
-      const { data: txs } = await supabase.from("transactions").select("amount").eq("user_id", prof.id).eq("type", "YIELD_CLAIM");
+      const txs = await fetch(`/api/transactions/${encodeURIComponent(walletAddr)}?type=YIELD_CLAIM`).then(r => r.json()).catch(() => []);
       return (txs || []).reduce((s: number, t: any) => s + Number(t.amount || 0), 0);
     },
     enabled: !!walletAddr,

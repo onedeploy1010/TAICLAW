@@ -6,7 +6,6 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import { useAdminAuth } from "@/admin/admin-auth";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -60,13 +59,8 @@ export default function AdminCopyTrading() {
   const { data: configs = [], isLoading: configsLoading, refetch: refetchConfigs } = useQuery({
     queryKey: ["admin", "copy-trading", "configs"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("user_risk_config").select("*").order("updated_at", { ascending: false });
-      if (error) throw error;
-      const userIds = (data ?? []).map(d => d.user_id);
-      if (userIds.length === 0) return [];
-      const { data: profiles } = await supabase.from("profiles").select("id, wallet_address").in("id", userIds);
-      const walletMap = new Map((profiles ?? []).map(p => [p.id, p.wallet_address]));
-      return (data ?? []).map(d => ({ ...d, wallet_address: walletMap.get(d.user_id) || "未知" })) as UserCopyConfig[];
+      const data = await fetch("/api/admin/user-risk-configs").then(r => r.json()).catch(() => []);
+      return (Array.isArray(data) ? data : []) as UserCopyConfig[];
     },
     enabled: !!adminUser,
   });
@@ -74,13 +68,8 @@ export default function AdminCopyTrading() {
   const { data: keys = [], isLoading: keysLoading, refetch: refetchKeys } = useQuery({
     queryKey: ["admin", "copy-trading", "keys"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("user_exchange_keys").select("*").order("created_at", { ascending: false });
-      if (error) throw error;
-      const userIds = (data ?? []).map(d => d.user_id);
-      if (userIds.length === 0) return [];
-      const { data: profiles } = await supabase.from("profiles").select("id, wallet_address").in("id", userIds);
-      const walletMap = new Map((profiles ?? []).map(p => [p.id, p.wallet_address]));
-      return (data ?? []).map(d => ({ ...d, wallet_address: walletMap.get(d.user_id) || "未知" })) as UserExchangeKey[];
+      const data = await fetch("/api/admin/user-exchange-keys").then(r => r.json()).catch(() => []);
+      return (Array.isArray(data) ? data : []) as UserExchangeKey[];
     },
     enabled: !!adminUser,
   });

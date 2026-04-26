@@ -6,7 +6,6 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import { useAdminAuth } from "@/admin/admin-auth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -83,8 +82,8 @@ export default function AdminTreasury() {
   const { data: switches = [], isLoading: switchesLoading } = useQuery({
     queryKey: ["admin", "treasury", "config"],
     queryFn: async () => {
-      const { data } = await supabase.from("treasury_config").select("*").order("key");
-      return (data || []) as TreasurySwitch[];
+      const data = await fetch("/api/admin/treasury-config").then(r => r.json()).catch(() => []);
+      return (Array.isArray(data) ? data : []) as TreasurySwitch[];
     },
     enabled: !!adminUser,
   });
@@ -93,8 +92,8 @@ export default function AdminTreasury() {
   const { data: cycles = [], isLoading: cyclesLoading, refetch: refetchCycles } = useQuery({
     queryKey: ["admin", "treasury", "cycles"],
     queryFn: async () => {
-      const { data } = await supabase.from("bridge_cycles").select("*").order("started_at", { ascending: false }).limit(20);
-      return (data || []) as BridgeCycle[];
+      const data = await fetch("/api/admin/bridge-cycles").then(r => r.json()).catch(() => []);
+      return (Array.isArray(data) ? data : []) as BridgeCycle[];
     },
     enabled: !!adminUser,
   });
@@ -102,8 +101,8 @@ export default function AdminTreasury() {
   // Toggle switch
   const toggleMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      const { error } = await supabase.from("treasury_config").update({ value, updated_at: new Date().toISOString() }).eq("key", key);
-      if (error) throw error;
+      const res = await fetch(`/api/admin/treasury-config/${encodeURIComponent(key)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ value }) });
+      if (!res.ok) throw new Error("Update failed");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "treasury", "config"] });
@@ -112,30 +111,25 @@ export default function AdminTreasury() {
 
   // Update config value
   const updateConfig = async (key: string, value: string) => {
-    await supabase.from("treasury_config").update({ value, updated_at: new Date().toISOString() }).eq("key", key);
+    await fetch(`/api/admin/treasury-config/${encodeURIComponent(key)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ value }) });
     queryClient.invalidateQueries({ queryKey: ["admin", "treasury", "config"] });
     toast({ title: "已更新", description: `${key} = ${value}` });
   };
 
   // Create manual cycle
   const createCycle = async (cycleType: string) => {
-    const { error } = await supabase.from("bridge_cycles").insert({
-      cycle_type: cycleType,
-      amount_usd: 0,
-      initiated_by: adminUser || "admin",
-      status: "PENDING",
-    });
-    if (error) {
-      toast({ title: "创建失败", description: error.message, variant: "destructive" });
+    const res = await fetch("/api/admin/bridge-cycles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cycleType, initiatedBy: adminUser }) });
+    if (!res.ok) {
+      toast({ title: "创建失败", variant: "destructive" });
     } else {
       toast({ title: "已创建", description: `${CYCLE_LABELS[cycleType]} 任务已加入队列` });
       refetchCycles();
     }
   };
 
-  // Call edge function directly
+  // Call server-side function
   const callEdgeFunction = async (name: string, body: Record<string, unknown> = {}) => {
-    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${name}`, {
+    const res = await fetch(`/api/admin/edge/${encodeURIComponent(name)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

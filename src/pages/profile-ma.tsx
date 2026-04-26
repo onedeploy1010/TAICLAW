@@ -9,7 +9,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useThirdwebClient } from "@/hooks/use-thirdweb";
 import { getMATokenContract, getUsdtContract, MA_TOKEN_ADDRESS, RELEASE_ADDRESS, BSC_CHAIN } from "@/lib/contracts";
 import { transfer } from "thirdweb/extensions/erc20";
-import { supabase } from "@/lib/supabase";
 import { VAULT_PLANS } from "@/lib/data";
 import { useMaPrice } from "@/hooks/use-ma-price";
 import { createChart, ColorType, CrosshairMode, LineStyle, type UTCTimestamp } from "lightweight-charts";
@@ -274,10 +273,8 @@ function MASwap() {
     queryKey: ["ma-swap-history", account?.address],
     queryFn: async () => {
       if (!account?.address) return [];
-      const { data } = await import("@/lib/supabase").then(m =>
-        m.supabase.from("ma_swap_records").select("*").eq("wallet_address", account!.address).order("created_at", { ascending: false }).limit(10)
-      );
-      return data || [];
+      const res = await fetch(`/api/ma-swap-history/${encodeURIComponent(account!.address)}`);
+      return res.ok ? res.json() : [];
     },
     enabled: !!account?.address,
   });
@@ -285,8 +282,6 @@ function MASwap() {
   const handleSwap = async () => {
     if (!account || !client || inputAmount <= 0 || exceedsQuota) return;
     const receiverAddress = import.meta.env.VITE_VIP_RECEIVER_ADDRESS || "0x93F655C3C6B595600fc735118dcEE10cd63d4C8f";
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-
     setSwapError("");
     try {
       setSwapStatus("transferring");
@@ -298,9 +293,9 @@ function MASwap() {
       const receipt = await waitForReceipt({ client, chain: BSC_CHAIN, transactionHash: result.transactionHash });
       if (receipt.status === "reverted") throw new Error("Transaction reverted");
 
-      // Record via edge function
+      // Record via API
       setSwapStatus("recording");
-      const resp = await fetch(`${supabaseUrl}/functions/v1/ma-swap`, {
+      const resp = await fetch("/api/ma-swap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -309,7 +304,7 @@ function MASwap() {
           direction: isSwapped ? "buy" : "sell",
           maAmount: inputAmount,
           outputToken,
-          maPrice,       // oracle price follows K-line
+          maPrice,
           maBalance,
         }),
       });
@@ -558,10 +553,8 @@ function VaultRedeemSection() {
     queryKey: ["vault-positions-ma", account?.address],
     queryFn: async () => {
       if (!account?.address) return [];
-      const { data: profile } = await supabase.from("profiles").select("id").eq("wallet_address", account.address).single();
-      if (!profile) return [];
-      const { data } = await supabase.from("vault_positions").select("*").eq("user_id", profile.id).eq("status", "ACTIVE").order("created_at", { ascending: false });
-      return data || [];
+      const res = await fetch(`/api/vault-positions/${encodeURIComponent(account.address)}`);
+      return res.ok ? res.json() : [];
     },
     enabled: !!account?.address,
   });
@@ -571,12 +564,12 @@ function VaultRedeemSection() {
   const handleRedeem = async (pos: any) => {
     setRedeeming(pos.id);
     try {
-      const { data: profile } = await supabase.from("profiles").select("id").eq("wallet_address", account!.address).single();
-      if (!profile) throw new Error("Profile not found");
-
-      // Call vault_withdraw RPC
-      const { error } = await supabase.rpc("vault_withdraw", { addr: account!.address, pos_id: pos.id });
-      if (error) throw error;
+      const res = await fetch("/api/vault-withdraw", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletAddress: account!.address, positionId: pos.id }),
+      });
+      if (!res.ok) throw new Error("Vault withdraw failed");
 
       refetch();
       queryClient.invalidateQueries({ queryKey: ["ma-balance"] });

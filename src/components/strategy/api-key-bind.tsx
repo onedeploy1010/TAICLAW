@@ -6,7 +6,6 @@
  */
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
@@ -57,14 +56,9 @@ export function ApiKeyBind({ userId }: { userId?: string }) {
   // Load stored keys
   useEffect(() => {
     if (!userId) return;
-    supabase
-      .from("user_exchange_keys")
-      .select("id, exchange, label, masked_key, testnet, is_valid, last_validated, created_at")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        if (data) setStoredKeys(data);
-      });
+    fetch(`/api/bind-exchange-key?userId=${encodeURIComponent(userId)}`).then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setStoredKeys(data);
+    }).catch(() => {});
   }, [userId, success]);
 
   const exchangeConfig = EXCHANGES.find(e => e.id === selectedExchange);
@@ -83,9 +77,10 @@ export function ApiKeyBind({ userId }: { userId?: string }) {
     setError("");
 
     try {
-      // Call edge function to validate and store key
-      const { data, error: fnError } = await supabase.functions.invoke("bind-exchange-key", {
-        body: {
+      const res = await fetch("/api/bind-exchange-key", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           userId,
           exchange: selectedExchange,
           apiKey,
@@ -93,10 +88,10 @@ export function ApiKeyBind({ userId }: { userId?: string }) {
           passphrase: passphrase || undefined,
           testnet,
           label: label || selectedExchange,
-        },
+        }),
       });
-
-      if (fnError) throw new Error(fnError.message);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to bind key");
       if (data?.error) throw new Error(data.error);
 
       setSuccess(`${exchangeConfig?.name} ${t("exchange.bindSuccess")}`);
@@ -114,11 +109,7 @@ export function ApiKeyBind({ userId }: { userId?: string }) {
     if (!userId) return;
     if (!confirm(t("exchange.confirmDelete", { exchange }))) return;
 
-    await supabase
-      .from("user_exchange_keys")
-      .delete()
-      .eq("user_id", userId)
-      .eq("exchange", exchange);
+    await fetch(`/api/bind-exchange-key`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, exchange }) });
 
     setStoredKeys(prev => prev.filter(k => k.exchange !== exchange));
   };

@@ -7,7 +7,6 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
-import { supabase } from "@/lib/supabase";
 import { useTranslation } from "react-i18next";
 
 interface CoinScore {
@@ -41,27 +40,16 @@ export function AICoinPicker({ compact = false }: { compact?: boolean }) {
 
   const fetchCoinScores = async () => {
     try {
-      // Fetch recent signals (last 1 hour) to analyze which coins are active
-      const [signalsRes, tradesRes, perfRes] = await Promise.all([
-        supabase
-          .from("trade_signals")
-          .select("asset, action, confidence, strength, strategy_type, created_at")
-          .gte("created_at", new Date(Date.now() - 3600_000).toISOString())
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("paper_trades")
-          .select("asset, strategy_type, side, pnl, pnl_pct, status, close_reason")
-          .eq("status", "CLOSED")
-          .gte("closed_at", new Date(Date.now() - 7 * 86400_000).toISOString()),
-        supabase
-          .from("paper_trades")
-          .select("asset, strategy_type, side, entry_price, leverage, opened_at")
-          .eq("status", "OPEN"),
+      // Fetch recent signals and trades via API
+      const [signalsData, tradesData, openTradesData] = await Promise.all([
+        fetch("/api/trade-signals?limit=200&hours=1").then(r => r.json()).catch(() => []),
+        fetch("/api/paper-trades?status=CLOSED&limit=200&days=7").then(r => r.json()).catch(() => []),
+        fetch("/api/open-positions").then(r => r.json()).catch(() => []),
       ]);
 
-      const signals = signalsRes.data ?? [];
-      const closedTrades = tradesRes.data ?? [];
-      const openTrades = perfRes.data ?? [];
+      const signals = Array.isArray(signalsData) ? signalsData : [];
+      const closedTrades = Array.isArray(tradesData) ? tradesData : [];
+      const openTrades = Array.isArray(openTradesData) ? openTradesData : [];
 
       // Get unique assets from all sources
       const allAssets = new Set<string>();

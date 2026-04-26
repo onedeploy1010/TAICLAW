@@ -271,16 +271,12 @@ export function usePayment() {
         const confirmedHash = receipt.transactionHash;
         setTxHash(confirmedHash);
 
-        // Activate VIP via edge function
+        // Activate VIP via API
         setStatus("recording");
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const resp = await fetch(`${supabaseUrl}/functions/v1/vip-subscribe`, {
+        const resp = await fetch("/api/subscribe-vip", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-payment": JSON.stringify({ txHash: confirmedHash, settled: true }),
-          },
-          body: JSON.stringify({ planKey, walletAddress: account.address }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ walletAddress: account.address, txHash: confirmedHash, planLabel: planKey }),
         });
 
         const result = await resp.json();

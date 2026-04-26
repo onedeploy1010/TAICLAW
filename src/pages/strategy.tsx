@@ -17,12 +17,11 @@ import {
 } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { formatCompact, formatUSD } from "@/lib/constants";
-import { supabase } from "@/lib/supabase";
 import {
   Shield, CheckCircle2, TrendingUp, TrendingDown,
   Minus, Clock, Brain, Info, RefreshCw, Wallet, ChevronLeft, ChevronRight,
   Search, RotateCcw, Copy, Eye, EyeOff, Key, Link2, MessageCircle,
-  DollarSign, Zap, Gauge, ArrowLeftRight, Flame, Waves, Sparkles, Activity, Crown, Search,
+  DollarSign, Zap, Gauge, ArrowLeftRight, Flame, Waves, Sparkles, Activity, Crown,
 } from "lucide-react";
 import type { Strategy, StrategySubscription, Profile, HedgePosition, InsurancePurchase } from "@shared/types";
 import { StrategyHeader } from "@/components/strategy/strategy-header";
@@ -82,9 +81,9 @@ function StrategyListTab({ walletAddr, onFollowStrategy }: { walletAddr: string;
   const { data: allTrades = [], isLoading } = useQuery<PaperTrade[]>({
     queryKey: ["strategy-trades"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("paper_trades").select("id,asset,side,entry_price,pnl,strategy_type,status,opened_at").order("opened_at", { ascending: false }).limit(200);
-      if (error) throw error;
-      return data as PaperTrade[];
+      const res = await fetch("/api/paper-trades?limit=200");
+      if (!res.ok) throw new Error("Failed");
+      return res.json() as Promise<PaperTrade[]>;
     },
     staleTime: 30_000, retry: false,
   });
@@ -92,9 +91,9 @@ function StrategyListTab({ walletAddr, onFollowStrategy }: { walletAddr: string;
   const { data: allSignals = [] } = useQuery<TradeSignal[]>({
     queryKey: ["strategy-signals"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("trade_signals").select("id,asset,direction,confidence,strategy_type,created_at").order("created_at", { ascending: false }).limit(50);
-      if (error) throw error;
-      return data as TradeSignal[];
+      const res = await fetch("/api/trade-signals?limit=50");
+      if (!res.ok) throw new Error("Failed");
+      return res.json() as Promise<TradeSignal[]>;
     },
     staleTime: 30_000, retry: false,
   });

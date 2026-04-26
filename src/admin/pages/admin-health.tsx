@@ -11,7 +11,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import { useAdminAuth } from "@/admin/admin-auth";
 import { cn } from "@/lib/utils";
 import { Activity, RefreshCw, Wifi, WifiOff, Clock, Database, Cpu, AlertTriangle, CheckCircle2, XCircle, Server, Zap } from "lucide-react";
@@ -66,7 +65,6 @@ const CRON_JOBS: { name: string; schedule: string; expectedInterval: number; des
   { name: "close-expired-trades", schedule: "*/10 * * * *", expectedInterval: 10, desc: "过期平仓" },
 ];
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://enedbksmftcgtszrkppc.supabase.co";
 
 // ── Helpers ──
 
@@ -108,51 +106,8 @@ export default function AdminHealth() {
   const { data: modelChecks = [], refetch: refetchModels } = useQuery({
     queryKey: ["admin", "health", "models"],
     queryFn: async (): Promise<ServiceCheck[]> => {
-      const checks: ServiceCheck[] = [];
-
-      for (const model of AI_MODELS) {
-        // Get latest analysis from this model
-        const { data: latest } = await supabase
-          .from("ai_market_analysis")
-          .select("created_at, asset, confidence, reasoning")
-          .eq("model", model.id)
-          .order("created_at", { ascending: false })
-          .limit(1);
-
-        // Count analyses in last 2 hours
-        const { count } = await supabase
-          .from("ai_market_analysis")
-          .select("id", { count: "exact", head: true })
-          .eq("model", model.id)
-          .gte("created_at", new Date(Date.now() - 2 * 3600_000).toISOString());
-
-        const lastRecord = latest?.[0];
-        const lastTime = lastRecord?.created_at || null;
-        const msSince = lastTime ? Date.now() - new Date(lastTime).getTime() : Infinity;
-        const count2h = count ?? 0;
-
-        let status: HealthStatus = "healthy";
-        let message = `最近2h: ${count2h}条分析`;
-
-        if (msSince > 3600_000) {
-          status = "critical";
-          message = `已停止 ${timeSince(lastTime)}`;
-        } else if (msSince > 1800_000) {
-          status = "warning";
-          message = `${timeSince(lastTime)}无新数据`;
-        }
-
-        checks.push({
-          name: `${model.icon} ${model.id}`,
-          status,
-          latencyMs: null,
-          lastSuccess: lastTime,
-          message,
-          details: { provider: model.provider, count2h, lastAsset: lastRecord?.asset },
-        });
-      }
-
-      return checks;
+      const result = await fetch("/api/admin/health/models").then(r => r.json()).catch(() => []);
+      return Array.isArray(result) ? result : [];
     },
     enabled: !!adminUser,
     refetchInterval: 60_000,
@@ -162,45 +117,8 @@ export default function AdminHealth() {
   const { data: macMiniCheck, refetch: refetchMacMini } = useQuery({
     queryKey: ["admin", "health", "macmini"],
     queryFn: async (): Promise<ServiceCheck> => {
-      // Check for mac-mini-agent source in ai_market_analysis
-      const { data: latest } = await supabase
-        .from("ai_market_analysis")
-        .select("created_at, asset, reasoning, key_levels")
-        .eq("model", "agent")
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      const { count } = await supabase
-        .from("ai_market_analysis")
-        .select("id", { count: "exact", head: true })
-        .eq("model", "agent")
-        .gte("created_at", new Date(Date.now() - 2 * 3600_000).toISOString());
-
-      const lastRecord = latest?.[0];
-      const lastTime = lastRecord?.created_at || null;
-      const msSince = lastTime ? Date.now() - new Date(lastTime).getTime() : Infinity;
-      const count2h = count ?? 0;
-
-      let status: HealthStatus = "healthy";
-      let message = `最近2h: ${count2h}条分析推送`;
-
-      if (msSince > 1800_000) {
-        // 30min no signal from agent that runs every 15min
-        status = "critical";
-        message = `Mac Mini 已停止推送 (${timeSince(lastTime)})`;
-      } else if (msSince > 900_000) {
-        status = "warning";
-        message = `最近一次推送: ${timeSince(lastTime)}`;
-      }
-
-      return {
-        name: "🖥 Mac Mini OpenClaw",
-        status,
-        latencyMs: null,
-        lastSuccess: lastTime,
-        message,
-        details: { count2h, lastAsset: lastRecord?.asset, reasoning: lastRecord?.reasoning?.slice(0, 100) },
-      };
+      const result = await fetch("/api/admin/health/macmini").then(r => r.json()).catch(() => null);
+      return result || { name: "🖥 Mac Mini OpenClaw", status: "unknown", latencyMs: null, lastSuccess: null, message: "无数据", details: {} };
     },
     enabled: !!adminUser,
     refetchInterval: 60_000,
@@ -210,100 +128,8 @@ export default function AdminHealth() {
   const { data: cronChecks = [], refetch: refetchCrons } = useQuery({
     queryKey: ["admin", "health", "crons"],
     queryFn: async (): Promise<CronJobStatus[]> => {
-      const checks: CronJobStatus[] = [];
-
-      // simulate-trading: check paper_trades latest opened_at
-      const { data: latestTrade } = await supabase
-        .from("paper_trades")
-        .select("opened_at")
-        .order("opened_at", { ascending: false })
-        .limit(1);
-
-      const tradeTime = latestTrade?.[0]?.opened_at || null;
-      const tradeMsSince = tradeTime ? Date.now() - new Date(tradeTime).getTime() : Infinity;
-      checks.push({
-        name: "simulate-trading",
-        schedule: "*/5 * * * *",
-        lastRun: tradeTime,
-        expectedInterval: 5,
-        status: tradeMsSince > 15 * 60_000 ? "critical" : tradeMsSince > 10 * 60_000 ? "warning" : "healthy",
-        message: tradeTime ? `最近开单: ${timeSince(tradeTime)}` : "无交易记录",
-      });
-
-      // ai-market-analysis: check latest analysis
-      const { data: latestAnalysis } = await supabase
-        .from("ai_market_analysis")
-        .select("created_at")
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      const analysisTime = latestAnalysis?.[0]?.created_at || null;
-      const analysisMsSince = analysisTime ? Date.now() - new Date(analysisTime).getTime() : Infinity;
-      checks.push({
-        name: "ai-market-analysis",
-        schedule: "*/30 * * * *",
-        lastRun: analysisTime,
-        expectedInterval: 30,
-        status: analysisMsSince > 60 * 60_000 ? "critical" : analysisMsSince > 40 * 60_000 ? "warning" : "healthy",
-        message: analysisTime ? `最近分析: ${timeSince(analysisTime)}` : "无分析记录",
-      });
-
-      // resolve-predictions: check latest resolved prediction
-      const { data: latestResolved } = await supabase
-        .from("ai_prediction_records")
-        .select("resolved_at")
-        .not("resolved_at", "is", null)
-        .order("resolved_at", { ascending: false })
-        .limit(1);
-
-      const resolvedTime = latestResolved?.[0]?.resolved_at || null;
-      const resolvedMsSince = resolvedTime ? Date.now() - new Date(resolvedTime).getTime() : Infinity;
-      checks.push({
-        name: "resolve-predictions",
-        schedule: "*/5 * * * *",
-        lastRun: resolvedTime,
-        expectedInterval: 5,
-        status: resolvedMsSince > 30 * 60_000 ? "critical" : resolvedMsSince > 15 * 60_000 ? "warning" : "healthy",
-        message: resolvedTime ? `最近结算: ${timeSince(resolvedTime)}` : "无结算记录",
-      });
-
-      // adjust-weights: check ai_model_accuracy updated_at
-      const { data: latestWeight } = await supabase
-        .from("ai_model_accuracy")
-        .select("updated_at")
-        .order("updated_at", { ascending: false })
-        .limit(1);
-
-      const weightTime = latestWeight?.[0]?.updated_at || null;
-      const weightMsSince = weightTime ? Date.now() - new Date(weightTime).getTime() : Infinity;
-      checks.push({
-        name: "adjust-weights",
-        schedule: "0 * * * *",
-        lastRun: weightTime,
-        expectedInterval: 60,
-        status: weightMsSince > 120 * 60_000 ? "critical" : weightMsSince > 90 * 60_000 ? "warning" : "healthy",
-        message: weightTime ? `最近调权: ${timeSince(weightTime)}` : "无调权记录",
-      });
-
-      // close-expired: check latest auto-closed trade
-      const { data: latestClosed } = await supabase
-        .from("paper_trades")
-        .select("closed_at")
-        .eq("close_reason", "EXPIRED")
-        .order("closed_at", { ascending: false })
-        .limit(1);
-
-      const closedTime = latestClosed?.[0]?.closed_at || null;
-      checks.push({
-        name: "close-expired-trades",
-        schedule: "*/10 * * * *",
-        lastRun: closedTime,
-        expectedInterval: 10,
-        status: "healthy", // This may not run if no trades need closing
-        message: closedTime ? `最近过期平仓: ${timeSince(closedTime)}` : "暂无过期平仓",
-      });
-
-      return checks;
+      const result = await fetch("/api/admin/health/crons").then(r => r.json()).catch(() => []);
+      return Array.isArray(result) ? result : [];
     },
     enabled: !!adminUser,
     refetchInterval: 60_000,
@@ -313,168 +139,24 @@ export default function AdminHealth() {
   const { data: dataChecks = [], refetch: refetchData } = useQuery({
     queryKey: ["admin", "health", "data"],
     queryFn: async (): Promise<DataFreshness[]> => {
-      const checks: DataFreshness[] = [];
-      const now = new Date();
-      const h24 = new Date(now.getTime() - 24 * 3600_000).toISOString();
-
-      // ai_market_analysis
-      const { data: analysisLatest } = await supabase
-        .from("ai_market_analysis")
-        .select("created_at")
-        .order("created_at", { ascending: false })
-        .limit(1);
-      const { count: analysisCount } = await supabase
-        .from("ai_market_analysis")
-        .select("id", { count: "exact", head: true })
-        .gte("created_at", h24);
-      const analysisTime = analysisLatest?.[0]?.created_at || null;
-      checks.push({
-        table: "ai_market_analysis",
-        label: "AI 分析数据",
-        latestRecord: analysisTime,
-        recordCount24h: analysisCount ?? 0,
-        expectedMinPerHour: 5,
-        status: (analysisCount ?? 0) < 24 ? "critical" : (analysisCount ?? 0) < 60 ? "warning" : "healthy",
-        message: `24h: ${analysisCount ?? 0}条`,
-      });
-
-      // paper_trades
-      const { data: tradeLatest } = await supabase
-        .from("paper_trades")
-        .select("opened_at")
-        .order("opened_at", { ascending: false })
-        .limit(1);
-      const { count: tradeCount } = await supabase
-        .from("paper_trades")
-        .select("id", { count: "exact", head: true })
-        .gte("opened_at", h24);
-      const tradeTime = tradeLatest?.[0]?.opened_at || null;
-      checks.push({
-        table: "paper_trades",
-        label: "模拟交易",
-        latestRecord: tradeTime,
-        recordCount24h: tradeCount ?? 0,
-        expectedMinPerHour: 2,
-        status: (tradeCount ?? 0) < 12 ? "critical" : (tradeCount ?? 0) < 24 ? "warning" : "healthy",
-        message: `24h: ${tradeCount ?? 0}笔`,
-      });
-
-      // trade_signals
-      const { data: sigLatest } = await supabase
-        .from("trade_signals")
-        .select("created_at")
-        .order("created_at", { ascending: false })
-        .limit(1);
-      const { count: sigCount } = await supabase
-        .from("trade_signals")
-        .select("id", { count: "exact", head: true })
-        .gte("created_at", h24);
-      const sigTime = sigLatest?.[0]?.created_at || null;
-      checks.push({
-        table: "trade_signals",
-        label: "交易信号",
-        latestRecord: sigTime,
-        recordCount24h: sigCount ?? 0,
-        expectedMinPerHour: 2,
-        status: (sigCount ?? 0) < 12 ? "critical" : (sigCount ?? 0) < 24 ? "warning" : "healthy",
-        message: `24h: ${sigCount ?? 0}条`,
-      });
-
-      // ai_prediction_records
-      const { data: predLatest } = await supabase
-        .from("ai_prediction_records")
-        .select("created_at")
-        .order("created_at", { ascending: false })
-        .limit(1);
-      const { count: predCount } = await supabase
-        .from("ai_prediction_records")
-        .select("id", { count: "exact", head: true })
-        .gte("created_at", h24);
-      const predTime = predLatest?.[0]?.created_at || null;
-      checks.push({
-        table: "ai_prediction_records",
-        label: "AI 预测记录",
-        latestRecord: predTime,
-        recordCount24h: predCount ?? 0,
-        expectedMinPerHour: 1,
-        status: (predCount ?? 0) < 6 ? "critical" : (predCount ?? 0) < 12 ? "warning" : "healthy",
-        message: `24h: ${predCount ?? 0}条`,
-      });
-
-      // ai_memory
-      const { data: memLatest } = await supabase
-        .from("ai_memory")
-        .select("created_at")
-        .order("created_at", { ascending: false })
-        .limit(1);
-      const { count: memCount } = await supabase
-        .from("ai_memory")
-        .select("id", { count: "exact", head: true })
-        .gte("created_at", h24);
-      const memTime = memLatest?.[0]?.created_at || null;
-      checks.push({
-        table: "ai_memory",
-        label: "AI 向量记忆",
-        latestRecord: memTime,
-        recordCount24h: memCount ?? 0,
-        expectedMinPerHour: 1,
-        status: (memCount ?? 0) === 0 ? "warning" : "healthy",
-        message: `24h: ${memCount ?? 0}条`,
-      });
-
-      return checks;
+      const result = await fetch("/api/admin/health/data-freshness").then(r => r.json()).catch(() => []);
+      return Array.isArray(result) ? result : [];
     },
     enabled: !!adminUser,
     refetchInterval: 120_000,
   });
 
-  // ── 5. API Usage (estimated from analysis counts per model) ──
+  // ── 5. API Usage ──
   const { data: apiUsage = [], refetch: refetchUsage } = useQuery({
     queryKey: ["admin", "health", "usage"],
     queryFn: async () => {
-      const now = new Date();
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-
-      const usage: { model: string; icon: string; today: number; month: number; estimateMonthly: number; tier: string }[] = [];
-
-      for (const model of AI_MODELS) {
-        const { count: todayCount } = await supabase
-          .from("ai_market_analysis")
-          .select("id", { count: "exact", head: true })
-          .eq("model", model.id)
-          .gte("created_at", startOfDay);
-
-        const { count: monthCount } = await supabase
-          .from("ai_market_analysis")
-          .select("id", { count: "exact", head: true })
-          .eq("model", model.id)
-          .gte("created_at", startOfMonth);
-
-        const dayOfMonth = now.getDate();
-        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const estimateMonthly = dayOfMonth > 0 ? Math.round(((monthCount ?? 0) / dayOfMonth) * daysInMonth) : 0;
-
-        // Rough tier labels based on typical API pricing
-        let tier = "按量付费";
-        if (model.id === "Llama") tier = "免费 (Cloudflare)";
-        if (model.id === "DeepSeek") tier = "低成本";
-
-        usage.push({
-          model: model.id,
-          icon: model.icon,
-          today: todayCount ?? 0,
-          month: monthCount ?? 0,
-          estimateMonthly,
-          tier,
-        });
-      }
-
-      return usage;
+      const result = await fetch("/api/admin/health/api-usage").then(r => r.json()).catch(() => []);
+      return Array.isArray(result) ? result : [];
     },
     enabled: !!adminUser,
     refetchInterval: 300_000,
   });
+
 
   // ── Refresh all ──
   const refreshAll = useCallback(async () => {

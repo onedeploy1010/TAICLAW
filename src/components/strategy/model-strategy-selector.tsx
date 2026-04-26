@@ -7,7 +7,6 @@
 
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 interface ModelInfo {
@@ -87,14 +86,11 @@ export function ModelStrategySelector({ selectedModels, selectedStrategies, onMo
 
   useEffect(() => {
     async function fetchModelAccuracy() {
-      const { data } = await supabase
-        .from("ai_model_accuracy")
-        .select("model, accuracy_pct, total_trades, wins, computed_weight")
-        .eq("period", "7d")
-        .eq("asset", "ALL");
+      const stats = await fetch("/api/admin/ai-stats?period=7d&asset=ALL").then(r => r.json()).catch(() => ({}));
+      const data = Array.isArray(stats.modelAccuracy) ? stats.modelAccuracy : [];
 
       const modelList: ModelInfo[] = Object.entries(MODEL_META).map(([id, meta]) => {
-        const row = data?.find(d => d.model === id);
+        const row = data.find((d: any) => d.model === id);
         return {
           id,
           ...meta,

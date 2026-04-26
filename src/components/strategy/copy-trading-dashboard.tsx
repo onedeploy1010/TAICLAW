@@ -4,7 +4,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { BarChart3, TrendingUp, TrendingDown, Clock, DollarSign, Target, AlertTriangle } from "lucide-react";
 
@@ -13,13 +12,8 @@ export function CopyTradingDashboard({ wallet }: { wallet: string }) {
   const { data: openPositions } = useQuery({
     queryKey: ["copy-open", wallet],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("copy_trade_orders")
-        .select("*")
-        .eq("user_wallet", wallet)
-        .in("status", ["filled", "partial"])
-        .order("opened_at", { ascending: false });
-      return data || [];
+      const res = await fetch(`/api/copy-trade-orders/${encodeURIComponent(wallet)}?status=open`);
+      return res.ok ? res.json() : [];
     },
     refetchInterval: 15000,
   });
@@ -27,14 +21,8 @@ export function CopyTradingDashboard({ wallet }: { wallet: string }) {
   const { data: closedTrades } = useQuery({
     queryKey: ["copy-closed", wallet],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("copy_trade_orders")
-        .select("*")
-        .eq("user_wallet", wallet)
-        .eq("status", "closed")
-        .order("closed_at", { ascending: false })
-        .limit(50);
-      return data || [];
+      const res = await fetch(`/api/copy-trade-orders/${encodeURIComponent(wallet)}?status=closed`);
+      return res.ok ? res.json() : [];
     },
     refetchInterval: 30000,
   });
@@ -42,14 +30,8 @@ export function CopyTradingDashboard({ wallet }: { wallet: string }) {
   const { data: config } = useQuery({
     queryKey: ["copy-config", wallet],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("user_trade_configs")
-        .select("*")
-        .eq("wallet_address", wallet)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-      return data;
+      const res = await fetch(`/api/user-trade-config/${encodeURIComponent(wallet)}`);
+      return res.ok ? res.json() : null;
     },
   });
 

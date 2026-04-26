@@ -11,7 +11,6 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import { useAdminAuth } from "@/admin/admin-auth";
 import { useThirdwebClient } from "@/hooks/use-thirdweb";
 import { readContract, getContract } from "thirdweb";
@@ -134,12 +133,8 @@ export default function AdminFunds() {
   const { data: vaultDeposits = [] } = useQuery({
     queryKey: ["admin", "funds", "vault-deposits"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("vault_positions")
-        .select("*, profiles!inner(wallet_address)")
-        .order("created_at", { ascending: false })
-        .limit(30);
-      return data || [];
+      const data = await fetch("/api/admin/vault-deposits?limit=30").then(r => r.json()).catch(() => []);
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!adminUser && section === "flow",
   });
@@ -148,8 +143,8 @@ export default function AdminFunds() {
   const { data: bridges = [] } = useQuery({
     queryKey: ["admin", "funds", "bridges"],
     queryFn: async () => {
-      const { data } = await supabase.from("bridge_cycles").select("*").order("started_at", { ascending: false }).limit(30);
-      return data || [];
+      const data = await fetch("/api/admin/bridge-cycles").then(r => r.json()).catch(() => []);
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!adminUser && section === "bridge",
   });
@@ -158,12 +153,8 @@ export default function AdminFunds() {
   const { data: swaps = [] } = useQuery({
     queryKey: ["admin", "funds", "swaps"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("ma_swap_records")
-        .select("*, profiles!inner(wallet_address)")
-        .order("created_at", { ascending: false })
-        .limit(30);
-      return data || [];
+      const data = await fetch("/api/admin/ma-swaps?limit=30").then(r => r.json()).catch(() => []);
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!adminUser && section === "swap",
   });
@@ -172,18 +163,11 @@ export default function AdminFunds() {
   const { data: txData, isLoading: txLoading, refetch: refetchTx } = useQuery({
     queryKey: ["admin", "funds", "txs", filter, search, page],
     queryFn: async () => {
-      let query = supabase
-        .from("transactions")
-        .select("*, profiles!inner(wallet_address)", { count: "exact" })
-        .order("created_at", { ascending: false })
-        .range(page * pageSize, (page + 1) * pageSize - 1);
-
-      if (filter !== "ALL") query = query.in("type", filter.split(","));
-      if (search) query = query.or(`tx_hash.ilike.%${search}%,profiles.wallet_address.ilike.%${search}%`);
-
-      const { data, count, error } = await query;
-      if (error) throw error;
-      return { txs: data || [], total: count || 0 };
+      const params = new URLSearchParams({ page: String(page + 1), pageSize: String(pageSize) });
+      if (filter !== "ALL") params.set("types", filter);
+      if (search) params.set("search", search);
+      const res = await fetch(`/api/admin/transactions?${params}`).then(r => r.json()).catch(() => ({ txs: [], total: 0 }));
+      return { txs: Array.isArray(res.txs) ? res.txs : [], total: res.total || 0 };
     },
     enabled: !!adminUser && section === "transactions",
   });

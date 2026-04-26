@@ -1,7 +1,8 @@
 modules = ["nodejs-20", "python-3.11", "web"]
 [agent]
 expertMode = true
-integrations = ["github:1.0.0"]
+integrations = ["github:1.0.0", "javascript_database:1.0.0"]
+stack = "FULLSTACK_JS"
 
 [nix]
 channel = "stable-25_05"
@@ -40,9 +41,10 @@ localPort = 5001
 externalPort = 3001
 
 [deployment]
-deploymentTarget = "static"
+deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
 publicDir = "dist"
+run = ["node", "./dist/index.cjs"]
 
 [userenv]
 

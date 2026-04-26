@@ -3,9 +3,6 @@ import { useProviderAuth } from "../provider-app";
 import { Settings, Save, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://jqgimdgtpwnunrlwexib.supabase.co";
 const ALL_ASSETS = ["BTC", "ETH", "SOL", "BNB", "DOGE", "XRP"];
 
 export default function ProviderStrategy() {
@@ -15,7 +12,7 @@ export default function ProviderStrategy() {
   const { data, isLoading } = useQuery({
     queryKey: ["provider", "dashboard-strategy"],
     queryFn: async () => {
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/provider-dashboard`, {
+      const resp = await fetch(`/api/provider/dashboard`, {
         headers: { Authorization: `Bearer ${apiKey}` },
       });
       if (!resp.ok) throw new Error("Failed");
@@ -46,7 +43,7 @@ export default function ProviderStrategy() {
   const { data: fullData } = useQuery({
     queryKey: ["provider", "full-details"],
     queryFn: async () => {
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/provider-dashboard?detailed=true`, {
+      const resp = await fetch(`/api/provider/dashboard?detailed=true`, {
         headers: { Authorization: `Bearer ${apiKey}` },
       });
       if (!resp.ok) throw new Error("Failed");
@@ -59,7 +56,7 @@ export default function ProviderStrategy() {
   const { data: assetStats } = useQuery({
     queryKey: ["provider", "asset-stats"],
     queryFn: async () => {
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/provider-signals?limit=100`, {
+      const resp = await fetch(`/api/provider/signals?limit=100`, {
         headers: { Authorization: `Bearer ${apiKey}` },
       });
       if (!resp.ok) throw new Error("Failed");

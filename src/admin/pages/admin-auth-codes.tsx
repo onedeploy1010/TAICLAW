@@ -19,7 +19,6 @@ import {
   adminGetAuthCodes, adminGetAuthCodeStats,
   adminBatchCreateAuthCodes, adminDeactivateAuthCode,
 } from "@/admin/admin-api";
-import { supabase } from "@/lib/supabase";
 import { useAdminAuth } from "@/admin/admin-auth";
 import { shortenAddress } from "@/lib/constants";
 import { copyText } from "@/lib/copy";
@@ -154,16 +153,9 @@ export default function AdminAuthCodes() {
   const handleExport = async () => {
     setExporting(true);
     try {
-      let query = supabase
-        .from("node_auth_codes")
-        .select("code, node_type, status, created_by, used_by_wallet, used_at, created_at")
-        .order("created_at", { ascending: false });
-
-      if (statusFilter !== "ALL") query = query.eq("status", statusFilter);
-
-      const { data: allCodes, error } = await query;
-      if (error) throw error;
-      if (!allCodes || allCodes.length === 0) { alert("没有数据可导出"); return; }
+      const statusParam = statusFilter !== "ALL" ? `&status=${encodeURIComponent(statusFilter)}` : "";
+      const allCodes = await fetch(`/api/admin/auth-codes?all=1${statusParam}`).then(r => r.json()).catch(() => []);
+      if (!Array.isArray(allCodes) || allCodes.length === 0) { alert("没有数据可导出"); return; }
 
       const headers = ["授权码", "节点类型", "状态", "创建人", "使用者", "使用时间", "创建时间"];
       const rows = allCodes.map((c: any) => [

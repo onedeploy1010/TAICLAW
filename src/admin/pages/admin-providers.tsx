@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAdminAuth } from "@/admin/admin-auth";
-import { supabase } from "@/lib/supabase";
 import { Radio, RefreshCw, Check, X, Ban, Clock, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
@@ -52,13 +51,9 @@ export default function AdminProviders() {
   const { data: providers, isLoading, refetch } = useQuery({
     queryKey: ["admin", "providers", tab],
     queryFn: async () => {
-      let query = supabase
-        .from("strategy_providers")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (tab !== "all") query = query.eq("status", tab);
-      const { data, error } = await query;
-      if (error) throw error;
+      const tabParam = tab !== "all" ? `?status=${encodeURIComponent(tab)}` : "";
+      const resp = await fetch(`/api/admin/providers${tabParam}`).then(r => r.json()).catch(() => []);
+      const data = Array.isArray(resp.data) ? resp.data : (Array.isArray(resp) ? resp : []);
       return data as Provider[];
     },
     enabled: !!adminUser,
@@ -67,14 +62,13 @@ export default function AdminProviders() {
   const { data: stats } = useQuery({
     queryKey: ["admin", "provider-stats"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("strategy_providers").select("status");
-      if (error) throw error;
-      const rows = data ?? [];
+      const resp = await fetch("/api/admin/providers").then(r => r.json()).catch(() => []);
+      const rows = Array.isArray(resp.data) ? resp.data : (Array.isArray(resp) ? resp : []);
       return {
         total: rows.length,
-        pending: rows.filter(r => r.status === "pending").length,
-        approved: rows.filter(r => r.status === "approved").length,
-        suspended: rows.filter(r => r.status === "suspended").length,
+        pending: rows.filter((r: any) => r.status === "pending").length,
+        approved: rows.filter((r: any) => r.status === "approved").length,
+        suspended: rows.filter((r: any) => r.status === "suspended").length,
       };
     },
     enabled: !!adminUser,
@@ -82,13 +76,8 @@ export default function AdminProviders() {
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: ProviderStatus }) => {
-      const updates: any = { status, updated_at: new Date().toISOString() };
-      if (status === "approved") {
-        updates.approved_by = adminUser;
-        updates.approved_at = new Date().toISOString();
-      }
-      const { error } = await supabase.from("strategy_providers").update(updates).eq("id", id);
-      if (error) throw error;
+      const res = await fetch(`/api/admin/providers/${encodeURIComponent(id)}/status`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status, approvedBy: adminUser }) });
+      if (!res.ok) throw new Error("Update failed");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "providers"] });

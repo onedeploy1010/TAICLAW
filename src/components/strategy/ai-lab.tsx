@@ -7,7 +7,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import {
   TrendingUp, TrendingDown, Minus, Brain, Target,
@@ -228,12 +227,9 @@ function SimOrdersButton({ model, color }: { model: string; color: string }) {
   const { data: trades = [], isLoading } = useQuery<PaperTrade[]>({
     queryKey: ["sim-orders", model],
     queryFn: async () => {
-      const { data, error } = await supabase.from("paper_trades")
-        .select("id,asset,side,entry_price,exit_price,leverage,pnl,pnl_pct,strategy_type,primary_model,status,opened_at,closed_at")
-        .or(`primary_model.eq.${model},primary_model.is.null`)
-        .order("opened_at", { ascending: false }).limit(20);
-      if (error) throw error;
-      return data as PaperTrade[];
+      const res = await fetch(`/api/paper-trades?model=${encodeURIComponent(model)}`);
+      if (!res.ok) throw new Error("Failed to fetch trades");
+      return res.json() as Promise<PaperTrade[]>;
     },
     enabled: open, staleTime: 30_000, retry: false,
   });
@@ -529,14 +525,8 @@ export function AiLab() {
   const { data: accuracy = [], isLoading: accLoading } = useQuery<AccuracyRow[]>({
     queryKey: ["ai-lab-accuracy"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ai_model_accuracy")
-        .select("*")
-        .eq("timeframe", "1H")
-        .eq("period", "30d")
-        .order("accuracy_pct", { ascending: false });
-      if (error) throw error;
-      return data as AccuracyRow[];
+      const data = await fetch("/api/admin/ai-stats?period=30d&timeframe=1H").then(r => r.json()).catch(() => ({}));
+      return (Array.isArray(data.modelAccuracy) ? data.modelAccuracy : []) as AccuracyRow[];
     },
     staleTime: 60_000,
     retry: false,
@@ -545,13 +535,8 @@ export function AiLab() {
   const { data: predictions = [] } = useQuery<PredictionRecord[]>({
     queryKey: ["ai-lab-predictions"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ai_prediction_records")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data as PredictionRecord[];
+      const data = await fetch("/api/admin/ai-predictions?limit=100").then(r => r.json()).catch(() => []);
+      return (Array.isArray(data) ? data : []) as PredictionRecord[];
     },
     staleTime: 30_000,
     retry: false,

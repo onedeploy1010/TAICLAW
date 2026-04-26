@@ -112,8 +112,7 @@ export function VaultDepositDialog({ open, onOpenChange }: VaultDepositDialogPro
 
       // Step 3: Record to database
       try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        await fetch(`${supabaseUrl}/functions/v1/vault-record`, {
+        await fetch(`/api/vault-record`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

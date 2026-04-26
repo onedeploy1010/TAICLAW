@@ -1601,22 +1601,11 @@ function CronPanel() {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      const res = await fetch(`${supabaseUrl}/rest/v1/rpc/get_cron_jobs`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": supabaseKey,
-          "Authorization": `Bearer ${supabaseKey}`,
-        },
-        body: "{}",
-      });
+      const res = await fetch("/api/admin/cron-jobs");
       if (res.ok) {
         const data = await res.json();
         setJobs(Array.isArray(data) ? data : []);
       } else {
-        // Fallback: try direct query
         setJobs([]);
       }
     } catch {
@@ -1631,16 +1620,10 @@ function CronPanel() {
   const handleSaveSchedule = async (jobName: string) => {
     setSaving(true);
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      await fetch(`${supabaseUrl}/rest/v1/rpc/update_cron_schedule`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": supabaseKey,
-          "Authorization": `Bearer ${supabaseKey}`,
-        },
-        body: JSON.stringify({ job_name: jobName, new_schedule: editSchedule }),
+      await fetch(`/api/admin/cron-jobs/${encodeURIComponent(jobName)}/schedule`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ schedule: editSchedule }),
       });
       toast({ title: "已更新", description: `${jobName} → ${editSchedule}` });
       setEditingJob(null);

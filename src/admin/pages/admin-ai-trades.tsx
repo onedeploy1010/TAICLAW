@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAdminAuth } from "@/admin/admin-auth";
-import { supabase } from "@/lib/supabase";
 import { Activity, TrendingUp, TrendingDown, RefreshCw, Settings2, Play, Key } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect, useMemo } from "react";
@@ -151,13 +150,8 @@ export default function AdminAITrades() {
   const { refetch: refetchConfig } = useQuery({
     queryKey: ["admin", "simulation-config"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("simulation_config")
-        .select("*")
-        .eq("id", 1)
-        .single();
-      if (error) throw error;
-      if (data) {
+      const data = await fetch("/api/admin/simulation-config").then(r => r.json()).catch(() => null);
+      if (data && !data.error) {
         setSimConfig({
           positionSize: data.position_size_usd ?? 1000,
           maxPositions: data.max_positions ?? 15,
@@ -176,17 +170,12 @@ export default function AdminAITrades() {
   const handleSaveConfig = async () => {
     setConfigSaving(true);
     try {
-      const { error } = await supabase.from("simulation_config").update({
-        position_size_usd: simConfig.positionSize,
-        max_positions: simConfig.maxPositions,
-        max_leverage: simConfig.maxLeverage,
-        max_drawdown_pct: simConfig.maxDrawdownPct,
-        cooldown_min: simConfig.cooldownMin,
-        enabled_strategies: simConfig.strategies,
-        enabled_assets: simConfig.assets,
-        updated_at: new Date().toISOString(),
-      }).eq("id", 1);
-      if (error) throw error;
+      const res = await fetch("/api/admin/simulation-config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ positionSizeUsd: simConfig.positionSize, maxPositions: simConfig.maxPositions, maxLeverage: simConfig.maxLeverage, maxDrawdownPct: simConfig.maxDrawdownPct, cooldownMin: simConfig.cooldownMin }),
+      });
+      if (!res.ok) throw new Error("Save failed");
       alert("配置已保存");
     } catch (err: any) {
       alert(`保存失败: ${err.message}`);
@@ -198,11 +187,12 @@ export default function AdminAITrades() {
   const handleRunSimulation = async () => {
     setSimRunning(true);
     try {
-      const { data, error } = await supabase.functions.invoke("simulate-trading");
-      if (error) throw error;
+      const res = await fetch("/api/admin/run-simulation", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Simulation failed");
       refetchOpen();
       refetchConfig();
-      alert(`模拟完成: ${data.signals_generated}个信号, ${data.paper_trades_opened}个开仓, ${data.paper_trades_closed}个平仓`);
+      alert(`模拟完成: ${data.signals_generated ?? 0}个信号, ${data.paper_trades_opened ?? 0}个开仓, ${data.paper_trades_closed ?? 0}个平仓`);
     } catch (err: any) {
       alert(`模拟失败: ${err.message}`);
     } finally {
@@ -241,13 +231,8 @@ export default function AdminAITrades() {
   const { data: openTrades, isLoading: openLoading, refetch: refetchOpen } = useQuery({
     queryKey: ["admin", "paper-trades-open"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("paper_trades")
-        .select("*")
-        .eq("status", "OPEN")
-        .order("opened_at", { ascending: false });
-      if (error) throw error;
-      return data as PaperTrade[];
+      const data = await fetch("/api/paper-trades?status=OPEN").then(r => r.json()).catch(() => []);
+      return (Array.isArray(data) ? data : []) as PaperTrade[];
     },
     enabled: !!adminUser,
     refetchInterval: 30000,
@@ -257,16 +242,9 @@ export default function AdminAITrades() {
   const { data: closedTrades, isLoading: closedLoading } = useQuery({
     queryKey: ["admin", "paper-trades-closed", historyPage, assetFilter],
     queryFn: async () => {
-      let q = supabase
-        .from("paper_trades")
-        .select("*", { count: "exact" })
-        .eq("status", "CLOSED")
-        .order("closed_at", { ascending: false })
-        .range(historyPage * PAGE_SIZE, (historyPage + 1) * PAGE_SIZE - 1);
-      if (assetFilter !== "全部") q = q.eq("asset", assetFilter);
-      const { data, error, count } = await q;
-      if (error) throw error;
-      return { data: data as PaperTrade[], count: count ?? 0 };
+      const assetParam = assetFilter !== "全部" ? `&asset=${encodeURIComponent(assetFilter)}` : "";
+      const res = await fetch(`/api/paper-trades?status=CLOSED&page=${historyPage + 1}&pageSize=${PAGE_SIZE}${assetParam}`).then(r => r.json()).catch(() => ({ data: [], count: 0 }));
+      return { data: (Array.isArray(res.data) ? res.data : []) as PaperTrade[], count: res.count ?? 0 };
     },
     enabled: !!adminUser,
   });
@@ -275,32 +253,11 @@ export default function AdminAITrades() {
   const { data: globalStats } = useQuery({
     queryKey: ["admin", "paper-trades-stats"],
     queryFn: async () => {
-      const [
-        { count: totalClosed },
-        { count: wins },
-        { data: pnlData },
-        { data: todayData },
-      ] = await Promise.all([
-        supabase.from("paper_trades").select("*", { count: "exact", head: true }).eq("status", "CLOSED"),
-        supabase.from("paper_trades").select("*", { count: "exact", head: true }).eq("status", "CLOSED").gt("pnl", 0),
-        supabase.from("paper_trades").select("pnl").eq("status", "CLOSED"),
-        supabase.from("paper_trades").select("pnl").eq("status", "CLOSED").gte("closed_at", new Date().toISOString().slice(0, 10)),
-      ]);
-      const totalPnl = pnlData?.reduce((s: number, t: any) => s + (t.pnl ?? 0), 0) ?? 0;
-      const todayPnl = todayData?.reduce((s: number, t: any) => s + (t.pnl ?? 0), 0) ?? 0;
-
-      // Calculate daily average PnL
-      const { data: dateRange } = await supabase
-        .from("paper_trades")
-        .select("closed_at")
-        .eq("status", "CLOSED")
-        .order("closed_at", { ascending: true })
-        .limit(1);
-      let tradingDays = 1;
-      if (dateRange && dateRange.length > 0 && dateRange[0].closed_at) {
-        const firstDay = new Date(dateRange[0].closed_at).getTime();
-        tradingDays = Math.max(1, Math.ceil((Date.now() - firstDay) / 86400000));
-      }
+      const stats = await fetch("/api/admin/paper-trade-stats").then(r => r.json()).catch(() => ({}));
+      const totalClosed = stats.totalClosed ?? 0, wins = stats.totalWins ?? 0;
+      const totalPnl = stats.totalPnl ?? 0;
+      const todayPnl = stats.todayPnl ?? 0;
+      const tradingDays = 1;
       const dailyAvgPnl = totalPnl / tradingDays;
 
       return {
@@ -321,15 +278,9 @@ export default function AdminAITrades() {
   const { data: signals, isLoading: sigLoading } = useQuery({
     queryKey: ["admin", "trade-signals", assetFilter],
     queryFn: async () => {
-      let q = supabase
-        .from("trade_signals")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (assetFilter !== "全部") q = q.eq("asset", assetFilter);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data as TradeSignal[];
+      const assetParam = assetFilter !== "全部" ? `&asset=${encodeURIComponent(assetFilter)}` : "";
+      const data = await fetch(`/api/trade-signals?limit=50${assetParam}`).then(r => r.json()).catch(() => []);
+      return (Array.isArray(data) ? data : []) as TradeSignal[];
     },
     enabled: !!adminUser,
   });

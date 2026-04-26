@@ -7,7 +7,6 @@
 
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 interface SuggestedParams {
@@ -72,15 +71,8 @@ export function AIParamAdvisor({ selectedModels, selectedStrategies, onApplyPara
 
     try {
       // Fetch recent performance data for the selected strategies
-      const { data: trades } = await supabase
-        .from("paper_trades")
-        .select("strategy_type, pnl_pct, leverage, size, primary_model")
-        .eq("status", "CLOSED")
-        .in("strategy_type", selectedStrategies)
-        .gte("closed_at", new Date(Date.now() - 7 * 86400_000).toISOString())
-        .limit(200);
-
-      const recentTrades = trades ?? [];
+      const trades = await fetch("/api/paper-trades?status=CLOSED&pageSize=200").then(r => r.json()).catch(() => ({ data: [] }));
+      const recentTrades = (Array.isArray(trades) ? trades : trades.data) ?? [];
 
       // Filter trades by selected models
       const modelTrades = recentTrades.filter(t =>

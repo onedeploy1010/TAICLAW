@@ -11,7 +11,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { supabase } from "@/lib/supabase";
 import { Shield, Sparkles, Clock, Crown, Zap, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -36,12 +35,7 @@ export function VipGate({ walletAddress, children }: VipGateProps) {
   const { data: vipStatus, isLoading } = useQuery({
     queryKey: ["vip-status", walletAddress],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("is_vip, vip_expires_at, vip_trial_used")
-        .eq("wallet_address", walletAddress)
-        .single();
-      return data;
+      return fetch(`/api/profile?wallet=${encodeURIComponent(walletAddress)}`).then(r => r.json()).catch(() => null);
     },
     enabled: !!walletAddress,
   });

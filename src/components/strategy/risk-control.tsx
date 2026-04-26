@@ -7,7 +7,6 @@
 
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 interface RiskConfig {
@@ -73,55 +72,56 @@ export function RiskControlPanel({ userId, initialOverrides }: RiskControlProps)
   useEffect(() => {
     if (!userId) return;
 
-    supabase
-      .from("user_risk_config")
-      .select("*")
-      .eq("user_id", userId)
-      .single()
-      .then(({ data }) => {
+    fetch(`/api/user-risk-config/${encodeURIComponent(userId)}`)
+      .then(r => r.json())
+      .then((data: any) => {
         if (data) {
           setConfig({
-            maxPositionSizeUsd: data.max_position_size_usd,
-            maxConcurrentPositions: data.max_concurrent_positions,
-            maxDailyLossUsd: data.max_daily_loss_usd,
-            maxDrawdownPct: data.max_drawdown_pct,
-            maxLeverage: data.max_leverage,
-            allowedAssets: data.allowed_assets || DEFAULT_CONFIG.allowedAssets,
-            copyEnabled: data.copy_enabled,
-            executionMode: data.execution_mode,
-            tradingHoursEnabled: data.trading_hours_enabled,
-            tradingHoursStart: data.trading_hours_start,
-            tradingHoursEnd: data.trading_hours_end,
-            cooldownMinutes: data.cooldown_minutes,
-            minSignalStrength: data.min_signal_strength,
+            maxPositionSizeUsd: data.maxPositionSizeUsd ?? DEFAULT_CONFIG.maxPositionSizeUsd,
+            maxConcurrentPositions: data.maxConcurrentPositions ?? DEFAULT_CONFIG.maxConcurrentPositions,
+            maxDailyLossUsd: data.maxDailyLossUsd ?? DEFAULT_CONFIG.maxDailyLossUsd,
+            maxDrawdownPct: data.maxDrawdownPct ?? DEFAULT_CONFIG.maxDrawdownPct,
+            maxLeverage: data.maxLeverage ?? DEFAULT_CONFIG.maxLeverage,
+            allowedAssets: data.allowedAssets || DEFAULT_CONFIG.allowedAssets,
+            copyEnabled: data.copyEnabled ?? DEFAULT_CONFIG.copyEnabled,
+            executionMode: data.executionMode ?? DEFAULT_CONFIG.executionMode,
+            tradingHoursEnabled: data.tradingHoursEnabled ?? DEFAULT_CONFIG.tradingHoursEnabled,
+            tradingHoursStart: data.tradingHoursStart ?? DEFAULT_CONFIG.tradingHoursStart,
+            tradingHoursEnd: data.tradingHoursEnd ?? DEFAULT_CONFIG.tradingHoursEnd,
+            cooldownMinutes: data.cooldownMinutes ?? DEFAULT_CONFIG.cooldownMinutes,
+            minSignalStrength: data.minSignalStrength ?? DEFAULT_CONFIG.minSignalStrength,
           });
-          setKillSwitchActive(data.kill_switch);
+          setKillSwitchActive(data.killSwitch ?? false);
         }
-      });
+      })
+      .catch(() => {});
   }, [userId]);
 
   const saveConfig = async () => {
     if (!userId) return;
     setSaving(true);
 
-    await supabase.from("user_risk_config").upsert({
-      user_id: userId,
-      max_position_size_usd: config.maxPositionSizeUsd,
-      max_concurrent_positions: config.maxConcurrentPositions,
-      max_daily_loss_usd: config.maxDailyLossUsd,
-      max_drawdown_pct: config.maxDrawdownPct,
-      max_leverage: config.maxLeverage,
-      allowed_assets: config.allowedAssets,
-      copy_enabled: config.copyEnabled,
-      execution_mode: config.executionMode,
-      trading_hours_enabled: config.tradingHoursEnabled,
-      trading_hours_start: config.tradingHoursStart,
-      trading_hours_end: config.tradingHoursEnd,
-      cooldown_minutes: config.cooldownMinutes,
-      min_signal_strength: config.minSignalStrength,
-      kill_switch: killSwitchActive,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "user_id" });
+    await fetch("/api/user-risk-config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId,
+        maxPositionSizeUsd: config.maxPositionSizeUsd,
+        maxConcurrentPositions: config.maxConcurrentPositions,
+        maxDailyLossUsd: config.maxDailyLossUsd,
+        maxDrawdownPct: config.maxDrawdownPct,
+        maxLeverage: config.maxLeverage,
+        allowedAssets: config.allowedAssets,
+        copyEnabled: config.copyEnabled,
+        executionMode: config.executionMode,
+        tradingHoursEnabled: config.tradingHoursEnabled,
+        tradingHoursStart: config.tradingHoursStart,
+        tradingHoursEnd: config.tradingHoursEnd,
+        cooldownMinutes: config.cooldownMinutes,
+        minSignalStrength: config.minSignalStrength,
+        killSwitch: killSwitchActive,
+      }),
+    });
 
     setSaving(false);
     setSaved(true);
@@ -136,12 +136,7 @@ export function RiskControlPanel({ userId, initialOverrides }: RiskControlProps)
     }
 
     if (userId) {
-      await supabase.from("user_risk_config").upsert({
-        user_id: userId,
-        kill_switch: newState,
-        copy_enabled: false,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "user_id" });
+      await fetch("/api/user-risk-config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, killSwitch: newState, copyEnabled: false }) });
     }
   };
 

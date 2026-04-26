@@ -6,7 +6,6 @@ import { useState, useEffect } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { CopyTradingFlow } from "@/components/strategy/copy-trading-flow";
 import { CopyTradingDashboard } from "@/components/strategy/copy-trading-dashboard";
-import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { Settings, BarChart3 } from "lucide-react";
 import { useTranslation } from "react-i18next";

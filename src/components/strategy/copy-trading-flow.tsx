@@ -13,7 +13,6 @@
 import { useState, useEffect } from "react";
 import { ApiKeyBind } from "@/components/strategy/api-key-bind";
 import { AICoinPicker } from "@/components/strategy/ai-coin-picker";
-import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { Brain } from "lucide-react";
@@ -89,17 +88,13 @@ export function CopyTradingFlow({
   // Load existing config
   useEffect(() => {
     if (!userId) return;
-    supabase
-      .from("user_trade_configs")
-      .select("is_active, execution_mode")
-      .eq("wallet_address", userId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single()
-      .then(({ data }) => {
-        if (data) setIsActive(!!data.is_active);
+    fetch(`/api/user-trade-config/${encodeURIComponent(userId)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data) setIsActive(!!data.isActive);
         setConfigLoaded(true);
-      });
+      })
+      .catch(() => setConfigLoaded(true));
   }, [userId]);
 
   const goTo = (s: CopyStep) => {
@@ -126,18 +121,11 @@ export function CopyTradingFlow({
         is_active: true,
       };
 
-      const { data: existing } = await supabase
-        .from("user_trade_configs")
-        .select("id")
-        .eq("wallet_address", userId)
-        .limit(1)
-        .single();
-
-      if (existing) {
-        await supabase.from("user_trade_configs").update({ ...config, updated_at: new Date().toISOString() }).eq("id", existing.id);
-      } else {
-        await supabase.from("user_trade_configs").insert(config);
-      }
+      await fetch("/api/user-trade-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config),
+      });
       setIsActive(true);
     } catch (e) {
       console.error("Activate failed:", e);
@@ -148,7 +136,7 @@ export function CopyTradingFlow({
 
   const handleDeactivate = async () => {
     if (!userId) return;
-    await supabase.from("user_trade_configs").update({ is_active: false }).eq("wallet_address", userId);
+    await fetch(`/api/user-trade-config/${encodeURIComponent(userId)}/deactivate`, { method: "POST" });
     setIsActive(false);
   };
 

@@ -1,6 +1,6 @@
 {
   "include": ["src/**/*", "shared/types.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "src/components/strategy/ConsoleFilterBar.tsx", "src/components/strategy/ConsoleLogItem.tsx", "src/components/strategy/ForexConsoleLogItem.tsx", "src/components/strategy/ForexTradeMatchingView.tsx"],
   "compilerOptions": {
     "incremental": true,
     "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",

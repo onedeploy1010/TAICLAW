@@ -24,7 +24,7 @@ import { useThirdwebClient } from "@/hooks/use-thirdweb";
 import { RELEASE_ADDRESS, BSC_CHAIN } from "@/lib/contracts";
 import { useMaPrice } from "@/hooks/use-ma-price";
 import { queryClient } from "@/lib/queryClient";
-import { supabase } from "@/lib/supabase";
+
 import { cn } from "@/lib/utils";
 import { VAULT_PLANS } from "@/lib/data";
 import { useTranslation } from "react-i18next";
@@ -119,10 +119,11 @@ export function MAReleaseDialog({ open, onOpenChange }: MAReleaseDialogProps) {
     queryKey: ["vault-db-yield-usd", account?.address],
     queryFn: async () => {
       if (!account?.address) return 0;
-      const { data: profile } = await supabase.from("profiles").select("id").eq("wallet_address", account.address).single();
-      if (!profile) return 0;
-      const { data: positions } = await supabase.from("vault_positions").select("*").eq("user_id", profile.id).eq("status", "ACTIVE");
-      if (!positions) return 0;
+      const res = await fetch(`/api/vault-yield?wallet=${encodeURIComponent(account.address)}`).then(r => r.json()).catch(() => null);
+      if (!res) return 0;
+      if (typeof res.yieldUsd === "number") return res.yieldUsd;
+      const positions = Array.isArray(res.positions) ? res.positions : [];
+      if (!positions.length) return 0;
       let total = 0;
       const now = new Date();
       for (const pos of positions) {
@@ -151,10 +152,8 @@ export function MAReleaseDialog({ open, onOpenChange }: MAReleaseDialogProps) {
     if (!account || inputAmount <= 0) return;
     setStep("creating");
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-
-      // Step 1: Call edge function to mint MA + prepare release
-      const resp = await fetch(`${supabaseUrl}/functions/v1/claim-yield`, {
+      // Step 1: Call API to mint MA + prepare release
+      const resp = await fetch(`/api/claim-yield`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

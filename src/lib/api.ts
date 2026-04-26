@@ -1,5 +1,3 @@
-import { supabase } from "./supabase";
-
 // Convert snake_case DB rows to camelCase for frontend
 function toCamel(obj: any): any {
   if (obj === null || obj === undefined) return obj;
@@ -13,278 +11,73 @@ function toCamel(obj: any): any {
   return out;
 }
 
-// Fetch MA token price from system_config
-// TODO: When LP pool is live, add Uniswap V3 TWAP / Chainlink oracle integration
-// Current sources (priority order):
-//   1. Uniswap V3 pool TWAP (not yet enabled)
-//   2. DEX aggregator API (not yet enabled)
-//   3. system_config.MA_TOKEN_PRICE (current default: 0.1 USD)
-export async function getMaPrice(): Promise<{ price: number; source: string }> {
-  const { data, error } = await supabase
-    .from("system_config")
-    .select("key, value")
-    .in("key", ["MA_TOKEN_PRICE", "MA_PRICE_SOURCE"]);
-  if (error) throw error;
-  const priceRow = (data ?? []).find((r: any) => r.key === "MA_TOKEN_PRICE");
-  const sourceRow = (data ?? []).find((r: any) => r.key === "MA_PRICE_SOURCE");
-  return {
-    price: Number(priceRow?.value) || 0.1,
-    source: sourceRow?.value || "DEFAULT",
-  };
-}
-
-// Helper: proxy external API calls through Supabase Edge Function to avoid CORS
-async function proxyFetch(url: string): Promise<any> {
-  const { data, error } = await supabase.functions.invoke("api-proxy", {
-    body: { url },
-  });
-  if (error) throw error;
-  return data;
-}
-
-// ─────────────────────────────────────────────
-// A) Direct Supabase queries (simple reads)
-// ─────────────────────────────────────────────
-
-export async function getProfile(walletAddress: string) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("wallet_address", walletAddress)
-    .single();
-  if (error && error.code !== "PGRST116") throw error;
-  if (!data) return null;
-
-  const profile = toCamel(data);
-
-  // Resolve parent wallet address from referrer_id
-  if (data.referrer_id) {
-    try {
-      const { data: parent } = await supabase
-        .from("profiles")
-        .select("wallet_address")
-        .eq("id", data.referrer_id)
-        .single();
-      if (parent) {
-        profile.parentWallet = parent.wallet_address;
-      }
-    } catch {
-      // Ignore – don't let parent lookup break profile loading
-    }
+async function apiFetch(path: string, options?: RequestInit) {
+  const res = await fetch(path, { headers: { "Content-Type": "application/json" }, ...options });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || `API error ${res.status}`);
   }
+  return res.json();
+}
 
-  return profile;
+async function apiPost(path: string, body: any) {
+  return apiFetch(path, { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── Helper: proxy external API calls through our server to avoid CORS ─────────
+async function proxyFetch(url: string): Promise<any> {
+  return apiPost("/api/proxy", { url });
+}
+
+// ── MA price ──────────────────────────────────────────────────────────────────
+export async function getMaPrice(): Promise<{ price: number; source: string }> {
+  return apiFetch("/api/ma-price");
+}
+
+// ── Profiles ──────────────────────────────────────────────────────────────────
+export async function getProfile(walletAddress: string) {
+  return apiFetch(`/api/profile/${encodeURIComponent(walletAddress)}`);
 }
 
 export async function getProfileByRefCode(refCode: string) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("wallet_address, rank, node_type")
-    .eq("ref_code", refCode)
-    .single();
-  if (error && error.code !== "PGRST116") throw error;
-  return toCamel(data);
+  return apiFetch(`/api/profile-by-refcode/${encodeURIComponent(refCode)}`);
 }
 
-export async function getStrategies() {
-  const { data, error } = await supabase
-    .from("strategies")
-    .select("*")
-    .order("created_at");
-  if (error) throw error;
-  return toCamel(data ?? []);
+// ── Auth ──────────────────────────────────────────────────────────────────────
+export async function authWallet(walletAddress: string, refCode?: string, placementCode?: string) {
+  return apiPost("/api/auth-wallet", { walletAddress, refCode, placementCode });
 }
 
-export async function getAiPredictions() {
-  const { data, error } = await supabase
-    .from("ai_predictions")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return toCamel(data ?? []);
-}
-
-export async function getTradeBets(walletAddress: string) {
-  const profile = await getProfile(walletAddress);
-  if (!profile) return [];
-  const { data, error } = await supabase
-    .from("trade_bets")
-    .select("*")
-    .eq("user_id", profile.id)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return toCamel(data ?? []);
-}
-
+// ── Vault ─────────────────────────────────────────────────────────────────────
 export async function getVaultPositions(walletAddress: string) {
-  const profile = await getProfile(walletAddress);
-  if (!profile) return [];
-  const { data, error } = await supabase
-    .from("vault_positions")
-    .select("*")
-    .eq("user_id", profile.id)
-    .order("start_date", { ascending: false });
-  if (error) throw error;
-  return toCamel(data ?? []);
+  return apiFetch(`/api/vault-positions/${encodeURIComponent(walletAddress)}`);
 }
 
 export async function getVaultRewards(walletAddress: string) {
-  const profile = await getProfile(walletAddress);
-  if (!profile) return [];
-  const { data, error } = await supabase
-    .from("vault_rewards")
-    .select("*")
-    .eq("user_id", profile.id)
-    .eq("reward_type", "DAILY_YIELD")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return toCamel(data ?? []);
-}
-
-export async function getTransactions(walletAddress: string, type?: string) {
-  const profile = await getProfile(walletAddress);
-  if (!profile) return [];
-  let query = supabase
-    .from("transactions")
-    .select("*")
-    .eq("user_id", profile.id)
-    .order("created_at", { ascending: false });
-  if (type) query = query.eq("type", type);
-  const { data, error } = await query;
-  if (error) throw error;
-  return toCamel(data ?? []);
-}
-
-export async function getSubscriptions(walletAddress: string) {
-  const profile = await getProfile(walletAddress);
-  if (!profile) return [];
-  const { data, error } = await supabase
-    .from("strategy_subscriptions")
-    .select("*")
-    .eq("user_id", profile.id)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return toCamel(data ?? []);
-}
-
-export async function getHedgePositions(walletAddress: string) {
-  const profile = await getProfile(walletAddress);
-  if (!profile) return [];
-  const { data, error } = await supabase
-    .from("hedge_positions")
-    .select("*")
-    .eq("user_id", profile.id)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return toCamel(data ?? []);
-}
-
-export async function getHedgePurchases(walletAddress: string) {
-  const profile = await getProfile(walletAddress);
-  if (!profile) return [];
-  const { data, error } = await supabase
-    .from("insurance_purchases")
-    .select("*")
-    .eq("user_id", profile.id)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return toCamel(data ?? []);
-}
-
-export async function getPredictionBets(walletAddress: string) {
-  const profile = await getProfile(walletAddress);
-  if (!profile) return [];
-  const { data, error } = await supabase
-    .from("prediction_bets")
-    .select("*")
-    .eq("user_id", profile.id)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return toCamel(data ?? []);
-}
-
-export async function getNodeMembership(walletAddress: string) {
-  const profile = await getProfile(walletAddress);
-  if (!profile) return null;
-  const { data, error } = await supabase
-    .from("node_memberships")
-    .select("*")
-    .eq("user_id", profile.id)
-    .order("start_date", { ascending: false })
-    .limit(1)
-    .single();
-  if (error && error.code !== "PGRST116") throw error;
-  return toCamel(data);
-}
-
-export async function getNodeMemberships(walletAddress: string) {
-  const profile = await getProfile(walletAddress);
-  if (!profile) return [];
-  const { data, error } = await supabase
-    .from("node_memberships")
-    .select("*")
-    .eq("user_id", profile.id)
-    .order("start_date", { ascending: false });
-  if (error) throw error;
-  const memberships = toCamel(data ?? []);
-
-  // Fetch tx hashes from transactions
-  const { data: txData } = await supabase
-    .from("transactions")
-    .select("tx_hash, created_at")
-    .eq("user_id", profile.id)
-    .eq("type", "NODE_PURCHASE")
-    .order("created_at", { ascending: false });
-  const txRecords = toCamel(txData ?? []);
-
-  return memberships.map((m: any, i: number) => ({
-    ...m,
-    txHash: txRecords[i]?.txHash || null,
-  }));
-}
-
-export async function getNodeOverview(walletAddress: string) {
-  const { data, error } = await supabase.rpc("get_node_overview", {
-    addr: walletAddress,
-  });
-  if (error) throw error;
-  return toCamel(data);
-}
-
-// ─────────────────────────────────────────────
-// B) Supabase RPC functions (business logic)
-// ─────────────────────────────────────────────
-
-export async function authWallet(walletAddress: string, refCode?: string, placementCode?: string) {
-  const { data, error } = await supabase.rpc("auth_wallet", {
-    addr: walletAddress,
-    ref_code: refCode || null,
-    placement_code: placementCode || null,
-  });
-  if (error) throw error;
-  return toCamel(data);
+  return apiFetch(`/api/vault-rewards/${encodeURIComponent(walletAddress)}`);
 }
 
 export async function vaultDeposit(walletAddress: string, planType: string, amount: number, txHash?: string) {
-  const { data, error } = await supabase.rpc("vault_deposit", {
-    addr: walletAddress,
-    plan_type: planType,
-    deposit_amount: amount,
-    tx_hash: txHash || null,
-  });
-  if (error) throw error;
-  return toCamel(data);
+  return apiPost("/api/vault-deposit", { walletAddress, planType, depositAmount: amount, txHash });
 }
 
 export async function vaultWithdraw(walletAddress: string, position_id: string) {
-  const { data, error } = await supabase.rpc("vault_withdraw", {
-    addr: walletAddress,
-    pos_id: position_id,
-  });
-  if (error) throw error;
-  return toCamel(data);
+  return apiPost("/api/vault-withdraw", { walletAddress, positionId: position_id });
 }
 
+export async function getVaultOverview() {
+  return apiFetch("/api/vault-overview");
+}
+
+// ── Transactions ──────────────────────────────────────────────────────────────
+export async function getTransactions(walletAddress: string, type?: string) {
+  const url = type
+    ? `/api/transactions/${encodeURIComponent(walletAddress)}?type=${encodeURIComponent(type)}`
+    : `/api/transactions/${encodeURIComponent(walletAddress)}`;
+  return apiFetch(url);
+}
+
+// ── Trade Bets ────────────────────────────────────────────────────────────────
 export async function placeTradeBet(
   walletAddress: string,
   asset: string,
@@ -293,119 +86,93 @@ export async function placeTradeBet(
   duration: string,
   entryPrice?: number
 ) {
-  const { data, error } = await supabase.rpc("place_trade_bet", {
-    addr: walletAddress,
-    bet_asset: asset,
-    bet_direction: direction,
-    bet_amount: amount,
-    bet_duration: duration || "1min",
-    bet_entry_price: entryPrice || null,
-  });
-  if (error) throw error;
-  return data;
+  return apiPost("/api/place-trade-bet", { walletAddress, asset, direction, amount, duration: duration || "1min", entryPrice });
 }
 
 export async function getTradeStats(walletAddress: string) {
-  const { data, error } = await supabase.rpc("get_trade_stats", {
-    addr: walletAddress,
-  });
-  if (error) throw error;
-  return data ?? { total: 0, wins: 0, losses: 0, totalStaked: "0" };
+  return apiFetch(`/api/trade-stats/${encodeURIComponent(walletAddress)}`);
+}
+
+// ── Strategies ────────────────────────────────────────────────────────────────
+export async function getStrategies() {
+  return apiFetch("/api/strategies");
+}
+
+export async function getStrategyOverview() {
+  return apiFetch("/api/strategy-overview");
 }
 
 export async function subscribeStrategy(walletAddress: string, strategyId: string, amount: number) {
-  const { data, error } = await supabase.rpc("subscribe_strategy", {
-    addr: walletAddress,
-    strat_id: strategyId,
-    capital: amount,
-  });
-  if (error) throw error;
-  return toCamel(data);
+  return apiPost("/api/subscribe-strategy", { walletAddress, strategyId, capital: amount });
+}
+
+export async function getSubscriptions(walletAddress: string) {
+  return apiFetch(`/api/subscriptions/${encodeURIComponent(walletAddress)}`);
+}
+
+// ── Hedge / Insurance ─────────────────────────────────────────────────────────
+export async function getHedgePositions(walletAddress: string) {
+  return apiFetch(`/api/hedge-positions/${encodeURIComponent(walletAddress)}`);
+}
+
+export async function getHedgePurchases(walletAddress: string) {
+  return apiFetch(`/api/hedge-purchases/${encodeURIComponent(walletAddress)}`);
 }
 
 export async function purchaseHedge(walletAddress: string, amount: number) {
-  const { data, error } = await supabase.rpc("purchase_hedge", {
-    addr: walletAddress,
-    hedge_amount: amount,
-  });
-  if (error) throw error;
-  return toCamel(data);
+  return apiPost("/api/purchase-hedge", { walletAddress, hedgeAmount: amount });
 }
 
+export async function getInsurancePool() {
+  return apiFetch("/api/insurance-pool");
+}
+
+// ── VIP ───────────────────────────────────────────────────────────────────────
 export async function subscribeVip(walletAddress: string, txHash?: string, planLabel?: string) {
-  const { data, error } = await supabase.rpc("subscribe_vip", {
-    addr: walletAddress,
-    tx_hash: txHash || null,
-    plan_label: planLabel || "monthly",
-  });
-  if (error) throw error;
-  return toCamel(data);
+  return apiPost("/api/subscribe-vip", { walletAddress, txHash, planLabel: planLabel || "monthly" });
 }
 
 export async function activateVipTrial(walletAddress: string) {
-  const { data, error } = await supabase.rpc("subscribe_vip", {
-    addr: walletAddress,
-    tx_hash: null,
-    plan_label: "trial",
-  });
-  if (error) throw error;
-  return toCamel(data);
+  return apiPost("/api/subscribe-vip", { walletAddress, txHash: null, planLabel: "trial" });
+}
+
+// ── Nodes ─────────────────────────────────────────────────────────────────────
+export async function getNodeMembership(walletAddress: string) {
+  return apiFetch(`/api/node-membership/${encodeURIComponent(walletAddress)}`);
+}
+
+export async function getNodeMemberships(walletAddress: string) {
+  return apiFetch(`/api/node-memberships/${encodeURIComponent(walletAddress)}`);
+}
+
+export async function getNodeOverview(walletAddress: string) {
+  return apiFetch(`/api/node-overview/${encodeURIComponent(walletAddress)}`);
 }
 
 export async function purchaseNode(walletAddress: string, nodeType: string, txHash?: string, paymentMode?: string, authCode?: string) {
-  // For MAX nodes, validate auth code first
-  if (nodeType === "MAX" && authCode) {
-    const { data: codeData, error: codeErr } = await supabase
-      .from("node_auth_codes")
-      .select("id, status, node_type")
-      .eq("code", authCode)
-      .eq("status", "ACTIVE")
-      .single();
-    if (codeErr || !codeData) throw new Error("Invalid or expired authorization code");
-    // Mark code as used
-    await supabase
-      .from("node_auth_codes")
-      .update({ status: "USED", used_by_wallet: walletAddress, used_at: new Date().toISOString(), used_count: 1 })
-      .eq("id", codeData.id);
-  }
-  const { data, error } = await supabase.rpc("purchase_node", {
-    addr: walletAddress,
-    node_type_param: nodeType,
-    tx_hash: txHash || null,
-    payment_mode_param: paymentMode || "FULL",
-  });
-  if (error) throw error;
-
-  // Auto-flush NodePool to node wallet after purchase (fire and forget)
-  supabase.functions.invoke("flush-node-pool").catch(() => {});
-
-  return toCamel(data);
+  return apiPost("/api/purchase-node", { walletAddress, nodeType, txHash, paymentMode, authCode });
 }
 
 export async function validateAuthCode(code: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from("node_auth_codes")
-    .select("id")
-    .eq("code", code)
-    .eq("status", "ACTIVE")
-    .single();
-  return !error && !!data;
+  const result = await apiFetch(`/api/validate-auth-code/${encodeURIComponent(code)}`);
+  return result?.valid === true;
 }
 
 export async function checkNodeMilestones(walletAddress: string) {
-  const { data, error } = await supabase.rpc("check_node_milestones", {
-    addr: walletAddress,
-  });
-  if (error) throw error;
-  return toCamel(data);
+  return apiPost("/api/check-node-milestones", { walletAddress });
 }
 
 export async function getNodeMilestoneRequirements(walletAddress: string) {
-  const { data, error } = await supabase.rpc("get_node_milestone_requirements", {
-    addr: walletAddress,
-  });
-  if (error) throw error;
-  return toCamel(data ?? { vault_deposited: 0, direct_node_referrals: 0, direct_mini_referrals: 0, activated_rank: null, earnings_paused: false });
+  return apiFetch(`/api/node-milestone-requirements/${encodeURIComponent(walletAddress)}`);
+}
+
+export async function getNodeEarningsRecords(walletAddress: string) {
+  return apiFetch(`/api/node-earnings/${encodeURIComponent(walletAddress)}`);
+}
+
+// ── Prediction Bets ───────────────────────────────────────────────────────────
+export async function getPredictionBets(walletAddress: string) {
+  return apiFetch(`/api/prediction-bets/${encodeURIComponent(walletAddress)}`);
 }
 
 export async function placePredictionBet(
@@ -417,137 +184,74 @@ export async function placePredictionBet(
   odds: number,
   amount: number
 ) {
-  const { data, error } = await supabase.rpc("place_prediction_bet", {
-    addr: walletAddress,
-    market_id_param: marketId,
-    market_type_param: marketType || "polymarket",
-    question_param: question || "",
-    choice_param: choice,
-    odds_param: odds || 1,
-    amount_param: amount,
-  });
-  if (error) throw error;
-  return toCamel(data);
+  return apiPost("/api/place-prediction-bet", { walletAddress, marketId, marketType, question, choice, odds, amount });
 }
 
-export async function getVaultOverview() {
-  const { data, error } = await supabase.rpc("get_vault_overview");
-  if (error) throw error;
-  return toCamel(data);
+// ── AI Predictions ────────────────────────────────────────────────────────────
+export async function getAiPredictions() {
+  return apiFetch("/api/ai-predictions");
 }
 
-export async function getStrategyOverview() {
-  const { data, error } = await supabase.rpc("get_strategy_overview");
-  if (error) throw error;
-  return toCamel(data);
+export async function getAiPrediction(asset: string, timeframe: string, lang?: string) {
+  return apiPost("/api/ai-prediction", { asset, timeframe, lang: lang || "en" });
 }
 
-export async function getInsurancePool() {
-  const { data, error } = await supabase.rpc("get_insurance_pool");
-  if (error) throw error;
-  return toCamel(data);
+export async function getAiForecast(asset: string, timeframe: string, lang?: string) {
+  return apiPost("/api/ai-forecast", { asset, timeframe, lang: lang || "en" });
 }
 
-export async function getCommissionRecords(walletAddress: string) {
-  const profile = await getProfile(walletAddress);
-  if (!profile) return { totalCommission: "0", directReferralTotal: "0", differentialTotal: "0", records: [] };
-
-  const { data, error } = await supabase
-    .from("node_rewards")
-    .select("*")
-    .eq("user_id", profile.id)
-    .eq("reward_type", "TEAM_COMMISSION")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-
-  const records = (data ?? []).map((r: any) => {
-    const rec = toCamel(r);
-    rec.details = r.details || {};
-    return rec;
-  });
-
-  let directTotal = 0;
-  let diffTotal = 0;
-  let sameRankTotal = 0;
-  let overrideTotal = 0;
-  for (const r of records) {
-    const amt = Number(r.amount || 0);
-    if (r.details?.type === "direct_referral") directTotal += amt;
-    else if (r.details?.type === "same_rank") sameRankTotal += amt;
-    else if (r.details?.type === "override") overrideTotal += amt;
-    else diffTotal += amt;
-  }
-
-  // Enrich with source user wallet addresses
-  const sourceIds = Array.from(new Set(records.map((r: any) => r.details?.source_user || r.details?.sourceUser).filter(Boolean)));
-  let sourceMap: Record<string, { wallet: string; rank: string }> = {};
-  if (sourceIds.length > 0) {
-    const { data: sources } = await supabase
-      .from("profiles")
-      .select("id, wallet_address, rank")
-      .in("id", sourceIds);
-    if (sources) {
-      for (const s of sources) {
-        sourceMap[s.id] = { wallet: s.wallet_address, rank: s.rank };
-      }
-    }
-  }
-
-  for (const r of records) {
-    const sid = r.details?.source_user || r.details?.sourceUser;
-    if (sid && sourceMap[sid]) {
-      r.sourceWallet = sourceMap[sid].wallet;
-      r.sourceRank = sourceMap[sid].rank;
-    }
-  }
-
-  return {
-    totalCommission: (directTotal + diffTotal + sameRankTotal + overrideTotal).toFixed(6),
-    directReferralTotal: directTotal.toFixed(6),
-    differentialTotal: diffTotal.toFixed(6),
-    sameRankTotal: sameRankTotal.toFixed(6),
-    overrideTotal: overrideTotal.toFixed(6),
-    records,
-  };
+export async function getAiForecastMulti(asset: string, timeframe: string, lang?: string) {
+  return apiPost("/api/ai-forecast-multi", { asset, timeframe, lang: lang || "en" });
 }
 
-export async function getNodeEarningsRecords(walletAddress: string) {
-  const profile = await getProfile(walletAddress);
-  if (!profile) return [];
-
-  const { data, error } = await supabase
-    .from("node_rewards")
-    .select("*")
-    .eq("user_id", profile.id)
-    .in("reward_type", ["FIXED_YIELD", "POOL_DIVIDEND"])
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-
-  return (data ?? []).map((r: any) => {
-    const rec = toCamel(r);
-    rec.details = r.details || {};
-    return rec;
-  });
+export async function getAiForecastSingle(asset: string, timeframe: string, model: string, lang?: string) {
+  return apiPost("/api/ai-forecast-multi", { asset, timeframe, model, lang: lang || "en" });
 }
 
+export const AI_MODEL_LABELS = ["GPT-4o", "DeepSeek", "Llama 3.1", "Gemini", "Grok"] as const;
+
+export async function getAiFearGreed() {
+  return apiFetch("/api/ai-fear-greed");
+}
+
+export async function getNewsPredictions() {
+  return apiFetch("/api/news-predictions");
+}
+
+// ── Referral & Rank ───────────────────────────────────────────────────────────
 export async function getReferralTree(walletAddress: string) {
-  const { data, error } = await supabase.rpc("get_referral_tree", {
-    addr: walletAddress,
-  });
-  if (error) throw error;
-  return data ?? { referrals: [], teamSize: 0, directCount: 0 };
+  return apiFetch(`/api/referral-tree/${encodeURIComponent(walletAddress)}`);
 }
 
 export async function getRankStatus(walletAddress: string) {
-  const { data, error } = await supabase.rpc("get_rank_status", { addr: walletAddress });
-  if (error) throw error;
-  return data;
+  return apiFetch(`/api/rank-status/${encodeURIComponent(walletAddress)}`);
 }
 
 export async function getUserTeamStats(walletAddress: string) {
-  const { data, error } = await supabase.rpc("get_user_team_stats", { addr: walletAddress });
-  if (error) throw error;
-  return data;
+  return apiFetch(`/api/team-stats/${encodeURIComponent(walletAddress)}`);
+}
+
+export async function checkRankPromotion(walletAddress: string) {
+  return apiPost("/api/check-rank-promotion", { walletAddress });
+}
+
+// ── Commissions ───────────────────────────────────────────────────────────────
+export async function getCommissionRecords(walletAddress: string) {
+  return apiFetch(`/api/commissions/${encodeURIComponent(walletAddress)}`);
+}
+
+// ── Earnings Release ──────────────────────────────────────────────────────────
+export async function requestEarningsRelease(walletAddress: string, releaseDays: number, amount: number, sourceType: "VAULT" | "NODE" = "VAULT") {
+  return apiPost("/api/request-earnings-release", { walletAddress, releaseDays, amount, sourceType });
+}
+
+export async function getEarningsReleases(walletAddress: string) {
+  return apiFetch(`/api/earnings-releases/${encodeURIComponent(walletAddress)}`);
+}
+
+// ── Daily Settlement (admin) ──────────────────────────────────────────────────
+export async function runDailySettlement() {
+  return apiPost("/api/admin/daily-settlement", {});
 }
 
 // ─────────────────────────────────────────────
@@ -602,7 +306,6 @@ export async function fetchExchangeDepth(symbol: string) {
   const baseBuy = (bidsTotal / total) * 100;
   const priceChange = parseFloat(ticker.priceChangePercent || "0");
 
-  // Simulate multi-exchange data with realistic variance from Binance real data
   const exchangeNames = [
     "Binance", "OKX", "Bybit", "Bitget", "Kraken",
     "Coinbase", "Gate", "MEXC", "CoinEx", "LBank",
@@ -610,9 +313,8 @@ export async function fetchExchangeDepth(symbol: string) {
     "KuCoin", "Huobi",
   ];
   const exchanges = exchangeNames.map((name, i) => {
-    // Use a deterministic seed per symbol+exchange for consistent data
     const seed = (symbol.charCodeAt(0) * 31 + i * 17) % 100;
-    const variance = ((seed - 50) / 50) * 6; // ±6% variance
+    const variance = ((seed - 50) / 50) * 6;
     const buy = Math.max(20, Math.min(80, baseBuy + variance));
     const sell = 100 - buy;
     return {
@@ -622,10 +324,9 @@ export async function fetchExchangeDepth(symbol: string) {
     };
   });
 
-  // Calculate FGI based on buy/sell ratio and price change
   let fgi = 50;
-  fgi += (baseBuy - 50) * 0.6; // order book sentiment
-  fgi += Math.max(-15, Math.min(15, priceChange * 3)); // price momentum
+  fgi += (baseBuy - 50) * 0.6;
+  fgi += Math.max(-15, Math.min(15, priceChange * 3));
   fgi = Math.max(0, Math.min(100, Math.round(fgi)));
   const fgiLabel = fgi <= 25 ? "Extreme Fear" : fgi <= 45 ? "Fear" : fgi <= 55 ? "Neutral" : fgi <= 75 ? "Greed" : "Extreme Greed";
 
@@ -764,7 +465,6 @@ export async function fetchFearGreedHistory(coin: string) {
     return { current: { value: latest.score, label: getFgiLabel(latest.score) }, buckets, totalDays: dailyScores.length, chartData, lastUpdated: new Date().toISOString() };
   }
 
-  // Fallback: adjust global BTC FGI with coin offset
   const baseFgi = fgiEntries[0] ? parseInt(fgiEntries[0].value) : 50;
   const coinOffsets: Record<string, number> = { ETH: -3, SOL: 8, BNB: 2, DOGE: 12 };
   const offset = coinOffsets[symbol] || 0;
@@ -988,84 +688,7 @@ export async function fetchExchangePrices() {
   return allCoinsData;
 }
 
-// ─────────────────────────────────────────────
-// D) Supabase Edge Functions (need API keys)
-// ─────────────────────────────────────────────
-
-export async function getAiPrediction(asset: string, timeframe: string, lang?: string) {
-  const { data, error } = await supabase.functions.invoke("ai-prediction", {
-    body: { asset, timeframe, lang: lang || "en" },
-  });
-  if (error) throw error;
-  return data;
-}
-
-export async function getAiForecast(asset: string, timeframe: string, lang?: string) {
-  const { data, error } = await supabase.functions.invoke("ai-forecast", {
-    body: { asset, timeframe, lang: lang || "en" },
-  });
-  if (error) throw error;
-  return data;
-}
-
-export async function getAiForecastMulti(asset: string, timeframe: string, lang?: string) {
-  const { data, error } = await supabase.functions.invoke("ai-forecast-multi", {
-    body: { asset, timeframe, lang: lang || "en" },
-  });
-  if (error) throw error;
-  return data;
-}
-
-export async function getAiForecastSingle(asset: string, timeframe: string, model: string, lang?: string) {
-  const { data, error } = await supabase.functions.invoke("ai-forecast-multi", {
-    body: { asset, timeframe, model, lang: lang || "en" },
-  });
-  if (error) throw error;
-  return data;
-}
-
-export const AI_MODEL_LABELS = ["GPT-4o", "DeepSeek", "Llama 3.1", "Gemini", "Grok"] as const;
-
-export async function getAiFearGreed() {
-  const { data, error } = await supabase.functions.invoke("ai-fear-greed");
-  if (error) throw error;
-  return data;
-}
-
-export async function getNewsPredictions() {
-  const { data, error } = await supabase.functions.invoke("news-predictions");
-  if (error) throw error;
-  return data;
-}
-
-// ─── Rank Promotion ───
-export async function checkRankPromotion(walletAddress: string) {
-  const { data, error } = await supabase.rpc("check_rank_promotion", { addr: walletAddress });
-  if (error) throw error;
-  return data;
-}
-
-// ─── Earnings Release / Burn ───
-export async function requestEarningsRelease(walletAddress: string, releaseDays: number, amount: number, sourceType: "VAULT" | "NODE" = "VAULT") {
-  const { data, error } = await supabase.rpc("request_earnings_release", {
-    addr: walletAddress,
-    release_days: releaseDays,
-    amount,
-    source_type: sourceType,
-  });
-  if (error) throw error;
-  return data;
-}
-
-export async function getEarningsReleases(walletAddress: string) {
-  const { data, error } = await supabase.rpc("get_earnings_releases", { addr: walletAddress });
-  if (error) throw error;
-  return data;
-}
-
-// ─── Daily Settlement (admin) ───
-export async function runDailySettlement() {
-  const { data, error } = await supabase.rpc("run_daily_settlement");
-  if (error) throw error;
-  return data;
+// ── AI Fear & Greed (server-side) ─────────────────────────────────────────────
+export async function fetchAiFearGreed() {
+  return apiFetch("/api/ai-fear-greed");
 }

@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAdminAuth } from "@/admin/admin-auth";
-import { supabase } from "@/lib/supabase";
 import { TrendingUp, RefreshCw, ArrowUpRight, ArrowDownRight, Minus, ChevronLeft, ChevronRight, Calendar, Brain, BarChart3, Target } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo } from "react";
@@ -74,12 +73,8 @@ function AccuracyCalendar({ asset, adminUser }: { asset: string; adminUser: stri
   const { data: calSnapshots } = useQuery({
     queryKey: ["admin", "ai-calendar", asset, year, month],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("accuracy_daily_snapshots").select("*")
-        .eq("asset", asset).gte("snapshot_date", monthStart).lte("snapshot_date", monthEnd)
-        .order("snapshot_date", { ascending: true });
-      if (error) throw error;
-      return data as Snapshot[];
+      const data = await fetch(`/api/admin/accuracy-snapshots?asset=${encodeURIComponent(asset)}&from=${monthStart}&to=${monthEnd}`).then(r => r.json()).catch(() => []);
+      return (Array.isArray(data) ? data : []) as Snapshot[];
     },
     enabled: !!adminUser,
   });
@@ -187,21 +182,12 @@ export default function AdminAIProgress() {
   const { data: predStats } = useQuery({
     queryKey: ["admin", "ai-progress-stats", selectedAsset],
     queryFn: async () => {
-      const [
-        { count: total },
-        { count: resolved },
-        { count: correct },
-        { data: modelData },
-      ] = await Promise.all([
-        supabase.from("ai_prediction_records").select("*", { count: "exact", head: true }).eq("asset", selectedAsset),
-        supabase.from("ai_prediction_records").select("*", { count: "exact", head: true }).eq("asset", selectedAsset).eq("status", "resolved"),
-        supabase.from("ai_prediction_records").select("*", { count: "exact", head: true }).eq("asset", selectedAsset).eq("direction_correct", true),
-        supabase.from("ai_model_accuracy").select("model, accuracy_pct, total_predictions, correct_predictions, computed_weight, avg_confidence").eq("asset", selectedAsset).eq("period", "7d"),
-      ]);
+      const stats = await fetch(`/api/admin/ai-stats?asset=${encodeURIComponent(selectedAsset)}`).then(r => r.json()).catch(() => ({}));
+      const total = stats.total ?? 0, resolved = stats.resolved ?? 0, correct = stats.correct ?? 0;
       return {
-        total: total ?? 0, resolved: resolved ?? 0, correct: correct ?? 0,
-        accuracy: (resolved ?? 0) > 0 ? ((correct ?? 0) / (resolved ?? 1)) * 100 : 0,
-        models: (modelData || []) as { model: string; accuracy_pct: number; total_predictions: number; correct_predictions: number; computed_weight: number; avg_confidence: number }[],
+        total, resolved, correct,
+        accuracy: resolved > 0 ? (correct / resolved) * 100 : 0,
+        models: (stats.modelAccuracy || []) as { model: string; accuracy_pct: number; total_predictions: number; correct_predictions: number; computed_weight: number; avg_confidence: number }[],
       };
     },
     enabled: !!adminUser,
@@ -211,11 +197,8 @@ export default function AdminAIProgress() {
   const { data: tfStats } = useQuery({
     queryKey: ["admin", "ai-progress-tf", selectedAsset],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ai_model_accuracy")
-        .select("timeframe, accuracy_pct, total_predictions, correct_predictions")
-        .eq("asset", selectedAsset).eq("period", "7d");
-      if (error) throw error;
+      const stats = await fetch(`/api/admin/ai-stats?asset=${encodeURIComponent(selectedAsset)}`).then(r => r.json()).catch(() => ({}));
+      const data = (stats.modelAccuracy || []).filter((r: any) => r.period === "7d");
       const byTf: Record<string, { total: number; correct: number }> = {};
       for (const r of (data || [])) {
         if (!byTf[r.timeframe]) byTf[r.timeframe] = { total: 0, correct: 0 };
@@ -235,10 +218,8 @@ export default function AdminAIProgress() {
   const { data: snapshots, isLoading, refetch } = useQuery({
     queryKey: ["admin", "ai-progress", selectedAsset, days],
     queryFn: async () => {
-      const { data, error } = await supabase.from("accuracy_daily_snapshots").select("*")
-        .eq("asset", selectedAsset).gte("snapshot_date", since).order("snapshot_date", { ascending: true });
-      if (error) throw error;
-      return data as Snapshot[];
+      const data = await fetch(`/api/admin/accuracy-snapshots?asset=${encodeURIComponent(selectedAsset)}`).then(r => r.json()).catch(() => []);
+      return (Array.isArray(data) ? data : []) as Snapshot[];
     },
     enabled: !!adminUser,
   });
@@ -246,9 +227,7 @@ export default function AdminAIProgress() {
   const { data: trainingReport } = useQuery({
     queryKey: ["admin", "ai-training-report"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("ai_training_reports").select("*").order("created_at", { ascending: false }).limit(1).single();
-      if (error) return null;
-      return data;
+      return fetch("/api/admin/training-report").then(r => r.json()).catch(() => null);
     },
     enabled: !!adminUser,
   });
@@ -256,10 +235,8 @@ export default function AdminAIProgress() {
   const { data: adjustLogs } = useQuery({
     queryKey: ["admin", "ai-adjust-logs", days],
     queryFn: async () => {
-      const { data, error } = await supabase.from("weight_adjustment_log").select("*")
-        .gte("timestamp", new Date(Date.now() - days * 86400_000).toISOString()).order("timestamp", { ascending: true });
-      if (error) throw error;
-      return data as AdjustmentLog[];
+      const data = await fetch("/api/admin/weight-adjustment-log").then(r => r.json()).catch(() => []);
+      return (Array.isArray(data) ? data : []) as AdjustmentLog[];
     },
     enabled: !!adminUser,
   });

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAdminAuth } from "@/admin/admin-auth";
-import { supabase } from "@/lib/supabase";
+import { adminGetAiStats } from "@/admin/admin-api";
 import { Brain, Target, TrendingUp, TrendingDown, Minus, RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
@@ -72,15 +72,8 @@ export default function AdminAIAccuracy() {
   const { data: accuracy, isLoading: accLoading, refetch: refetchAcc } = useQuery({
     queryKey: ["admin", "ai-accuracy", selectedAsset, selectedTimeframe, selectedPeriod],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ai_model_accuracy")
-        .select("*")
-        .eq("asset", selectedAsset)
-        .eq("timeframe", selectedTimeframe)
-        .eq("period", selectedPeriod)
-        .order("accuracy_pct", { ascending: false });
-      if (error) throw error;
-      return data as AccuracyRow[];
+      const stats = await fetch(`/api/admin/ai-stats?asset=${encodeURIComponent(selectedAsset)}`).then(r => r.json());
+      return (stats.modelAccuracy || []).filter((r: any) => r.period === selectedPeriod && r.timeframe === selectedTimeframe) as AccuracyRow[];
     },
     enabled: !!adminUser,
   });
@@ -88,15 +81,8 @@ export default function AdminAIAccuracy() {
   const { data: recent, isLoading: recLoading } = useQuery({
     queryKey: ["admin", "ai-predictions", selectedAsset, selectedTimeframe],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ai_prediction_records")
-        .select("*")
-        .eq("asset", selectedAsset)
-        .eq("timeframe", selectedTimeframe)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data as PredictionRow[];
+      const data = await fetch(`/api/admin/ai-predictions?asset=${encodeURIComponent(selectedAsset)}&timeframe=${encodeURIComponent(selectedTimeframe)}&limit=50`).then(r => r.json()).catch(() => []);
+      return (Array.isArray(data) ? data : []) as PredictionRow[];
     },
     enabled: !!adminUser,
   });
@@ -104,11 +90,8 @@ export default function AdminAIAccuracy() {
   const { data: summary } = useQuery({
     queryKey: ["admin", "ai-summary"],
     queryFn: async () => {
-      const { count: total } = await supabase.from("ai_prediction_records").select("*", { count: "exact", head: true });
-      const { count: resolved } = await supabase.from("ai_prediction_records").select("*", { count: "exact", head: true }).eq("status", "resolved");
-      const { count: pending } = await supabase.from("ai_prediction_records").select("*", { count: "exact", head: true }).eq("status", "pending");
-      const { count: correct } = await supabase.from("ai_prediction_records").select("*", { count: "exact", head: true }).eq("direction_correct", true);
-      return { total: total ?? 0, resolved: resolved ?? 0, pending: pending ?? 0, correct: correct ?? 0 };
+      const stats = await fetch("/api/admin/ai-stats").then(r => r.json());
+      return { total: stats.total ?? 0, resolved: stats.resolved ?? 0, pending: stats.pending ?? 0, correct: stats.correct ?? 0 };
     },
     enabled: !!adminUser,
   });
@@ -117,12 +100,9 @@ export default function AdminAIAccuracy() {
   const { data: tfAccuracy } = useQuery({
     queryKey: ["admin", "ai-tf-accuracy", selectedAsset, selectedPeriod],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ai_model_accuracy")
-        .select("timeframe, accuracy_pct, total_predictions, correct_predictions")
-        .eq("asset", selectedAsset)
-        .eq("period", selectedPeriod);
-      if (error) throw error;
+      const stats = await fetch(`/api/admin/ai-stats?asset=${encodeURIComponent(selectedAsset)}`).then(r => r.json());
+      const data = stats.modelAccuracy || [];
+      {}
       // Aggregate by timeframe
       const byTf: Record<string, { total: number; correct: number; accSum: number; models: number }> = {};
       for (const row of (data || [])) {
@@ -150,13 +130,8 @@ export default function AdminAIAccuracy() {
   const { data: liveAnalysis } = useQuery({
     queryKey: ["admin", "ai-live-analysis"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ai_market_analysis")
-        .select("asset, model, direction, confidence, reasoning, market_sentiment, created_at")
-        .order("created_at", { ascending: false })
-        .limit(30);
-      if (error) throw error;
-      return data;
+      const data = await fetch("/api/admin/ai-market-analysis").then(r => r.json()).catch(() => []);
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!adminUser,
     refetchInterval: 60000,
@@ -166,14 +141,13 @@ export default function AdminAIAccuracy() {
   const { data: memoryStats } = useQuery({
     queryKey: ["admin", "ai-memory-stats"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ai_memory")
-        .select("outcome, learning_score, asset")
-        .neq("outcome", "pending");
-      if (error) return null;
-      const total = data?.length ?? 0;
-      const correct = data?.filter(d => d.outcome === "correct").length ?? 0;
-      const avgScore = total > 0 ? data!.reduce((s, d) => s + (Number(d.learning_score) || 0), 0) / total : 0;
+      const data = await fetch("/api/admin/ai-memory-stats").then(r => r.json()).catch(() => null);
+      if (!data) return null;
+      if (typeof data.total === "number") return data;
+      const records = Array.isArray(data) ? data : [];
+      const total = records.length;
+      const correct = records.filter((d: any) => d.outcome === "correct").length;
+      const avgScore = total > 0 ? records.reduce((s: number, d: any) => s + (Number(d.learning_score) || 0), 0) / total : 0;
       return { total, correct, accuracy: total > 0 ? (correct / total * 100) : 0, avgScore };
     },
     enabled: !!adminUser,
