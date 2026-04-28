@@ -452,17 +452,15 @@ function AppMain() {
 
 function MainApp() {
   return (
-    <ThirdwebProvider>
-      <div className="min-h-screen bg-background text-foreground">
-        <Header />
-        <div className="flex">
-          <DesktopSidebar />
-          <AppMain />
-        </div>
-        <BottomNav />
-        <WalletSync />
+    <div className="min-h-screen bg-background text-foreground">
+      <Header />
+      <div className="flex">
+        <DesktopSidebar />
+        <AppMain />
       </div>
-    </ThirdwebProvider>
+      <BottomNav />
+      <WalletSync />
+    </div>
   );
 }
 
@@ -470,11 +468,7 @@ function RootRouter() {
   const [location] = useLocation();
 
   if (location.startsWith("/admin")) {
-    return (
-      <ThirdwebProvider>
-        <AdminApp />
-      </ThirdwebProvider>
-    );
+    return <AdminApp />;
   }
 
   if (location.startsWith("/provider")) {
@@ -486,12 +480,14 @@ function RootRouter() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <RootRouter />
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ThirdwebProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <RootRouter />
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThirdwebProvider>
   );
 }
 
