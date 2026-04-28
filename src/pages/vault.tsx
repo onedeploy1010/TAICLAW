@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 import { VaultChart } from "@/components/vault/vault-chart";
 import { VaultStats } from "@/components/vault/vault-stats";
 import { VaultDepositDialog } from "@/components/vault/vault-deposit-dialog";
+import { RuneLockSection } from "@/components/vault/rune-lock-section";
+import { EmberBurnSection } from "@/components/vault/ember-burn-section";
 import { useActiveAccount } from "thirdweb/react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getVaultPositions, getTransactions, getVaultRewards, vaultDeposit, vaultWithdraw } from "@/lib/api";
@@ -618,6 +620,32 @@ export default function Vault() {
             )}
           </TabsContent>
         </Tabs>
+      </div>
+
+      {/* ── RUNE 锁仓 Section ── */}
+      <div className="mx-4 lg:mx-0 lg:px-6">
+        <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(212,168,50,0.03)", border: "1px solid rgba(212,168,50,0.12)" }}>
+          <div className="px-4 pt-4 pb-3 flex items-center gap-2" style={{ borderBottom: "1px solid rgba(212,168,50,0.08)" }}>
+            <Lock className="h-4 w-4" style={{ color: "rgba(212,168,50,0.8)" }} />
+            <span className="text-xs font-bold tracking-wide" style={{ color: "rgba(212,168,50,0.8)" }}>RUNE 锁仓 · ve(3,3) 经济模型</span>
+          </div>
+          <div className="py-4">
+            <RuneLockSection />
+          </div>
+        </div>
+      </div>
+
+      {/* ── EMBER 销毁 Section ── */}
+      <div className="mx-4 lg:mx-0 lg:px-6">
+        <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(239,68,68,0.03)", border: "1px solid rgba(239,68,68,0.12)" }}>
+          <div className="px-4 pt-4 pb-3 flex items-center gap-2" style={{ borderBottom: "1px solid rgba(239,68,68,0.08)" }}>
+            <Flame className="h-4 w-4 text-red-400" />
+            <span className="text-xs font-bold tracking-wide text-red-400">销毁 RUNE → 永久获得 EMBER 日化</span>
+          </div>
+          <div className="py-4">
+            <EmberBurnSection />
+          </div>
+        </div>
       </div>
 
       <VaultDepositDialog open={depositOpen} onOpenChange={setDepositOpen} />

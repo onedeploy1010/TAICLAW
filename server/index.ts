@@ -872,6 +872,116 @@ app.post("/api/claim-yield", handle(async (req, res) => {
   res.json({ ok: true, message: "Claim recorded", walletAddress, planIndex, amount });
 }));
 
+// ── RUNE Lock (veRUNE) ────────────────────────────────────────────────────────
+app.get("/api/rune-lock", handle(async (req, res) => {
+  const { wallet } = req.query;
+  if (!wallet) return res.status(400).json({ error: "wallet required" });
+  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [wallet]);
+  if (!p.length) return res.json([]);
+  const { rows } = await pool.query(
+    `SELECT * FROM rune_lock_positions WHERE user_id = $1 ORDER BY created_at DESC`,
+    [p[0].id]
+  );
+  res.json(toCamel(rows));
+}));
+
+app.post("/api/rune-lock", handle(async (req, res) => {
+  const { walletAddress, runeAmount, lockDays, txHash } = req.body;
+  if (!walletAddress || !runeAmount || !lockDays) return res.status(400).json({ error: "Missing required fields" });
+  const { rows: p } = await pool.query(
+    "INSERT INTO profiles (wallet_address) VALUES ($1) ON CONFLICT (wallet_address) DO UPDATE SET wallet_address = EXCLUDED.wallet_address RETURNING id",
+    [walletAddress]
+  );
+  const veRune = Number(runeAmount) * 0.35 * (Number(lockDays) / 540);
+  const endDate = new Date(Date.now() + Number(lockDays) * 86400 * 1000).toISOString();
+  const { rows } = await pool.query(
+    `INSERT INTO rune_lock_positions (user_id, rune_amount, lock_days, ve_rune, tx_hash, end_date)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [p[0].id, runeAmount, lockDays, veRune.toFixed(6), txHash || null, endDate]
+  );
+  res.json(toCamel(rows[0]));
+}));
+
+app.get("/api/rune-lock/stats", handle(async (req, res) => {
+  const { wallet } = req.query;
+  if (!wallet) return res.status(400).json({ error: "wallet required" });
+  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [wallet]);
+  if (!p.length) return res.json({ totalRuneLocked: "0", totalVeRune: "0", positions: 0 });
+  const { rows } = await pool.query(
+    `SELECT COALESCE(SUM(rune_amount), 0) AS total_rune, COALESCE(SUM(ve_rune), 0) AS total_ve_rune, COUNT(*) AS pos_count
+     FROM rune_lock_positions WHERE user_id = $1 AND status = 'ACTIVE'`,
+    [p[0].id]
+  );
+  res.json({ totalRuneLocked: rows[0].total_rune, totalVeRune: rows[0].total_ve_rune, positions: parseInt(rows[0].pos_count) });
+}));
+
+// ── EMBER Burn (burn RUNE → daily EMBER) ─────────────────────────────────────
+app.get("/api/ember-burn", handle(async (req, res) => {
+  const { wallet } = req.query;
+  if (!wallet) return res.status(400).json({ error: "wallet required" });
+  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [wallet]);
+  if (!p.length) return res.json([]);
+  const { rows } = await pool.query(
+    `SELECT * FROM ember_burn_positions WHERE user_id = $1 ORDER BY created_at DESC`,
+    [p[0].id]
+  );
+  res.json(toCamel(rows));
+}));
+
+app.post("/api/ember-burn", handle(async (req, res) => {
+  const { walletAddress, runeAmount, txHash } = req.body;
+  if (!walletAddress || !runeAmount) return res.status(400).json({ error: "Missing required fields" });
+  const { rows: p } = await pool.query(
+    "INSERT INTO profiles (wallet_address) VALUES ($1) ON CONFLICT (wallet_address) DO UPDATE SET wallet_address = EXCLUDED.wallet_address RETURNING id",
+    [walletAddress]
+  );
+  const amount = Number(runeAmount);
+  const dailyRate = amount >= 5000 ? 0.015 : amount >= 1000 ? 0.014 : amount >= 500 ? 0.013 : amount >= 100 ? 0.012 : 0.010;
+  const { rows } = await pool.query(
+    `INSERT INTO ember_burn_positions (user_id, rune_amount, daily_rate, tx_hash)
+     VALUES ($1, $2, $3, $4) RETURNING *`,
+    [p[0].id, runeAmount, dailyRate, txHash || null]
+  );
+  res.json(toCamel(rows[0]));
+}));
+
+app.post("/api/ember-burn/claim", handle(async (req, res) => {
+  const { walletAddress, positionId } = req.body;
+  if (!walletAddress || !positionId) return res.status(400).json({ error: "Missing required fields" });
+  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [walletAddress]);
+  if (!p.length) return res.status(404).json({ error: "Profile not found" });
+  const { rows } = await pool.query(
+    `SELECT * FROM ember_burn_positions WHERE id = $1 AND user_id = $2 AND status = 'ACTIVE'`,
+    [positionId, p[0].id]
+  );
+  if (!rows.length) return res.status(404).json({ error: "Position not found" });
+  const pos = rows[0];
+  const daysSinceLastClaim = Math.max(0, (Date.now() - new Date(pos.last_claim_at).getTime()) / (1000 * 60 * 60 * 24));
+  const pendingEmber = Number(pos.rune_amount) * Number(pos.daily_rate) * daysSinceLastClaim;
+  await pool.query(
+    `UPDATE ember_burn_positions
+     SET pending_ember = 0, total_claimed_ember = total_claimed_ember + $1, last_claim_at = NOW()
+     WHERE id = $2`,
+    [pendingEmber.toFixed(6), positionId]
+  );
+  res.json({ ok: true, claimed: pendingEmber.toFixed(6) });
+}));
+
+app.get("/api/ember-burn/stats", handle(async (req, res) => {
+  const { wallet } = req.query;
+  if (!wallet) return res.status(400).json({ error: "wallet required" });
+  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [wallet]);
+  if (!p.length) return res.json({ totalRuneBurned: "0", dailyEmber: "0", totalClaimedEmber: "0" });
+  const { rows } = await pool.query(
+    `SELECT COALESCE(SUM(rune_amount), 0) AS total_burned,
+            COALESCE(SUM(rune_amount * daily_rate), 0) AS daily_ember,
+            COALESCE(SUM(total_claimed_ember), 0) AS total_claimed
+     FROM ember_burn_positions WHERE user_id = $1 AND status = 'ACTIVE'`,
+    [p[0].id]
+  );
+  res.json({ totalRuneBurned: rows[0].total_burned, dailyEmber: rows[0].daily_ember, totalClaimedEmber: rows[0].total_claimed });
+}));
+
 const PORT = parseInt(process.env.PORT || "5001");
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`API server running on port ${PORT}`);

@@ -20,7 +20,7 @@ async function apiFetch(path: string, options?: RequestInit) {
   return res.json();
 }
 
-async function apiPost(path: string, body: any) {
+export async function apiPost(path: string, body: any) {
   return apiFetch(path, { method: "POST", body: JSON.stringify(body) });
 }
 

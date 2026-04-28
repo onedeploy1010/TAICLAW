@@ -41,6 +41,12 @@ export const FLASH_SWAP_ADDRESS = import.meta.env.VITE_FLASH_SWAP_ADDRESS || "0x
 export const ARB_FLASH_SWAP_ADDRESS = "0x681a734AbE80D9f52236d70d29cA5504207b6d7C";
 export const MA_DECIMALS = 18;
 
+// ── RUNE/EMBER Token Contracts ──
+export const RUNE_TOKEN_ADDRESS = import.meta.env.VITE_RUNE_TOKEN_ADDRESS || "";
+export const EMBER_TOKEN_ADDRESS = import.meta.env.VITE_EMBER_TOKEN_ADDRESS || "";
+export const RUNE_LOCK_CONTRACT_ADDRESS = import.meta.env.VITE_RUNE_LOCK_CONTRACT_ADDRESS || "";
+export const EMBER_BURN_CONTRACT_ADDRESS = import.meta.env.VITE_EMBER_BURN_CONTRACT_ADDRESS || "";
+
 // Convert USD amount to USDT units (6 decimals)
 export function usdToUsdtUnits(amount: number): bigint {
   return BigInt(Math.round(amount * 10 ** USDT_DECIMALS));

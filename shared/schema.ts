@@ -140,6 +140,34 @@ export const predictionBets = pgTable("prediction_bets", {
   createdAt: timestamp("created_at", { withTimezone: true }).default(sql`NOW()`),
 });
 
+// ── RUNE Lock Positions (veRUNE) ─────────────────────────
+export const runeLockPositions = pgTable("rune_lock_positions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").notNull().references(() => profiles.id),
+  runeAmount: numeric("rune_amount").notNull(),
+  lockDays: integer("lock_days").notNull(),
+  veRune: numeric("ve_rune").notNull(),
+  txHash: text("tx_hash"),
+  startDate: timestamp("start_date", { withTimezone: true }).default(sql`NOW()`),
+  endDate: timestamp("end_date", { withTimezone: true }).notNull(),
+  status: text("status").default("ACTIVE"),
+  createdAt: timestamp("created_at", { withTimezone: true }).default(sql`NOW()`),
+});
+
+// ── EMBER Burn Positions ──────────────────────────────────
+export const emberBurnPositions = pgTable("ember_burn_positions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").notNull().references(() => profiles.id),
+  runeAmount: numeric("rune_amount").notNull(),
+  dailyRate: numeric("daily_rate").notNull(),
+  pendingEmber: numeric("pending_ember").default("0"),
+  totalClaimedEmber: numeric("total_claimed_ember").default("0"),
+  txHash: text("tx_hash"),
+  lastClaimAt: timestamp("last_claim_at", { withTimezone: true }).default(sql`NOW()`),
+  status: text("status").default("ACTIVE"),
+  createdAt: timestamp("created_at", { withTimezone: true }).default(sql`NOW()`),
+});
+
 // ── Admin Users ───────────────────────────────────────────
 export const adminUsers = pgTable("admin_users", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),

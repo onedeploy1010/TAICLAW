@@ -1,26 +1,48 @@
-# CoinMax
+# CoinMax 2.0
 
-A cryptocurrency trading and portfolio management web application built with React, Vite, and Supabase.
+A cryptocurrency trading, vault, and DeFi protocol management web application built with React, Vite, and Express + Neon PostgreSQL.
 
 ## Tech Stack
 
-- **Frontend**: React 18, TypeScript, Vite 7, TailwindCSS
-- **Backend/Database**: Supabase (PostgreSQL)
-- **Web3**: Thirdweb SDK (Base Sepolia Testnet)
-- **UI**: Radix UI components, Framer Motion, Recharts, Lightweight Charts
+- **Frontend**: React 18, TypeScript, Vite 7, TailwindCSS, shadcn/ui
+- **Backend**: Express.js on port 5001, Drizzle ORM, Neon PostgreSQL
+- **Web3**: Thirdweb SDK (BSC chain), wallet-based auth
+- **UI**: Radix UI components, Framer Motion, Recharts, Lightweight Charts, lucide-react
 - **Routing**: Wouter
 - **i18n**: i18next + react-i18next
-- **State**: TanStack React Query
+- **State**: TanStack React Query v5
 
 ## Project Structure
 
-- `src/` - React application source
-- `src/lib/supabase.ts` - Supabase client initialization
-- `contracts/` - Smart contract related files
-- `supabase/` - Supabase configuration
-- `shared/` - Shared types/utilities
-- `attached_assets/` - Static assets
-- `public/` - Public static files
+- `src/` — React application source
+- `src/pages/vault.tsx` — Main vault page (RUNE strategy vaults + two new DeFi sections)
+- `src/components/vault/` — Vault sub-components
+  - `rune-lock-section.tsx` — RUNE 锁仓 / veRUNE section
+  - `ember-burn-section.tsx` — 销毁 RUNE → EMBER section
+- `src/lib/contracts.ts` — All on-chain contract addresses (RUNE_TOKEN, EMBER_TOKEN, RUNE_LOCK, EMBER_BURN)
+- `src/lib/api.ts` — REST API helpers (apiPost exported)
+- `server/index.ts` — All Express API routes
+- `shared/schema.ts` — Drizzle schema for all DB tables
+- `contracts/` — Smart contract related files
+- `shared/` — Shared types/utilities
+- `attached_assets/` — Static assets
+- `public/` — Public static files
+
+## DeFi Vault Sections (New)
+
+### RUNE 锁仓 (veRUNE)
+- Lock RUNE for 30/90/180/360/540 days → receive veRUNE governance tokens
+- Formula: `veRUNE = RUNE × 35% × (lockDays / 540)`
+- Benefits: AI revenue share dividends, Epoch voting rights, IDO launch access, Forge fee dividends
+- DB table: `rune_lock_positions`
+- Contract env vars: `VITE_RUNE_TOKEN_ADDRESS`, `VITE_RUNE_LOCK_CONTRACT_ADDRESS`
+
+### 销毁 RUNE → EMBER
+- Burn RUNE permanently (irreversible) → daily EMBER yield (1.0%–1.5% tiered)
+- Rate tiers: <100 RUNE=1.0%, 100-499=1.2%, 500-999=1.3%, 1000-4999=1.4%, 5000+=1.5%
+- EMBER auto-stakes → AI monthly revenue share + IDO access
+- DB table: `ember_burn_positions`
+- Contract env vars: `VITE_EMBER_TOKEN_ADDRESS`, `VITE_EMBER_BURN_CONTRACT_ADDRESS`
 
 ## AI Analysis Section
 
