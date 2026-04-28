@@ -22,7 +22,7 @@ export function useThirdwebClient() {
         setClient(c);
       }
     } catch (e) {
-      console.error(e);
+      console.error("ThirdWeb client init failed:", e);
     } finally {
       setIsLoading(false);
     }

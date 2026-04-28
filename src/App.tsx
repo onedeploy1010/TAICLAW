@@ -342,51 +342,74 @@ function Header() {
     <header className="sticky top-0 z-50 flex items-center justify-between px-4 lg:px-8 py-2.5 lg:py-3 border-b border-border/40 bg-background/90 backdrop-blur-xl">
       <Link href="/" className="flex items-center cursor-pointer shrink-0" data-testid="link-logo-home">
         <img src="/rune-protocol-logo.jpeg" alt="RUNE PROTOCOL" className="h-8 lg:h-9 rounded-full object-cover" />
-        <span className="font-display font-bold ml-2 leading-tight flex flex-col">
+        {/* Hide text on small screens so ConnectButton always has room */}
+        <span className="font-display font-bold ml-2 leading-tight flex-col hidden sm:flex">
           <span className="text-foreground text-xs lg:text-sm tracking-[0.2em]">RUNE</span>
           <span className="text-primary text-[0.55rem] lg:text-[0.6rem] tracking-[0.35em]">PROTOCOL</span>
         </span>
       </Link>
 
-      <div className="flex items-center gap-2">
-        {isLoading || !client ? (
-          <div className="h-9 w-20 sm:w-24 animate-pulse rounded-md bg-muted" />
-        ) : (
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        {isLoading ? (
+          <div className="h-9 w-24 animate-pulse rounded-md bg-muted" />
+        ) : client ? (
           <ConnectButton
-          client={client}
-          chain={BSC_CHAIN}
-          wallets={wallets}
-          connectButton={{
-            label: t("common.connect"),
-            style: {
+            client={client}
+            chain={BSC_CHAIN}
+            wallets={wallets}
+            connectButton={{
+              label: t("common.connect"),
+              style: {
+                background: "linear-gradient(135deg, hsl(43, 74%, 58%), hsl(38, 80%, 44%))",
+                color: "#0a0704",
+                borderRadius: "6px",
+                fontSize: "13px",
+                fontWeight: "700",
+                height: "36px",
+                padding: "0 14px",
+                border: "none",
+                boxShadow: "0 0 12px rgba(212, 168, 50, 0.35)",
+                whiteSpace: "nowrap",
+              },
+            }}
+            detailsButton={{
+              style: {
+                background: "hsl(170, 18%, 10%)",
+                color: "hsl(165, 15%, 93%)",
+                borderRadius: "6px",
+                fontSize: "12px",
+                fontWeight: "500",
+                height: "36px",
+                padding: "0 10px",
+                border: "1px solid rgba(212, 168, 50, 0.18)",
+                boxShadow: "0 0 8px rgba(212, 168, 50, 0.05)",
+                maxWidth: "140px",
+              },
+            }}
+            theme="dark"
+            showThirdwebBranding={false}
+          />
+        ) : (
+          /* Fallback shown when VITE_THIRDWEB_CLIENT_ID is not configured */
+          <button
+            style={{
               background: "linear-gradient(135deg, hsl(43, 74%, 58%), hsl(38, 80%, 44%))",
               color: "#0a0704",
               borderRadius: "6px",
               fontSize: "13px",
               fontWeight: "700",
               height: "36px",
-              padding: "0 16px",
+              padding: "0 14px",
               border: "none",
               boxShadow: "0 0 12px rgba(212, 168, 50, 0.35)",
-            },
-          }}
-          detailsButton={{
-            style: {
-              background: "hsl(170, 18%, 10%)",
-              color: "hsl(165, 15%, 93%)",
-              borderRadius: "6px",
-              fontSize: "13px",
-              fontWeight: "500",
-              height: "36px",
-              padding: "0 12px",
-              border: "1px solid rgba(212, 168, 50, 0.18)",
-              boxShadow: "0 0 8px rgba(212, 168, 50, 0.05)",
-            },
-          }}
-          theme="dark"
-          showThirdwebBranding={false}
-        />
-      )}
+              whiteSpace: "nowrap",
+              cursor: "pointer",
+            }}
+            data-testid="button-connect-fallback"
+          >
+            {t("common.connect", "Connect")}
+          </button>
+        )}
         <LangSwitcher />
       </div>
     </header>
