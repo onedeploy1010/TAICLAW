@@ -144,7 +144,9 @@ export const predictionBets = pgTable("prediction_bets", {
 export const runeLockPositions = pgTable("rune_lock_positions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: uuid("user_id").notNull().references(() => profiles.id),
+  usdtAmount: numeric("usdt_amount"),
   runeAmount: numeric("rune_amount").notNull(),
+  runePrice: numeric("rune_price"),
   lockDays: integer("lock_days").notNull(),
   veRune: numeric("ve_rune").notNull(),
   txHash: text("tx_hash"),
@@ -158,7 +160,9 @@ export const runeLockPositions = pgTable("rune_lock_positions", {
 export const emberBurnPositions = pgTable("ember_burn_positions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: uuid("user_id").notNull().references(() => profiles.id),
+  usdtAmount: numeric("usdt_amount"),
   runeAmount: numeric("rune_amount").notNull(),
+  runePrice: numeric("rune_price"),
   dailyRate: numeric("daily_rate").notNull(),
   pendingEmber: numeric("pending_ember").default("0"),
   totalClaimedEmber: numeric("total_claimed_ember").default("0"),

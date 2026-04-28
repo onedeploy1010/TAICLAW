@@ -921,7 +921,7 @@ app.get("/api/rune-lock", handle(async (req, res) => {
 }));
 
 app.post("/api/rune-lock", handle(async (req, res) => {
-  const { walletAddress, runeAmount, lockDays, txHash } = req.body;
+  const { walletAddress, runeAmount, lockDays, txHash, usdtAmount, runePrice } = req.body;
   if (!walletAddress || !runeAmount || !lockDays) return res.status(400).json({ error: "Missing required fields" });
   const { rows: p } = await pool.query(
     "INSERT INTO profiles (wallet_address) VALUES ($1) ON CONFLICT (wallet_address) DO UPDATE SET wallet_address = EXCLUDED.wallet_address RETURNING id",
@@ -930,9 +930,9 @@ app.post("/api/rune-lock", handle(async (req, res) => {
   const veRune = Number(runeAmount) * 0.35 * (Number(lockDays) / 540);
   const endDate = new Date(Date.now() + Number(lockDays) * 86400 * 1000).toISOString();
   const { rows } = await pool.query(
-    `INSERT INTO rune_lock_positions (user_id, rune_amount, lock_days, ve_rune, tx_hash, end_date)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-    [p[0].id, runeAmount, lockDays, veRune.toFixed(6), txHash || null, endDate]
+    `INSERT INTO rune_lock_positions (user_id, usdt_amount, rune_amount, rune_price, lock_days, ve_rune, tx_hash, end_date)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+    [p[0].id, usdtAmount || null, runeAmount, runePrice || null, lockDays, veRune.toFixed(6), txHash || null, endDate]
   );
   res.json(toCamel(rows[0]));
 }));
@@ -964,7 +964,7 @@ app.get("/api/ember-burn", handle(async (req, res) => {
 }));
 
 app.post("/api/ember-burn", handle(async (req, res) => {
-  const { walletAddress, runeAmount, txHash } = req.body;
+  const { walletAddress, runeAmount, txHash, usdtAmount, runePrice } = req.body;
   if (!walletAddress || !runeAmount) return res.status(400).json({ error: "Missing required fields" });
   const { rows: p } = await pool.query(
     "INSERT INTO profiles (wallet_address) VALUES ($1) ON CONFLICT (wallet_address) DO UPDATE SET wallet_address = EXCLUDED.wallet_address RETURNING id",
@@ -973,9 +973,9 @@ app.post("/api/ember-burn", handle(async (req, res) => {
   const amount = Number(runeAmount);
   const dailyRate = amount >= 5000 ? 0.015 : amount >= 1000 ? 0.014 : amount >= 500 ? 0.013 : amount >= 100 ? 0.012 : 0.010;
   const { rows } = await pool.query(
-    `INSERT INTO ember_burn_positions (user_id, rune_amount, daily_rate, tx_hash)
-     VALUES ($1, $2, $3, $4) RETURNING *`,
-    [p[0].id, runeAmount, dailyRate, txHash || null]
+    `INSERT INTO ember_burn_positions (user_id, usdt_amount, rune_amount, rune_price, daily_rate, tx_hash)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [p[0].id, usdtAmount || null, runeAmount, runePrice || null, dailyRate, txHash || null]
   );
   res.json(toCamel(rows[0]));
 }));

@@ -19,6 +19,8 @@ import {
   BSC_CHAIN,
   USDT_ADDRESS,
   USDC_ADDRESS,
+  RUNE_LOCK_CONTRACT_ADDRESS,
+  EMBER_BURN_CONTRACT_ADDRESS,
 } from "@/lib/contracts";
 import { VIP_PLANS } from "@/lib/data";
 
@@ -293,11 +295,101 @@ export function usePayment() {
     [account, client, sendTransaction],
   );
 
+  // ── RUNE Lock (pay USDT → contract buys & locks RUNE) ──
+  const payRuneLock = useCallback(
+    async (amountUsd: number): Promise<string> => {
+      if (!RUNE_LOCK_CONTRACT_ADDRESS) throw new Error("RUNE_LOCK_CONTRACT not configured");
+      if (!client) throw new Error("Thirdweb client not ready");
+      if (!account) throw new Error("Wallet not connected");
+      setStatus("approving");
+      setError(null);
+      setTxHash(null);
+      try {
+        const usdtContract = getUsdtContract(client);
+        const rawAmount = usdToUsdtUnits(amountUsd);
+        const maxUint = BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        const approveTx = prepareContractCall({
+          contract: usdtContract,
+          method: "function approve(address spender, uint256 amount) returns (bool)",
+          params: [RUNE_LOCK_CONTRACT_ADDRESS as `0x${string}`, maxUint],
+        });
+        const approveResult = await sendTransaction(approveTx);
+        await waitForReceipt({ client, chain: BSC_CHAIN, transactionHash: approveResult.transactionHash });
+        setStatus("paying");
+        const lockContract = getContract({ client, chain: BSC_CHAIN, address: RUNE_LOCK_CONTRACT_ADDRESS as `0x${string}` });
+        const tx = prepareContractCall({
+          contract: lockContract,
+          method: "function depositUSDT(uint256 amount) external",
+          params: [rawAmount],
+        });
+        (tx as any).gas = BigInt(600000);
+        const payResult = await sendTransaction(tx);
+        setStatus("confirming");
+        const receipt = await waitForReceipt({ client, chain: BSC_CHAIN, transactionHash: payResult.transactionHash });
+        if (receipt.status === "reverted") throw new Error("Transaction reverted");
+        setTxHash(receipt.transactionHash);
+        setStatus("recording");
+        return receipt.transactionHash;
+      } catch (err: any) {
+        setError(err?.message || "Payment failed");
+        setStatus("error");
+        throw err;
+      }
+    },
+    [account, client, sendTransaction],
+  );
+
+  // ── EMBER Burn (pay USDT → contract buys & burns RUNE) ──
+  const payEmberBurn = useCallback(
+    async (amountUsd: number): Promise<string> => {
+      if (!EMBER_BURN_CONTRACT_ADDRESS) throw new Error("EMBER_BURN_CONTRACT not configured");
+      if (!client) throw new Error("Thirdweb client not ready");
+      if (!account) throw new Error("Wallet not connected");
+      setStatus("approving");
+      setError(null);
+      setTxHash(null);
+      try {
+        const usdtContract = getUsdtContract(client);
+        const rawAmount = usdToUsdtUnits(amountUsd);
+        const maxUint = BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        const approveTx = prepareContractCall({
+          contract: usdtContract,
+          method: "function approve(address spender, uint256 amount) returns (bool)",
+          params: [EMBER_BURN_CONTRACT_ADDRESS as `0x${string}`, maxUint],
+        });
+        const approveResult = await sendTransaction(approveTx);
+        await waitForReceipt({ client, chain: BSC_CHAIN, transactionHash: approveResult.transactionHash });
+        setStatus("paying");
+        const burnContract = getContract({ client, chain: BSC_CHAIN, address: EMBER_BURN_CONTRACT_ADDRESS as `0x${string}` });
+        const tx = prepareContractCall({
+          contract: burnContract,
+          method: "function depositUSDT(uint256 amount) external",
+          params: [rawAmount],
+        });
+        (tx as any).gas = BigInt(600000);
+        const payResult = await sendTransaction(tx);
+        setStatus("confirming");
+        const receipt = await waitForReceipt({ client, chain: BSC_CHAIN, transactionHash: payResult.transactionHash });
+        if (receipt.status === "reverted") throw new Error("Transaction reverted");
+        setTxHash(receipt.transactionHash);
+        setStatus("recording");
+        return receipt.transactionHash;
+      } catch (err: any) {
+        setError(err?.message || "Payment failed");
+        setStatus("error");
+        throw err;
+      }
+    },
+    [account, client, sendTransaction],
+  );
+
   return {
     payVaultDeposit,
     payNodePurchase,
     payNodePurchaseV2,
     payVIPSubscribe,
+    payRuneLock,
+    payEmberBurn,
     status,
     txHash,
     error,
