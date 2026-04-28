@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -9,15 +9,16 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { apiPost } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
-const BURN_TIERS = [
-  { min: 0,    max: 99,   rate: 0.010, label: "1.0%", tier: "入门" },
-  { min: 100,  max: 499,  rate: 0.012, label: "1.2%", tier: "进阶" },
-  { min: 500,  max: 999,  rate: 0.013, label: "1.3%", tier: "高级" },
-  { min: 1000, max: 4999, rate: 0.014, label: "1.4%", tier: "精英" },
-  { min: 5000, max: Infinity, rate: 0.015, label: "1.5%", tier: "顶级", best: true },
-] as const;
+const BURN_TIERS: Array<{ min: number; max: number; rate: number; rateLabel: string; tierKey: string; tierDefault: string; best?: boolean }> = [
+  { min: 0,    max: 99,        rate: 0.010, rateLabel: "1.0%", tierKey: "vault.burn.tierStarter",  tierDefault: "Starter" },
+  { min: 100,  max: 499,       rate: 0.012, rateLabel: "1.2%", tierKey: "vault.burn.tierAdvanced", tierDefault: "Advanced" },
+  { min: 500,  max: 999,       rate: 0.013, rateLabel: "1.3%", tierKey: "vault.burn.tierPro",      tierDefault: "Pro" },
+  { min: 1000, max: 4999,      rate: 0.014, rateLabel: "1.4%", tierKey: "vault.burn.tierElite",    tierDefault: "Elite" },
+  { min: 5000, max: Infinity,  rate: 0.015, rateLabel: "1.5%", tierKey: "vault.burn.tierMax",      tierDefault: "Max", best: true },
+];
 
 function getBurnRate(amount: number) {
   return BURN_TIERS.find(t => amount >= t.min && amount <= t.max) || BURN_TIERS[0];
@@ -41,6 +42,7 @@ interface EmberBurnStats {
 }
 
 export function EmberBurnSection() {
+  const { t } = useTranslation();
   const account = useActiveAccount();
   const wallet = account?.address || "";
   const { toast } = useToast();
@@ -56,7 +58,7 @@ export function EmberBurnSection() {
     enabled: !!wallet,
   });
 
-  const { data: positions = [], isLoading: posLoading } = useQuery<EmberBurnPosition[]>({
+  const { data: positions = [] } = useQuery<EmberBurnPosition[]>({
     queryKey: ["/api/ember-burn", wallet],
     queryFn: () => fetch(`/api/ember-burn?wallet=${wallet}`).then(r => r.json()),
     enabled: !!wallet,
@@ -66,7 +68,7 @@ export function EmberBurnSection() {
     mutationFn: (data: { walletAddress: string; runeAmount: number }) =>
       apiPost("/api/ember-burn", data),
     onSuccess: () => {
-      toast({ title: "销毁成功", description: `已永久销毁 ${runeAmount} RUNE，开始每日产出 EMBER` });
+      toast({ title: t("vault.burn.success", "Burned!"), description: t("vault.burn.successDesc", "RUNE burned successfully. Daily EMBER yield has started.") });
       queryClient.invalidateQueries({ queryKey: ["/api/ember-burn", wallet] });
       queryClient.invalidateQueries({ queryKey: ["/api/ember-burn/stats", wallet] });
       setOpen(false);
@@ -74,7 +76,7 @@ export function EmberBurnSection() {
       setConfirmed(false);
     },
     onError: (err: Error) => {
-      toast({ title: "销毁失败", description: err.message, variant: "destructive" });
+      toast({ title: t("vault.burn.error", "Burn Failed"), description: err.message, variant: "destructive" });
     },
   });
 
@@ -82,20 +84,20 @@ export function EmberBurnSection() {
     mutationFn: (positionId: string) =>
       apiPost("/api/ember-burn/claim", { walletAddress: wallet, positionId }),
     onSuccess: (data: any) => {
-      toast({ title: "领取成功", description: `已领取 ${Number(data.claimed).toFixed(4)} EMBER` });
+      toast({ title: t("vault.burn.claimSuccess", "Claimed!"), description: t("vault.burn.claimSuccessDesc", "Claimed {{amount}} EMBER", { amount: Number(data.claimed).toFixed(4) }) });
       queryClient.invalidateQueries({ queryKey: ["/api/ember-burn", wallet] });
       queryClient.invalidateQueries({ queryKey: ["/api/ember-burn/stats", wallet] });
     },
     onError: (err: Error) => {
-      toast({ title: "领取失败", description: err.message, variant: "destructive" });
+      toast({ title: t("vault.burn.claimError", "Claim Failed"), description: err.message, variant: "destructive" });
     },
   });
 
   const handleBurn = () => {
     const amount = parseFloat(runeAmount);
-    if (!wallet) { toast({ title: "请先连接钱包", variant: "destructive" }); return; }
-    if (isNaN(amount) || amount <= 0) { toast({ title: "请输入有效的 RUNE 数量", variant: "destructive" }); return; }
-    if (!confirmed) { toast({ title: "请确认不可逆操作", variant: "destructive" }); return; }
+    if (!wallet) { toast({ title: t("vault.burn.validationWallet", "Please connect your wallet first"), variant: "destructive" }); return; }
+    if (isNaN(amount) || amount <= 0) { toast({ title: t("vault.burn.validationAmount", "Please enter a valid RUNE amount"), variant: "destructive" }); return; }
+    if (!confirmed) { toast({ title: t("vault.burn.validationConfirm", "Please confirm the irreversible action"), variant: "destructive" }); return; }
     burnMutation.mutate({ walletAddress: wallet, runeAmount: amount });
   };
 
@@ -112,93 +114,90 @@ export function EmberBurnSection() {
     return Number(pos.runeAmount) * Number(pos.dailyRate) * days;
   }
 
+  const benefits = [
+    { icon: Coins,    color: "rgb(251,191,36)",  labelKey: "vault.burn.benefitRevenue", labelDefault: "AI Revenue Share",     descKey: "vault.burn.benefitRevenueDesc", descDefault: "Monthly AI quant profits distributed by EMBER weight" },
+    { icon: Trophy,   color: "rgb(167,243,208)", labelKey: "vault.burn.benefitIdo",     labelDefault: "Exclusive IDO Access", descKey: "vault.burn.benefitIdoDesc",     descDefault: "Monthly launches, avg 50x. EMBER holders only" },
+    { icon: Sparkles, color: "rgb(196,181,253)", labelKey: "vault.burn.benefitScarcity",labelDefault: "Protocol Scarcity",    descKey: "vault.burn.benefitScarcityDesc",descDefault: "Hard cap 1.31M EMBER. External projects compete for emissions" },
+  ];
+
   return (
     <div className="px-4 lg:px-0 space-y-3">
+      {/* Section Header */}
       <div className="flex items-center gap-2 mb-1">
         <div className="h-5 w-5 rounded-md flex items-center justify-center" style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)" }}>
           <Flame className="h-3 w-3 text-red-400" />
         </div>
-        <h3 className="text-sm font-bold">销毁 RUNE · 永久产出 EMBER</h3>
+        <h3 className="text-sm font-bold">{t("vault.burn.sectionTitle", "Burn RUNE · Permanent EMBER Yield")}</h3>
         <Badge className="text-[9px] border-0 ml-auto" style={{ background: "rgba(239,68,68,0.12)", color: "rgb(248,113,113)" }}>
-          永久通缩
+          {t("vault.burn.badge", "Permanent Deflation")}
         </Badge>
       </div>
 
       {/* Stats Row */}
       {wallet && (
         <div className="grid grid-cols-3 gap-1.5">
-          <div className="rounded-xl p-2.5" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.12)" }}>
-            <div className="text-[9px] text-muted-foreground uppercase mb-0.5">已销毁 RUNE</div>
-            <div className="text-base font-bold tabular-nums text-red-400">
-              {Number(stats?.totalRuneBurned || 0).toLocaleString()}
+          {[
+            { labelKey: "vault.burn.statBurned",  labelDefault: "RUNE Burned",   value: Number(stats?.totalRuneBurned || 0).toLocaleString(), color: "text-red-400" },
+            { labelKey: "vault.burn.statDaily",   labelDefault: "Daily EMBER",   value: totalDailyEmber.toFixed(2),                          color: "text-orange-400" },
+            { labelKey: "vault.burn.statClaimed", labelDefault: "EMBER Claimed", value: Number(stats?.totalClaimedEmber || 0).toFixed(2),    color: "text-orange-300" },
+          ].map(({ labelKey, labelDefault, value, color }) => (
+            <div key={labelKey} className="rounded-xl p-2.5" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.12)" }}>
+              <div className="text-[9px] text-muted-foreground uppercase mb-0.5">{t(labelKey, labelDefault)}</div>
+              <div className={`text-base font-bold tabular-nums ${color}`}>{value}</div>
             </div>
-          </div>
-          <div className="rounded-xl p-2.5" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.12)" }}>
-            <div className="text-[9px] text-muted-foreground uppercase mb-0.5">日产 EMBER</div>
-            <div className="text-base font-bold tabular-nums text-orange-400">
-              {totalDailyEmber.toFixed(2)}
-            </div>
-          </div>
-          <div className="rounded-xl p-2.5" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.12)" }}>
-            <div className="text-[9px] text-muted-foreground uppercase mb-0.5">已领取 EMBER</div>
-            <div className="text-base font-bold tabular-nums text-orange-300">
-              {Number(stats?.totalClaimedEmber || 0).toFixed(2)}
-            </div>
-          </div>
+          ))}
         </div>
       )}
 
-      {/* Mechanism Description */}
+      {/* EMBER Benefits */}
       <div className="rounded-xl p-3 space-y-2" style={{ background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.10)" }}>
-        <div className="flex items-center gap-1.5">
-          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">EMBER 质押权益</div>
-        </div>
-        {[
-          { icon: Coins, label: "AI 月度收益分红", desc: "全网 AI 量化月收益按 EMBER 质押权重分配", color: "rgb(251,191,36)" },
-          { icon: Trophy, label: "IDO 打新独家入场券", desc: "月度1-2个新项目，平均涨幅50倍，参与须持 EMBER", color: "rgb(167,243,208)" },
-          { icon: Sparkles, label: "期货市场价值积累", desc: "外部项目竞争 EMBER 流向，稀缺 131万 硬顶", color: "rgb(196,181,253)" },
-        ].map(({ icon: Icon, label, desc, color }) => (
-          <div key={label} className="flex items-start gap-2.5">
+        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("vault.burn.benefitsTitle", "EMBER Staking Benefits")}</div>
+        {benefits.map(({ icon: Icon, color, labelKey, labelDefault, descKey, descDefault }) => (
+          <div key={labelKey} className="flex items-start gap-2.5">
             <div className="h-6 w-6 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: `${color}15`, border: `1px solid ${color}25` }}>
               <Icon className="h-3 w-3" style={{ color }} />
             </div>
             <div>
-              <div className="text-[11px] font-semibold">{label}</div>
-              <div className="text-[10px] text-muted-foreground">{desc}</div>
+              <div className="text-[11px] font-semibold">{t(labelKey, labelDefault)}</div>
+              <div className="text-[10px] text-muted-foreground">{t(descKey, descDefault)}</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Burn Rate Tiers Toggle */}
+      {/* Rate Tiers Toggle */}
       <button
         onClick={() => setShowTiers(v => !v)}
         className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs text-muted-foreground transition-colors hover:text-foreground"
         style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}
       >
-        <span>日化收益分层（按销毁金额）</span>
+        <span>{t("vault.burn.tiersTitle", "Daily Rate Tiers (by burn amount)")}</span>
         {showTiers ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
       </button>
+
       {showTiers && (
         <div className="rounded-lg overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
           <table className="w-full text-[10px]">
             <thead>
               <tr style={{ background: "rgba(255,255,255,0.04)" }}>
-                <th className="text-left px-3 py-2 text-muted-foreground font-medium">销毁量 (RUNE)</th>
-                <th className="text-center px-3 py-2 text-muted-foreground font-medium">档次</th>
-                <th className="text-right px-3 py-2 text-muted-foreground font-medium">日化 EMBER</th>
+                <th className="text-left px-3 py-2 text-muted-foreground font-medium">{t("vault.burn.tierAmount", "Burn Amount (RUNE)")}</th>
+                <th className="text-center px-3 py-2 text-muted-foreground font-medium">{t("vault.burn.tierLevel", "Level")}</th>
+                <th className="text-right px-3 py-2 text-muted-foreground font-medium">{t("vault.burn.tierRate", "Daily EMBER")}</th>
               </tr>
             </thead>
             <tbody>
-              {BURN_TIERS.map(t => (
-                <tr key={t.min} className={cn("border-t", t.best ? "text-orange-300" : "")} style={{ borderColor: "rgba(255,255,255,0.04)" }}>
+              {BURN_TIERS.map(tier => (
+                <tr key={tier.min} className={cn("border-t", tier.best ? "text-orange-300" : "")} style={{ borderColor: "rgba(255,255,255,0.04)" }}>
                   <td className="px-3 py-1.5 text-muted-foreground">
-                    {t.max === Infinity ? `≥ ${t.min.toLocaleString()}` : `${t.min} – ${t.max.toLocaleString()}`}
+                    {tier.max === Infinity ? `≥ ${tier.min.toLocaleString()}` : `${tier.min.toLocaleString()} – ${tier.max.toLocaleString()}`}
                   </td>
                   <td className="px-3 py-1.5 text-center">
-                    {t.best ? <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(239,68,68,0.2)", color: "rgb(248,113,113)" }}>顶级</span> : t.tier}
+                    {tier.best
+                      ? <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: "rgba(239,68,68,0.2)", color: "rgb(248,113,113)" }}>{t(tier.tierKey, tier.tierDefault)}</span>
+                      : t(tier.tierKey, tier.tierDefault)
+                    }
                   </td>
-                  <td className="px-3 py-1.5 text-right font-bold">{t.label}</td>
+                  <td className="px-3 py-1.5 text-right font-bold">{tier.rateLabel}</td>
                 </tr>
               ))}
             </tbody>
@@ -214,13 +213,13 @@ export function EmberBurnSection() {
         data-testid="button-ember-burn-open"
       >
         <Flame className="mr-2 h-4 w-4" />
-        销毁 RUNE → 获得永久 EMBER 产出
+        {t("vault.burn.burnButton", "Burn RUNE → Permanent EMBER Yield")}
       </Button>
 
-      {/* Active Positions */}
+      {/* Active Burn Positions */}
       {activePositions.length > 0 && (
         <div className="space-y-2">
-          <div className="text-[10px] font-semibold text-muted-foreground uppercase">当前销毁仓位</div>
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase">{t("vault.burn.myPositions", "Active Burn Positions")}</div>
           {activePositions.map(pos => {
             const pending = calcPendingEmber(pos);
             const rate = getBurnRate(Number(pos.runeAmount));
@@ -232,15 +231,15 @@ export function EmberBurnSection() {
                 <div className="flex items-center justify-between mb-1.5">
                   <div>
                     <span className="font-bold text-sm text-red-400">{Number(pos.runeAmount).toLocaleString()}</span>
-                    <span className="text-muted-foreground ml-1">RUNE 销毁</span>
+                    <span className="text-muted-foreground ml-1">{t("vault.burn.burned", "RUNE burned")}</span>
                   </div>
                   <Badge className="text-[9px] border-0" style={{ background: "rgba(239,68,68,0.12)", color: "rgb(248,113,113)" }}>
-                    日化 {rate.label}
+                    {t("vault.burn.dailyRate", "Daily")} {rate.rateLabel}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="text-[10px] text-muted-foreground">
-                    待领取: <span className="text-orange-300 font-semibold">{pending.toFixed(4)} EMBER</span>
+                    {t("vault.burn.pending", "Pending:")} <span className="text-orange-300 font-semibold">{pending.toFixed(4)} EMBER</span>
                   </div>
                   <Button
                     size="sm"
@@ -250,7 +249,7 @@ export function EmberBurnSection() {
                     disabled={claimMutation.isPending || pending < 0.001}
                     data-testid={`button-claim-ember-${pos.id}`}
                   >
-                    {claimMutation.isPending ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : "领取"}
+                    {claimMutation.isPending ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : t("vault.burn.claim", "Claim")}
                   </Button>
                 </div>
               </div>
@@ -260,7 +259,7 @@ export function EmberBurnSection() {
       )}
 
       {!wallet && (
-        <div className="text-center py-4 text-xs text-muted-foreground">连接钱包以查看销毁记录</div>
+        <div className="text-center py-4 text-xs text-muted-foreground">{t("vault.burn.connectWallet", "Connect wallet to view burn positions")}</div>
       )}
 
       {/* Burn Dialog */}
@@ -269,20 +268,19 @@ export function EmberBurnSection() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-400">
               <Flame className="h-4 w-4" />
-              销毁 RUNE 获得 EMBER
+              {t("vault.burn.confirmTitle", "Burn RUNE for EMBER")}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              销毁后 RUNE 永久退出流通，每日按比例产出 EMBER 并自动进入质押
+              {t("vault.burn.confirmDesc", "Burned RUNE leaves circulation permanently. You receive daily EMBER yield with no expiry.")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
-            {/* Amount Input */}
             <div>
-              <div className="text-xs text-muted-foreground mb-1.5">销毁数量 (RUNE)</div>
+              <div className="text-xs text-muted-foreground mb-1.5">{t("vault.burn.amountLabel", "Burn Amount (RUNE)")}</div>
               <Input
                 type="number"
-                placeholder="输入要销毁的 RUNE 数量"
+                placeholder={t("vault.burn.amountPlaceholder", "Enter RUNE to burn permanently")}
                 value={runeAmount}
                 onChange={e => { setRuneAmount(e.target.value); setConfirmed(false); }}
                 className="bg-background border-border"
@@ -290,50 +288,41 @@ export function EmberBurnSection() {
               />
             </div>
 
-            {/* Rate Preview */}
             {amountNum > 0 && (
               <div className="rounded-lg p-3 space-y-2" style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)" }}>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">当前档位</span>
-                  <span className="font-bold" style={{ color: tier.best ? "rgb(248,113,113)" : undefined }}>{tier.tier}</span>
+                  <span className="text-muted-foreground">{t("vault.burn.currentTier", "Current Tier")}</span>
+                  <span className="font-bold" style={{ color: tier.best ? "rgb(248,113,113)" : undefined }}>{t(tier.tierKey, tier.tierDefault)}</span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">日化率</span>
-                  <span className="font-bold text-orange-400">{tier.label} / 天</span>
+                  <span className="text-muted-foreground">{t("vault.burn.dailyRateLabel", "Daily Rate")}</span>
+                  <span className="font-bold text-orange-400">{tier.rateLabel} / day</span>
                 </div>
                 <div className="border-t border-border/40 pt-2 space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">每日产出 EMBER</span>
+                    <span className="text-muted-foreground">{t("vault.burn.dailyYield", "Daily EMBER Yield")}</span>
                     <span className="font-bold text-orange-300">{dailyEmber.toFixed(4)} EMBER</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">年度预估 EMBER</span>
+                    <span className="text-muted-foreground">{t("vault.burn.yearlyYield", "Annual EMBER Estimate")}</span>
                     <span className="font-bold text-orange-300">{yearlyEmber.toFixed(0)} EMBER</span>
                   </div>
-                  {tier.best && (
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">10年累积 EMBER</span>
-                      <span className="font-bold text-orange-200">{(yearlyEmber * 10).toFixed(0)} EMBER</span>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
 
-            {/* Tier Reference */}
             {amountNum > 0 && amountNum < 5000 && (
               <div className="text-[10px] text-muted-foreground rounded-lg p-2" style={{ background: "rgba(251,191,36,0.04)", border: "1px solid rgba(251,191,36,0.10)" }}>
-                💡 销毁 <span className="text-yellow-400 font-semibold">5,000+ RUNE</span> 可触达 1.5% 最高日化档位
+                💡 {t("vault.burn.tipUpgrade", "Burn 5,000+ RUNE to unlock the maximum 1.5% daily rate")}
               </div>
             )}
 
-            {/* Irreversible Warning */}
             <div className="space-y-2">
               <div className="flex items-start gap-2 text-[10px] rounded-lg p-2.5" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.20)" }}>
                 <AlertCircle className="h-3.5 w-3.5 text-red-400 shrink-0 mt-0.5" />
                 <div className="text-red-300 space-y-0.5">
-                  <div className="font-semibold">⚠️ 不可逆操作</div>
-                  <div>销毁后 RUNE 永久退出流通，<strong>本金无法归还</strong>。您获得的是永久日化 EMBER 产出权，无到期时间。</div>
+                  <div className="font-semibold">{t("vault.burn.irreversible", "⚠️ Irreversible Action")}</div>
+                  <div>{t("vault.burn.irreversibleDesc", "Burned RUNE is permanently removed from circulation. Principal is never returned. You receive perpetual daily EMBER yield.")}</div>
                 </div>
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
@@ -344,13 +333,13 @@ export function EmberBurnSection() {
                   className="rounded"
                   data-testid="checkbox-burn-confirm"
                 />
-                <span className="text-[11px] text-muted-foreground">我已理解销毁不可逆，确认继续</span>
+                <span className="text-[11px] text-muted-foreground">{t("vault.burn.checkboxLabel", "I understand this is irreversible and confirm")}</span>
               </label>
             </div>
           </div>
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>取消</Button>
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>{t("common.cancel", "Cancel")}</Button>
             <Button
               size="sm"
               onClick={handleBurn}
@@ -359,7 +348,7 @@ export function EmberBurnSection() {
               data-testid="button-ember-burn-confirm"
             >
               {burnMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                <><Flame className="mr-1.5 h-3.5 w-3.5" />确认销毁</>
+                <><Flame className="mr-1.5 h-3.5 w-3.5" />{t("vault.burn.confirmBtn", "Confirm Burn")}</>
               )}
             </Button>
           </DialogFooter>
