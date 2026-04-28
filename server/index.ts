@@ -530,12 +530,47 @@ app.post("/api/ai-forecast", handle(async (req, res) => {
 }));
 
 app.post("/api/ai-forecast-multi", handle(async (req, res) => {
-  req.body.asset = req.body.asset || "BTC";
-  return app._router.handle(
-    Object.assign(req, { url: "/api/ai-forecast", path: "/api/ai-forecast" }),
-    res,
-    () => {}
-  );
+  const { asset, timeframe } = req.body;
+  const assetUp = (asset || "BTC").toUpperCase();
+  const tf = timeframe || "1H";
+  const [fearGreed, currentPrice] = await Promise.all([fetchFearGreedIndex(), fetchCurrentPrice(assetUp)]);
+  const tfLabel = TIMEFRAME_LABELS[tf] || tf;
+
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!openaiKey) throw new Error("OPENAI_API_KEY not configured");
+
+  const models = [
+    { name: "GPT-4o", prompt: "You are GPT-4o, a sophisticated AI analyst." },
+    { name: "DeepSeek", prompt: "You are DeepSeek, a deep learning market analyst." },
+    { name: "Llama 3.1", prompt: "You are Llama, a reasoning-focused market analyst." },
+    { name: "Gemini", prompt: "You are Gemini, Google's multi-modal AI analyst." },
+    { name: "Grok", prompt: "You are Grok, xAI's market analyst." },
+  ];
+
+  const forecasts = await Promise.all(models.map(async (m) => {
+    try {
+      const r = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${openaiKey}` },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: `${m.prompt} Respond with JSON only: {prediction, confidence (0-100), targetPrice, reasoning}` },
+            { role: "user", content: `Analyze ${assetUp} at $${currentPrice}. FGI: ${fearGreed.value}. Predict ${tfLabel} direction.` },
+          ],
+          max_tokens: 150,
+          response_format: { type: "json_object" },
+        }),
+      });
+      const data = await r.json();
+      const p = JSON.parse(data.choices?.[0]?.message?.content || "{}");
+      return { model: m.name, prediction: p.prediction || "NEUTRAL", confidence: p.confidence || 50, targetPrice: p.targetPrice || currentPrice, reasoning: p.reasoning || "" };
+    } catch {
+      return { model: m.name, prediction: "NEUTRAL", confidence: 50, targetPrice: currentPrice, reasoning: "Analysis unavailable" };
+    }
+  }));
+
+  res.json({ asset: assetUp, timeframe: tf, currentPrice, forecasts });
 }));
 
 // ── API Proxy (for external APIs, server-side, avoids CORS) ──────────────────
