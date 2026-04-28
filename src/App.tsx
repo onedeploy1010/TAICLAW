@@ -390,8 +390,10 @@ function Header() {
             showThirdwebBranding={false}
           />
         ) : (
-          /* Fallback shown when VITE_THIRDWEB_CLIENT_ID is not configured */
+          /* Fallback shown when ThirdWeb client cannot initialize */
           <button
+            onClick={() => window.open("https://thirdweb.com/dashboard", "_blank")}
+            title="Configure VITE_THIRDWEB_CLIENT_ID to enable wallet connection"
             style={{
               background: "linear-gradient(135deg, hsl(43, 74%, 58%), hsl(38, 80%, 44%))",
               color: "#0a0704",
