@@ -218,12 +218,27 @@ export function VaultLpPool() {
                   ? (isZh ? "母币数量" : "RUNE Locked")
                   : (isZh ? "销毁母币" : "RUNE Burned")}
               </div>
-              <div className="text-xl font-bold tabular-nums text-foreground">
-                {fmtRune(poolData?.runeTotal ?? 0)}
-              </div>
-              <div className="text-[9px] text-muted-foreground mt-0.5">
-                RUNE
-              </div>
+              {isLive ? (
+                <>
+                  <div className="text-xl font-bold tabular-nums text-foreground">
+                    {fmtRune(poolData?.runeTotal ?? 0)}
+                  </div>
+                  <div className="text-[9px] text-muted-foreground mt-0.5">RUNE</div>
+                </>
+              ) : (
+                <>
+                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold mt-0.5"
+                    style={{ background: "rgba(212,168,50,0.12)", border: "1px solid rgba(212,168,50,0.25)", color: "rgba(212,168,50,0.9)" }}>
+                    {isZh ? "未上线" : "Pre-launch"}
+                  </div>
+                  <div className="text-[9px] text-muted-foreground mt-1.5">
+                    {isZh ? "上线价 $0.028 / RUNE" : "Launch price $0.028 / RUNE"}
+                  </div>
+                  <div className="text-[8.5px] mt-0.5" style={{ color: "rgba(212,168,50,0.6)" }}>
+                    {isZh ? "280万USDT : 1亿RUNE" : "2.8M USDT : 100M RUNE"}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

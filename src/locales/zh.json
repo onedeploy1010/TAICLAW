@@ -65,14 +65,19 @@
     "select": "选择"
   },
   "nav": {
-    "home": "首页",
-    "trade": "交易",
-    "vault": "金库",
+    "home": "HALL",
+    "homeZh": "符阁",
+    "trade": "MARKET",
+    "tradeZh": "符市",
+    "vault": "VAULT",
+    "vaultZh": "符库",
     "strategy": "策略",
-    "profile": "我的",
+    "profile": "SELF",
+    "profileZh": "符身",
     "market": "市场",
     "nodes": "节点",
-    "predict": "预测"
+    "predict": "SIGHT",
+    "predictZh": "符见"
   },
   "dashboard": {
     "depthRatio": "深度比率",

@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { RuneLockSection } from "@/components/vault/rune-lock-section";
 import { EmberBurnSection } from "@/components/vault/ember-burn-section";
 import { VaultLpPool } from "@/components/vault/vault-lp-pool";
+import { VaultCharts } from "@/components/vault/vault-charts";
 import { useTranslation } from "react-i18next";
 
 type VaultTab = "pool" | "lock" | "burn";
@@ -136,8 +137,9 @@ export default function Vault() {
       {/* ── Tab Content ── */}
       <div key={activeTab} className="vault-fade pt-4 space-y-4">
         {activeTab === "pool" && (
-          <div className="space-y-4">
+          <div className="space-y-4 pb-4">
             <VaultLpPool />
+            <VaultCharts />
           </div>
         )}
         {activeTab === "lock" && <RuneLockSection />}

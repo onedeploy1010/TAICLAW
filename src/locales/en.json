@@ -65,14 +65,19 @@
     "select": "Select"
   },
   "nav": {
-    "home": "Home",
-    "trade": "Trade",
-    "vault": "Vault",
+    "home": "HALL",
+    "homeZh": "符阁",
+    "trade": "MARKET",
+    "tradeZh": "符市",
+    "vault": "VAULT",
+    "vaultZh": "符库",
     "strategy": "Strategy",
-    "profile": "Profile",
+    "profile": "SELF",
+    "profileZh": "符身",
     "market": "Market",
     "nodes": "Nodes",
-    "predict": "Predict"
+    "predict": "SIGHT",
+    "predictZh": "符见"
   },
   "dashboard": {
     "depthRatio": "Depth Ratio",
