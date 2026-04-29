@@ -210,13 +210,36 @@ export default function ProfileReferralPage() {
 
           <div className="h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
 
-          {/* Referrer wallet address */}
+          {/* Own referral code = own wallet address */}
           <div>
-            <div className="text-[13px] font-bold text-white mb-1.5">推荐地址</div>
-            <div className="text-[12px] text-white/45 font-mono break-all">
-              {referrer || "--"}
+            <div className="text-[13px] font-bold text-white mb-1.5">我的推荐码</div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0 text-[11px] text-white/45 font-mono truncate">
+                {isConnected ? walletAddr : "--"}
+              </div>
+              {isConnected && (
+                <button
+                  onClick={() => copyToClipboard(walletAddr)}
+                  className="shrink-0 p-1.5 rounded-lg transition-colors hover:bg-white/10"
+                  data-testid="button-copy-own-code"
+                >
+                  <Copy className="h-3.5 w-3.5 text-white/30" />
+                </button>
+              )}
             </div>
           </div>
+
+          <div className="h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+
+          {/* Upline referrer address */}
+          {referrer && (
+            <div>
+              <div className="text-[12px] font-semibold text-white/50 mb-1">上级地址</div>
+              <div className="text-[11px] text-white/30 font-mono break-all">
+                {referrer}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── My performance + team stats ── */}
