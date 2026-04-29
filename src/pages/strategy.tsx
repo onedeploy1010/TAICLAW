@@ -28,6 +28,7 @@ import { StrategyHeader } from "@/components/strategy/strategy-header";
 import { AiLab } from "@/components/strategy/ai-lab";
 import { CopyTradingFlow } from "@/components/strategy/copy-trading-flow";
 import { TradeMatchingEngine } from "@/components/strategy/trade-matching-engine";
+import { TradingVaultBanner } from "@/components/strategy/trading-vault-banner";
 type TabId = "strategies" | "ailab" | "signals";
 
 const TABS: { id: TabId; labelKey: string }[] = [
@@ -432,6 +433,8 @@ export default function StrategyPage() {
   return (
     <div className="space-y-4 pb-24 lg:pb-8 lg:px-6 lg:pt-4" data-testid="page-strategy">
       <StrategyHeader />
+
+      <TradingVaultBanner />
 
       <div className="px-4 space-y-3">
         <div className="flex gap-0 bg-card border border-border rounded-lg overflow-hidden" data-testid="strategy-tabs">
