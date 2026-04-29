@@ -6,6 +6,7 @@ import {
   AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { useTranslation } from "react-i18next";
+import { VaultCalendar } from "./vault-calendar";
 
 interface PoolStats {
   tradingPool: {
@@ -239,6 +240,9 @@ export function TradingVaultBanner() {
             <span className="text-blue-400/70">▲ 40% {isZh ? "区间上限" : "Ceiling"}</span>
           </div>
         </div>
+
+        {/* AI Quant Calendar */}
+        <VaultCalendar />
 
         {/* Footer note */}
         <div className="flex items-center gap-1.5 text-[8.5px] text-muted-foreground">
