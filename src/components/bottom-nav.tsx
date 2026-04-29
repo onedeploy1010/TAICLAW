@@ -70,11 +70,11 @@ export function BottomNav() {
         <div
           className="pointer-events-auto relative flex items-stretch justify-around mx-3 mb-2.5 w-[calc(100%-1.5rem)] max-w-md rounded-2xl overflow-hidden"
           style={{
-            background: "linear-gradient(180deg, rgba(22,16,6,0.97) 0%, rgba(14,10,4,0.99) 100%)",
-            backdropFilter: "blur(24px) saturate(1.6)",
-            WebkitBackdropFilter: "blur(24px) saturate(1.6)",
-            border: "1px solid rgba(212,168,50,0.22)",
-            boxShadow: "0 -4px 32px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(212,168,50,0.12), inset 0 1px 0 rgba(255,255,255,0.06)",
+            background: "linear-gradient(180deg, rgba(38,28,10,0.98) 0%, rgba(28,20,8,0.99) 100%)",
+            backdropFilter: "blur(24px) saturate(1.8)",
+            WebkitBackdropFilter: "blur(24px) saturate(1.8)",
+            border: "1px solid rgba(212,168,50,0.35)",
+            boxShadow: "0 -6px 32px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(212,168,50,0.18), inset 0 1px 0 rgba(255,255,255,0.08), 0 -2px 24px rgba(212,168,50,0.06)",
           }}
         >
           {/* Top shimmer line */}
