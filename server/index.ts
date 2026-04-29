@@ -1019,7 +1019,9 @@ app.get("/api/ember-burn/stats", handle(async (req, res) => {
 
 // ── Vault LP Pool Stats (protocol-wide, pre-launch node accumulation) ─────────
 app.get("/api/vault/pool-stats", handle(async (_, res) => {
-  const TRADING_POOL_RATIO = 0.45; // 45% of every deposit flows to trading vault
+  const MOTHER_POOL_RATIO  = 0.35; // 35% → 母币底池
+  const TRADING_POOL_RATIO = 0.45; // 45% → 交易金库
+  const RESERVE_POOL_RATIO = 0.20; // 20% → 储备金库
   const MONTHLY_YIELD_RATE = 0.08; // 8% monthly yield target from AI quant trading
 
   const [motherLockRes, emberBurnRes, nodeMembRes, revenueRes] = await Promise.all([
@@ -1057,24 +1059,30 @@ app.get("/api/vault/pool-stats", handle(async (_, res) => {
   const subUsdtTotal    = Number(emberBurn.usdt_total);
   const subRuneTotal    = Number(emberBurn.rune_total);
 
-  // 45% of all deposit sources flows into the trading vault pool
-  const allDepositUsdt   = nodeUsdt + Number(motherLock.usdt_total) + Number(emberBurn.usdt_total);
-  const tradingPoolFrom45 = allDepositUsdt * TRADING_POOL_RATIO;
-  const tradingBalance   = tradingPoolFrom45 + revTotal;
-  const monthlyYield     = tradingBalance * MONTHLY_YIELD_RATE;
-  const annualYield      = tradingBalance * MONTHLY_YIELD_RATE * 12;
+  // Split all deposits: 35% mother LP, 45% trading vault, 20% reserve vault
+  const allDepositUsdt    = nodeUsdt + Number(motherLock.usdt_total) + Number(emberBurn.usdt_total);
+  const motherPoolBalance = allDepositUsdt * MOTHER_POOL_RATIO;
+  const tradingBalance    = allDepositUsdt * TRADING_POOL_RATIO + revTotal;
+  const reserveBalance    = allDepositUsdt * RESERVE_POOL_RATIO;
+  const monthlyYield      = tradingBalance * MONTHLY_YIELD_RATE;
+  const annualYield       = tradingBalance * MONTHLY_YIELD_RATE * 12;
 
   res.json({
     mother: {
-      usdtTotal: motherUsdtTotal.toFixed(2),
+      usdtTotal: motherPoolBalance.toFixed(2),
       runeTotal: motherRuneTotal.toFixed(4),
       lockPositions: parseInt(motherLock.position_count),
       nodeCount: parseInt(nodeMembr.node_count),
+      ratio: (MOTHER_POOL_RATIO * 100).toFixed(0),
     },
     sub: {
       usdtTotal: subUsdtTotal.toFixed(2),
       runeTotal: subRuneTotal.toFixed(4),
       burnPositions: parseInt(emberBurn.position_count),
+    },
+    reservePool: {
+      balance: reserveBalance.toFixed(2),
+      ratio: (RESERVE_POOL_RATIO * 100).toFixed(0),
     },
     tradingPool: {
       balance: tradingBalance.toFixed(2),
