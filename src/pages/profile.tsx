@@ -160,7 +160,7 @@ export default function ProfilePage() {
                       <Copy className="h-3.5 w-3.5 text-white/50" />
                     </button>
                   </div>
-                  <div className="font-mono text-[10px] text-white/30 mt-0.5 truncate">{walletAddr}</div>
+                  <div className="font-mono text-[10px] text-white/55 mt-0.5 truncate">{walletAddr}</div>
                 </>
               )}
             </div>
@@ -192,15 +192,16 @@ export default function ProfilePage() {
       <div className="px-4 -mt-1 space-y-3">
 
         {/* ── Main asset overview card ── */}
-        <div className="rounded-2xl overflow-hidden" style={{ background: "#111", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="surface-3d rounded-2xl overflow-hidden border border-amber-500/55 bg-gradient-to-br from-slate-700/90 via-slate-700/80 to-slate-800/85">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/45 to-transparent pointer-events-none" />
 
           {/* 累计收益 — top highlight */}
-          <div className="px-5 pt-5 pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="px-5 pt-5 pb-4 border-b border-amber-500/25">
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <TrendingUp className="h-3.5 w-3.5 text-white/35" />
-                  <span className="text-[11px] text-white/40 font-medium uppercase tracking-wider">累计收益</span>
+                  <TrendingUp className="h-3.5 w-3.5 text-amber-400/70" />
+                  <span className="text-[11px] text-white/70 font-medium uppercase tracking-wider">累计收益</span>
                 </div>
                 {!isConnected ? (
                   <div className="text-[30px] font-black text-white/15">--</div>
@@ -223,9 +224,9 @@ export default function ProfilePage() {
                   { label: "锁仓收益", value: formatCompactMA(vaultYield) },
                   { label: "推广佣金", value: formatCompactMA(referralEarnings) },
                 ].map((item, i) => (
-                  <div key={i} className="flex-1 rounded-xl px-2.5 py-2 text-center" style={{ background: "#1a1a1a" }}>
-                    <div className="text-[9px] text-white/30 mb-0.5">{item.label}</div>
-                    <div className="text-[12px] font-bold text-white/70">{item.value}</div>
+                  <div key={i} className="flex-1 rounded-xl px-2.5 py-2 text-center border border-amber-500/30 bg-white/[0.06]">
+                    <div className="text-[9px] text-white/60 mb-0.5">{item.label}</div>
+                    <div className="text-[12px] font-bold text-white/90">{item.value}</div>
                   </div>
                 ))}
               </div>
@@ -235,10 +236,10 @@ export default function ProfilePage() {
           {/* 锁仓RUNE + 锁仓EMBER */}
           <div className="grid grid-cols-2">
             {/* 锁仓RUNE */}
-            <div className="px-4 py-4" style={{ borderRight: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="px-4 py-4 border-r border-amber-500/25">
               <div className="flex items-center gap-1.5 mb-2">
                 <Lock className="h-3.5 w-3.5" style={{ color: "rgba(212,168,50,0.6)" }} />
-                <span className="text-[10px] text-white/35 font-medium">锁仓 RUNE</span>
+                <span className="text-[10px] text-white/65 font-medium">锁仓 RUNE</span>
               </div>
               {!isConnected ? (
                 <div className="text-[20px] font-black text-white/15">--</div>
@@ -248,12 +249,12 @@ export default function ProfilePage() {
                     {runeLocked > 0 ? formatCompactMA(runeLocked) : "0"}
                   </div>
                   {veRune > 0 && (
-                    <div className="text-[10px] text-white/30 mt-0.5">
+                    <div className="text-[10px] text-white/60 mt-0.5">
                       veRUNE: {formatCompactMA(veRune)}
                     </div>
                   )}
                   {runeLocked === 0 && (
-                    <div className="text-[10px] text-white/25 mt-0.5">暂未锁仓</div>
+                    <div className="text-[10px] text-white/50 mt-0.5">暂未锁仓</div>
                   )}
                 </>
               )}
@@ -263,7 +264,7 @@ export default function ProfilePage() {
             <div className="px-4 py-4">
               <div className="flex items-center gap-1.5 mb-2">
                 <Flame className="h-3.5 w-3.5 text-orange-400/60" />
-                <span className="text-[10px] text-white/35 font-medium">锁仓 EMBER</span>
+                <span className="text-[10px] text-white/65 font-medium">锁仓 EMBER</span>
               </div>
               {!isConnected ? (
                 <div className="text-[20px] font-black text-white/15">--</div>
@@ -273,12 +274,12 @@ export default function ProfilePage() {
                     {emberBurned > 0 ? formatCompactMA(emberBurned) : "0"}
                   </div>
                   {dailyEmber > 0 && (
-                    <div className="text-[10px] text-white/30 mt-0.5">
+                    <div className="text-[10px] text-white/60 mt-0.5">
                       日产: +{formatCompactMA(dailyEmber)} /天
                     </div>
                   )}
                   {emberBurned === 0 && (
-                    <div className="text-[10px] text-white/25 mt-0.5">暂未销毁</div>
+                    <div className="text-[10px] text-white/50 mt-0.5">暂未销毁</div>
                   )}
                 </>
               )}
@@ -289,22 +290,22 @@ export default function ProfilePage() {
           {!isConnected && (
             <div className="px-5 pb-5 pt-1 text-center">
               <WalletCards className="h-6 w-6 text-white/20 mx-auto mb-2" />
-              <p className="text-[12px] text-white/30" data-testid="text-connect-prompt">{t("common.connectWalletPrompt")}</p>
+              <p className="text-[12px] text-white/60" data-testid="text-connect-prompt">{t("common.connectWalletPrompt")}</p>
             </div>
           )}
         </div>
 
         {/* ── Invite link card ── */}
         {isConnected && referralLink && (
-          <div className="rounded-2xl p-4 space-y-3" style={{ background: "#111", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="surface-3d rounded-2xl p-4 space-y-3 border border-amber-500/55 bg-gradient-to-br from-slate-700/90 via-slate-700/80 to-slate-800/85">
             {/* Invite link */}
             <div>
               <div className="text-[12px] font-bold text-white/70 mb-2">{t("profile.inviteFriends", "邀请链接")}</div>
               <div className="flex items-center gap-2">
-                <div className="flex-1 min-w-0 rounded-xl px-3 py-2.5 font-mono text-[11px] text-white/45 truncate" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="flex-1 min-w-0 rounded-xl px-3 py-2.5 font-mono text-[11px] text-white/55 truncate border border-amber-500/30 bg-white/[0.06]">
                   {referralLink}
                 </div>
-                <button onClick={() => copyToClipboard(referralLink)} className="shrink-0 px-3 py-2.5 rounded-xl transition-all active:scale-95" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.07)" }} data-testid="button-copy-referral">
+                <button onClick={() => copyToClipboard(referralLink)} className="shrink-0 px-3 py-2.5 rounded-xl transition-all active:scale-95 border border-amber-500/30 bg-white/[0.06] hover:border-amber-500/55" data-testid="button-copy-referral">
                   <Copy className="h-4 w-4 text-white/50" />
                 </button>
                 <button onClick={shareReferralLink} className="shrink-0 px-3.5 py-2.5 rounded-xl font-medium transition-all hover:brightness-110 active:scale-95" style={{ background: "linear-gradient(135deg, hsl(43,74%,50%), hsl(38,70%,40%))", boxShadow: "0 2px 8px rgba(212,168,50,0.2)" }} data-testid="button-share-referral">
@@ -315,19 +316,18 @@ export default function ProfilePage() {
 
             {/* My referral code = own wallet address */}
             <div>
-              <div className="text-[11px] text-white/35 mb-1">我的推荐码（钱包地址）</div>
+              <div className="text-[11px] text-white/65 mb-1">我的推荐码（钱包地址）</div>
               <div className="flex items-center gap-2">
-                <div className="flex-1 min-w-0 font-mono text-[11px] text-white/50 truncate">{walletAddr}</div>
+                <div className="flex-1 min-w-0 font-mono text-[11px] text-white/70 truncate">{walletAddr}</div>
                 <button onClick={() => copyToClipboard(walletAddr)} className="shrink-0 p-1.5 rounded-lg transition-colors hover:bg-white/10" data-testid="button-copy-own-address">
-                  <Copy className="h-3.5 w-3.5 text-white/35" />
+                  <Copy className="h-3.5 w-3.5 text-white/60" />
                 </button>
               </div>
             </div>
 
-            <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} className="pt-2">
+            <div className="pt-2 border-t border-amber-500/25">
               <button
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all hover:bg-white/[0.04] active:bg-white/[0.06]"
-                style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.07)" }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all border border-amber-500/30 bg-white/[0.05] hover:border-amber-500/55 hover:bg-amber-500/[0.07]"
                 onClick={() => navigate("/profile/referral")}
                 data-testid="menu-referral"
               >
@@ -336,9 +336,9 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[12px] font-semibold text-white/90">{t("profile.referralTeam")}</div>
-                  <div className="text-[10px] text-white/35">{t("profile.referralTeamDesc")}</div>
+                  <div className="text-[10px] text-white/60">{t("profile.referralTeamDesc")}</div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-white/25 shrink-0" />
+                <ChevronRight className="h-4 w-4 text-white/55 shrink-0" />
               </button>
             </div>
           </div>
@@ -346,23 +346,23 @@ export default function ProfilePage() {
 
         {/* ── Menu items (mobile only) ── */}
         <div className="lg:hidden">
-          <div className="rounded-2xl overflow-hidden" style={{ background: "#111", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="surface-3d rounded-2xl overflow-hidden border border-amber-500/55 bg-gradient-to-br from-slate-700/90 via-slate-700/80 to-slate-800/85">
             {MENU_ITEMS.map((item, idx) => (
               <button
                 key={item.path}
-                className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-all hover:bg-white/[0.04] active:bg-white/[0.06]"
-                style={{ borderBottom: idx < MENU_ITEMS.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-all hover:bg-amber-500/[0.05]"
+                style={{ borderBottom: idx < MENU_ITEMS.length - 1 ? "1px solid rgba(251,191,36,0.1)" : "none" }}
                 onClick={() => navigate(item.path)}
                 data-testid={`menu-${item.path.split("/").pop()}`}
               >
-                <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 border border-amber-500/35 bg-white/[0.06]">
                   <item.icon className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-semibold text-white/85">{t(item.labelKey)}</div>
-                  <div className="text-[10px] text-white/30 mt-0.5">{t(item.descKey)}</div>
+                  <div className="text-[10px] text-white/60 mt-0.5">{t(item.descKey)}</div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-white/20 shrink-0" />
+                <ChevronRight className="h-4 w-4 text-white/50 shrink-0" />
               </button>
             ))}
           </div>
