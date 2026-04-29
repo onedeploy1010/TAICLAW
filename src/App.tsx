@@ -22,6 +22,7 @@ import Vault from "@/pages/vault";
 import StrategyPage from "@/pages/strategy";
 import ProfilePage from "@/pages/profile";
 import ProfileReferralPage from "@/pages/profile-referral";
+import ProfileTierInfoPage from "@/pages/profile-tier-info";
 import ProfileTransactionsPage from "@/pages/profile-transactions";
 import ProfileNotificationsPage from "@/pages/profile-notifications";
 import ProfileSettingsPage from "@/pages/profile-settings";
@@ -428,6 +429,7 @@ function Router() {
       <Route path="/vault" component={Vault} />
       <Route path="/strategy" component={StrategyPage} />
       <Route path="/profile" component={ProfilePage} />
+      <Route path="/profile/referral/info" component={ProfileTierInfoPage} />
       <Route path="/profile/referral" component={ProfileReferralPage} />
       <Route path="/profile/transactions" component={ProfileTransactionsPage} />
       <Route path="/profile/notifications" component={ProfileNotificationsPage} />

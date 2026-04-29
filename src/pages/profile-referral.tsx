@@ -3,7 +3,7 @@ import { useState, useCallback } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { shortenAddress, formatCompact } from "@/lib/constants";
 import { useMaPrice } from "@/hooks/use-ma-price";
-import { ArrowLeft, Copy, Users, UserPlus, DollarSign, WalletCards, Layers, ChevronRight, ChevronDown, History, Network, Link2 } from "lucide-react";
+import { ArrowLeft, Copy, Users, UserPlus, DollarSign, WalletCards, Layers, ChevronRight, ChevronDown, History, Network, Link2, Info, ServerIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { copyText } from "@/lib/copy";
 import { useQuery } from "@tanstack/react-query";
@@ -33,7 +33,7 @@ interface ReferralData {
 }
 
 type MainTab = "team" | "history";
-type HistoryFilter = "all" | "deposit" | "redeem" | "direct" | "diff" | "same_rank" | "override";
+type HistoryFilter = "all" | "direct" | "diff" | "same_rank" | "override" | "node_reward";
 
 export default function ProfileReferralPage() {
   const { t } = useTranslation();
@@ -91,10 +91,21 @@ export default function ProfileReferralPage() {
     enabled: isConnected,
   });
 
-  // Commission history still from Neon DB
+  // Commission history from Neon DB
   const { data: commission, isLoading: commissionLoading } = useQuery({
     queryKey: ["commission", walletAddr],
     queryFn: () => getCommissionRecords(walletAddr) as Promise<CommissionSummary>,
+    enabled: isConnected,
+  });
+
+  // Node rewards (FIXED_YIELD + POOL_DIVIDEND)
+  const { data: nodeRewards, isLoading: nodeRewardsLoading } = useQuery<any[]>({
+    queryKey: ["node-rewards", walletAddr],
+    queryFn: async () => {
+      const r = await fetch(`/api/node-rewards/${encodeURIComponent(walletAddr)}`);
+      const d = await r.json();
+      return d?.rewards ?? [];
+    },
     enabled: isConnected,
   });
 
@@ -105,6 +116,7 @@ export default function ProfileReferralPage() {
   const overrideTotal = Number(commission?.overrideTotal || 0);
 
   const refCode = profile?.refCode;
+  const currentRank = profile?.rank || "V0";
   const referralLink = refCode ? `${window.location.origin}/r/${refCode}/${refCode}` : "--";
 
   // Use Supabase data for team stats
@@ -154,100 +166,32 @@ export default function ProfileReferralPage() {
             <h1 className="text-[17px] font-bold tracking-wide text-white">{t("profile.promotionCenter")}</h1>
           </div>
 
-          {/* ── Node Tier Card ── */}
+          {/* ── Current V-level + node tier + info icon ── */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="w-1 h-4 rounded-full" style={{ background: "linear-gradient(180deg, hsl(43,74%,58%), hsl(43,74%,52%))" }} />
-              <span className="text-[13px] font-bold text-white">我的节点等级</span>
+              <span className="text-[13px] font-bold text-white">当前等级</span>
             </div>
-            <span className="text-[12px] font-black px-3 py-1 rounded-lg"
-              style={{ background: nodeTierBg, border: `1px solid ${nodeTierBorder}`, color: nodeTierColor }}>
-              {nodeTierLabel}
-            </span>
-          </div>
-
-          {/* Three-tier progress track */}
-          <div className="relative mb-4 rounded-2xl overflow-hidden p-4"
-            style={{ background: "linear-gradient(145deg, rgba(20,16,8,0.95), rgba(14,12,6,0.98))", border: "1px solid rgba(212,168,50,0.12)" }}>
-            <div className="absolute top-0 right-0 w-28 h-28 opacity-15" style={{ background: "radial-gradient(circle, rgba(212,168,50,0.5), transparent 70%)", filter: "blur(24px)" }} />
-            {/* Tier track */}
-            <div className="relative flex items-center justify-between px-2">
-              {/* Track line background */}
-              <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-[2px]" style={{ background: "rgba(255,255,255,0.06)" }} />
-              {/* Active segment */}
-              <div className="absolute left-8 top-1/2 -translate-y-1/2 h-[2px] transition-all duration-700"
-                style={{ width: isSuper ? "calc(100% - 64px)" : isStd ? "50%" : "0%", background: "linear-gradient(90deg, #60a5fa, #f59e0b)", boxShadow: "0 0 6px rgba(212,168,50,0.3)" }} />
-              {[
-                { label: "注册会员", color: "rgba(255,255,255,0.4)",  bg: "rgba(255,255,255,0.05)", active: true,    border: "rgba(255,255,255,0.15)" },
-                { label: "标准节点", color: isStd||isSuper ? "#60a5fa" : "rgba(255,255,255,0.2)", bg: isStd||isSuper ? "rgba(96,165,250,0.15)" : "rgba(255,255,255,0.03)", active: isStd||isSuper, border: isStd||isSuper ? "rgba(96,165,250,0.5)" : "rgba(255,255,255,0.08)" },
-                { label: "超级节点", color: isSuper ? "#f59e0b" : "rgba(255,255,255,0.2)", bg: isSuper ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.03)", active: isSuper, border: isSuper ? "rgba(245,158,11,0.5)" : "rgba(255,255,255,0.08)" },
-              ].map((tier, i) => (
-                <div key={i} className="relative z-10 flex flex-col items-center gap-1.5">
-                  {tier.active && (
-                    <div className="absolute w-12 h-12 rounded-full" style={{ background: `${tier.color}22`, animation: "pulse 2.5s ease-in-out infinite", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }} />
-                  )}
-                  <div className="relative w-10 h-10 rounded-full flex items-center justify-center"
-                    style={{ background: tier.bg, border: `2px solid ${tier.border}`, boxShadow: tier.active ? `0 0 12px ${tier.color}44` : "none" }}>
-                    <span className="text-[9px] font-black text-center leading-tight" style={{ color: tier.color }}>{i === 0 ? "会员" : i === 1 ? "标准" : "超级"}</span>
-                  </div>
-                  <span className="text-[8px] text-center whitespace-nowrap" style={{ color: tier.color }}>{tier.label}</span>
-                </div>
-              ))}
+            <div className="flex items-center gap-2">
+              {ownNode && (
+                <span className="text-[10px] px-2 py-0.5 rounded-md font-bold"
+                  style={{ background: nodeTierBg, border: `1px solid ${nodeTierBorder}`, color: nodeTierColor }}>
+                  {nodeTierLabel}
+                </span>
+              )}
+              <span className="text-[13px] font-black px-3 py-1 rounded-lg"
+                style={{ background: "linear-gradient(135deg, rgba(212,168,50,0.15), rgba(212,168,50,0.1))", border: "1px solid rgba(212,168,50,0.3)", color: "hsl(43,74%,58%)" }}>
+                {currentRank}
+              </span>
+              <button
+                onClick={() => navigate("/profile/referral/info")}
+                className="w-7 h-7 flex items-center justify-center rounded-full transition-colors"
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}
+                title="等级要求说明"
+              >
+                <Info className="h-3.5 w-3.5 text-white/50" />
+              </button>
             </div>
-
-            {/* My node info row */}
-            <div className="mt-4 flex items-center justify-between">
-              <div>
-                <div className="text-[10px] text-white/30 mb-0.5">节点投入</div>
-                <div className="text-[15px] font-black" style={{ color: nodeTierColor }}>
-                  {ownNode ? `$${Number(ownNode.usdtAmount).toLocaleString()} USDT` : "--"}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] text-white/30 mb-0.5">直推佣金</div>
-                <div className="text-[15px] font-black" style={{ color: nodeTierColor }}>
-                  {isSuper ? "15%" : isStd ? "10%" : "0%"}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] text-white/30 mb-0.5">团队级差</div>
-                <div className="text-[15px] font-black" style={{ color: nodeTierColor }}>
-                  {isSuper ? "5-10%" : isStd ? "5%" : "0%"}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Official Tier Requirements Table ── */}
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-1 h-4 rounded-full" style={{ background: "linear-gradient(180deg, hsl(43,74%,58%), hsl(43,74%,52%))" }} />
-            <span className="text-[13px] font-bold text-white">等级要求 & 奖励</span>
-          </div>
-
-          <div className="rounded-2xl overflow-hidden mb-1" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
-            {/* Header */}
-            <div className="grid grid-cols-4 gap-0 px-3 py-2" style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-              {["等级", "节点费用", "直推奖励", "团队奖励"].map(h => (
-                <div key={h} className="text-[9px] font-bold text-white/30 text-center">{h}</div>
-              ))}
-            </div>
-            {/* Rows */}
-            {[
-              { label: "注册会员", price: "免费",     direct: "—",   team: "—",      active: !isStd && !isSuper, color: "rgba(255,255,255,0.5)" },
-              { label: "标准节点", price: "$1,000",   direct: "10%", team: "5%",     active: isStd,   color: "#60a5fa" },
-              { label: "超级节点", price: "$2,500",   direct: "15%", team: "5-10%",  active: isSuper, color: "#f59e0b" },
-            ].map((row, i) => (
-              <div key={i} className="grid grid-cols-4 gap-0 px-3 py-2.5 items-center"
-                style={{ background: row.active ? `${row.color}0d` : i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
-                <div className="flex items-center gap-1.5">
-                  {row.active && <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: row.color }} />}
-                  <span className="text-[10px] font-bold" style={{ color: row.active ? row.color : "rgba(255,255,255,0.4)" }}>{row.label}</span>
-                </div>
-                <div className="text-[10px] text-center" style={{ color: row.active ? row.color : "rgba(255,255,255,0.3)" }}>{row.price}</div>
-                <div className="text-[11px] font-bold text-center" style={{ color: row.active ? row.color : "rgba(255,255,255,0.25)" }}>{row.direct}</div>
-                <div className="text-[11px] font-bold text-center" style={{ color: row.active ? row.color : "rgba(255,255,255,0.25)" }}>{row.team}</div>
-              </div>
-            ))}
           </div>
 
           {/* ── Global Stats Strip ── */}
@@ -669,11 +613,12 @@ export default function ProfileReferralPage() {
 
             <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1">
               {([
-                { key: "all" as HistoryFilter, label: t("profile.historyAll", "全部") },
-                { key: "direct" as HistoryFilter, label: t("profile.historyDirect", "直推奖励") },
-                { key: "diff" as HistoryFilter, label: t("profile.historyDiff", "团队级差") },
-                { key: "same_rank" as HistoryFilter, label: t("profile.historySameRank", "同级奖励") },
-                { key: "override" as HistoryFilter, label: t("profile.historyOverride", "越级奖励") },
+                { key: "all" as HistoryFilter, label: "全部" },
+                { key: "direct" as HistoryFilter, label: "直推奖励" },
+                { key: "diff" as HistoryFilter, label: "团队级差" },
+                { key: "same_rank" as HistoryFilter, label: "同级奖励" },
+                { key: "override" as HistoryFilter, label: "越级奖励" },
+                { key: "node_reward" as HistoryFilter, label: "节点奖励" },
               ]).map((f) => (
                 <button
                   key={f.key}
@@ -691,10 +636,47 @@ export default function ProfileReferralPage() {
             </div>
 
             {!isConnected ? (
-              <div className="rounded-2xl p-8 text-center" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.4)" }}>
+              <div className="rounded-2xl p-8 text-center" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <WalletCards className="h-8 w-8 text-white/25 mx-auto mb-3" />
                 <p className="text-[13px] text-white/40">{t("profile.connectToViewCommission")}</p>
               </div>
+            ) : historyFilter === "node_reward" ? (
+              nodeRewardsLoading ? (
+                <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
+              ) : !nodeRewards?.length ? (
+                <div className="py-16 text-center text-white/30 text-[13px]">{t("profile.noHistoryData")}</div>
+              ) : (
+                <div className="space-y-2">
+                  {nodeRewards.map((rec: any) => {
+                    const rType = rec.rewardType || rec.reward_type || "FIXED_YIELD";
+                    const amount = Number(rec.amount || 0);
+                    const createdAt = (rec.createdAt || rec.created_at)
+                      ? new Date(rec.createdAt || rec.created_at).toLocaleDateString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+                      : "--";
+                    const isFixed = rType === "FIXED_YIELD";
+                    const color = isFixed ? "#10b981" : "#f59e0b";
+                    const bg = isFixed ? "rgba(16,185,129,0.1)" : "rgba(245,158,11,0.1)";
+                    const label = isFixed ? "节点固定收益" : "节点分红";
+                    return (
+                      <div key={rec.id} className="rounded-xl p-3 flex items-center justify-between"
+                        style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.08)" }}>
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: bg }}>
+                            <ServerIcon className="h-4 w-4" style={{ color }} />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ background: bg, color }}>{label}</span>
+                            <div className="text-[9px] text-white/25 mt-0.5">{createdAt}</div>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-[13px] font-bold" style={{ color }}>+{amount.toFixed(2)} MA</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
             ) : commissionLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
@@ -723,20 +705,15 @@ export default function ProfileReferralPage() {
                   const Icon = cfg.icon;
 
                   return (
-                    <div
-                      key={record.id}
-                      className="rounded-xl p-3 flex items-center justify-between"
-                      style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.15)" }}
-                    >
+                    <div key={record.id} className="rounded-xl p-3 flex items-center justify-between"
+                      style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.08)" }}>
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: cfg.bg }}>
                           <Icon className="h-4 w-4" style={{ color: cfg.color }} />
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ background: cfg.bg, color: cfg.color }}>
-                              {cfg.label}
-                            </span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
                             {depth > 0 && <span className="text-[9px] text-white/25">L{depth}</span>}
                           </div>
                           <div className="text-[10px] text-white/30 mt-0.5 truncate">
