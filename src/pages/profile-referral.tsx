@@ -1,11 +1,11 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useCallback, type ComponentType } from "react";
+import { useState, useCallback, useMemo, type ComponentType } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { shortenAddress, formatCompact } from "@/lib/constants";
 import {
   ArrowLeft, Copy, CheckCircle2, Users, UserPlus, DollarSign,
-  WalletCards, Layers, ChevronRight, History, Network, Link2,
-  Info, ServerIcon, Coins, TrendingUp,
+  WalletCards, Layers, ChevronRight, History, Network, Gift,
+  Info, ServerIcon, Coins, TrendingUp, BarChart2, Award,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { copyText } from "@/lib/copy";
@@ -16,6 +16,11 @@ import type { Profile, CommissionSummary } from "@shared/types";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ResponsiveContainer, ComposedChart, Bar, Line,
+  CartesianGrid, XAxis, YAxis, Tooltip,
+  PieChart, Pie, Cell, Legend,
+} from "recharts";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -33,7 +38,7 @@ interface ReferralMember {
   subReferrals?: ReferralMember[] | null;
 }
 
-type MainTab = "team" | "history";
+type MainTab = "team" | "history" | "chart";
 type HistoryFilter = "all" | "direct" | "diff" | "same_rank" | "override" | "node_reward";
 
 /* ── Shared local copy-button ─────────────────────────────────────────────── */
@@ -593,8 +598,9 @@ export default function ProfileReferralPage() {
         {/* ── Tab switcher ── */}
         <div className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/30 p-1 text-[12px] relative">
           {([
-            { key: "team" as MainTab, label: t("profile.tabTeam"), icon: Network },
-            { key: "history" as MainTab, label: t("profile.tabHistory"), icon: History },
+            { key: "team"    as MainTab, label: t("profile.tabTeam"),    icon: Network    },
+            { key: "history" as MainTab, label: t("profile.tabHistory"), icon: History    },
+            { key: "chart"   as MainTab, label: "图表",                  icon: BarChart2  },
           ]).map((tab) => {
             const active = mainTab === tab.key;
             return (
@@ -714,7 +720,7 @@ export default function ProfileReferralPage() {
                 数据来自链上索引，更新延迟约 5 分钟
               </p>
             </motion.div>
-          ) : (
+          ) : mainTab === "history" ? (
             <motion.div
               key="history"
               initial={{ opacity: 0, y: 8 }}
@@ -723,6 +729,71 @@ export default function ProfileReferralPage() {
               transition={{ duration: 0.3, ease: EASE }}
               className="space-y-3"
             >
+              {/* ── Rewards KPI row (from official RewardsTab) ── */}
+              {isConnected && (() => {
+                const directRecs   = commission?.records?.filter((r: any) => r.details?.type === "direct_referral") ?? [];
+                const totalComm    = commission?.records?.reduce((s: number, r: any) => s + Number(r.amount ?? 0), 0) ?? 0;
+                const nrTotal      = nodeRewards?.reduce((s: number, r: any) => s + Number(r.amount ?? 0), 0) ?? 0;
+                return (
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { icon: Users, label: "直推笔数",     value: String(directRecs.length),              sub: "direct referrals", highlight: false },
+                      { icon: DollarSign, label: "累计佣金", value: `$${totalComm.toFixed(0)}`,            sub: "USDT",             highlight: true  },
+                      { icon: Award, label: "节点收益",      value: `${nrTotal.toFixed(0)} MA`,            sub: "token rewards",    highlight: false },
+                    ].map((kpi, i) => (
+                      <Kpi key={kpi.label} icon={kpi.icon} label={kpi.label} value={kpi.value} sub={kpi.sub} highlight={kpi.highlight} delay={i * 0.05} />
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* ── Mini monthly trend (official RewardsTab MonthlyChart) ── */}
+              {isConnected && (commission?.records?.length ?? 0) > 0 && (() => {
+                const now = new Date();
+                const bars = Array.from({ length: 6 }, (_, i) => {
+                  const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+                  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                  const label = `${d.getMonth() + 1}月`;
+                  const amount = (commission?.records ?? []).reduce((s: number, r: any) => {
+                    const rd = new Date(r.createdAt ?? "");
+                    const rk = `${rd.getFullYear()}-${String(rd.getMonth() + 1).padStart(2, "0")}`;
+                    return rk === key ? s + Number(r.amount ?? 0) : s;
+                  }, 0);
+                  return { label, amount };
+                });
+                const maxBar = Math.max(...bars.map(b => b.amount), 1);
+                return (
+                  <Card className="surface-3d relative overflow-hidden border-amber-500/50 bg-gradient-to-br from-amber-900/20 via-slate-800/80 to-slate-800/90">
+                    <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent pointer-events-none" />
+                    <CardHeader className="pb-2 border-b border-amber-500/15 relative z-10">
+                      <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.65)]" />
+                        月度佣金趋势
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-3 pb-3 relative z-10">
+                      <div className="flex items-end gap-1.5 h-16">
+                        {bars.map((b, i) => (
+                          <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                            <div className="w-full flex items-end" style={{ height: 44 }}>
+                              <motion.div
+                                className="w-full rounded-t-md bg-gradient-to-t from-amber-600/80 to-amber-400/70"
+                                initial={{ height: 0 }}
+                                animate={{ height: maxBar > 0 ? `${Math.max(6, (b.amount / maxBar) * 40)}px` : "6px" }}
+                                transition={{ duration: 0.7, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+                                style={{ maxHeight: 44 }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-muted-foreground/80">{b.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
               {/* History filter pills */}
               <div className="flex gap-1.5 overflow-x-auto pb-1">
                 {([
@@ -835,9 +906,311 @@ export default function ProfileReferralPage() {
                 </CardContent>
               </Card>
             </motion.div>
-          )}
+          ) : mainTab === "chart" ? (
+            <motion.div
+              key="chart"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3, ease: EASE }}
+              className="space-y-4"
+            >
+              <ReferralCharts
+                commission={commission}
+                referrals={sbTeam?.referrals ?? []}
+                directUsdt={directUsdt}
+                teamUsdt={teamUsdt}
+                isConnected={isConnected}
+              />
+            </motion.div>
+          ) : null}
         </AnimatePresence>
       </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   图表 Tab — 推广中心数据可视化
+══════════════════════════════════════════════════════════════════════════ */
+
+const CHART_TOOLTIP_STYLE = {
+  background: "rgba(8,6,2,0.95)",
+  border: "1px solid rgba(251,191,36,0.3)",
+  borderRadius: 10,
+  fontSize: 12,
+  boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+};
+const CHART_LABEL_STYLE = { color: "#fbbf24", fontWeight: 600, marginBottom: 4 };
+
+/* Reward-type colour map */
+const REWARD_COLORS: Record<string, string> = {
+  direct_referral: "#f59e0b",
+  differential:    "#8b5cf6",
+  same_rank:       "#ec4899",
+  override:        "#10b981",
+  unknown:         "#6b7280",
+};
+const REWARD_LABELS: Record<string, string> = {
+  direct_referral: "直推佣金",
+  differential:    "差额奖励",
+  same_rank:       "平级奖励",
+  override:        "越级奖励",
+};
+
+/* V-rank colours */
+const RANK_COLORS: Record<string, string> = {
+  V0: "#374151", V1: "#6b7280", V2: "#d97706", V3: "#f59e0b",
+  V4: "#fbbf24", V5: "#fcd34d", V6: "#fb923c",
+  V7: "#f97316", V8: "#ef4444", V9: "#dc2626",
+};
+
+function ReferralCharts({
+  commission, referrals, directUsdt, teamUsdt, isConnected,
+}: {
+  commission: CommissionSummary | undefined;
+  referrals: any[];
+  directUsdt: number;
+  teamUsdt: number;
+  isConnected: boolean;
+}) {
+  /* ── 1. Monthly commission trend ── */
+  const monthlyData = useMemo(() => {
+    const now = new Date();
+    const buckets: { label: string; key: string; amount: number; count: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      buckets.push({ key, label: `${d.getMonth() + 1}月`, amount: 0, count: 0 });
+    }
+    const byKey = new Map(buckets.map(b => [b.key, b]));
+    for (const r of commission?.records ?? []) {
+      const d = new Date(r.createdAt ?? "");
+      if (isNaN(d.getTime())) continue;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const b = byKey.get(key);
+      if (!b) continue;
+      b.amount += Number(r.amount ?? 0);
+      b.count  += 1;
+    }
+    return buckets;
+  }, [commission]);
+
+  /* ── 2. Reward-type pie ── */
+  const pieData = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const r of commission?.records ?? []) {
+      const k = r.details?.type ?? "unknown";
+      totals[k] = (totals[k] ?? 0) + Number(r.amount ?? 0);
+    }
+    return Object.entries(totals)
+      .filter(([, v]) => v > 0)
+      .map(([name, value]) => ({
+        name,
+        value: parseFloat(value.toFixed(4)),
+        label: REWARD_LABELS[name] ?? name,
+        color: REWARD_COLORS[name] ?? "#6b7280",
+      }));
+  }, [commission]);
+
+  /* ── 3. Team V-rank distribution ── */
+  const rankData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const m of referrals) {
+      const r = m.rank || "V0";
+      counts[r] = (counts[r] ?? 0) + 1;
+    }
+    return Object.entries(counts)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([rank, count]) => ({ rank, count, fill: RANK_COLORS[rank] ?? "#6b7280" }));
+  }, [referrals]);
+
+  /* ── 4. Business performance bar ── */
+  const perfData = [
+    { name: "直推业绩", value: directUsdt, fill: "#f59e0b" },
+    { name: "团队业绩", value: teamUsdt,   fill: "#fcd34d" },
+  ];
+
+  const hasAny = (commission?.records?.length ?? 0) > 0 || referrals.length > 0;
+
+  if (!isConnected) {
+    return (
+      <div className="rounded-2xl p-10 text-center border border-amber-500/15 bg-amber-500/[0.03]">
+        <BarChart2 className="h-10 w-10 text-amber-400/30 mx-auto mb-3" />
+        <p className="text-sm text-white/40">连接钱包查看图表</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* ── 月度佣金趋势 ── */}
+      <Card className="surface-3d relative overflow-hidden border-amber-500/50 bg-gradient-to-br from-amber-900/20 via-slate-800/80 to-slate-800/90">
+        <div className="absolute -top-20 -right-16 w-64 h-64 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent pointer-events-none" />
+        <CardHeader className="pb-3 border-b border-amber-500/15 relative z-10">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.65)]" />
+            月度佣金趋势
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4 relative z-10">
+          <div className="h-52">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={monthlyData} margin={{ top: 6, right: 12, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="refBarGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"   stopColor="#fbbf24" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#fbbf24" stopOpacity={0.12} />
+                  </linearGradient>
+                  <filter id="refLineGlow">
+                    <feGaussianBlur stdDeviation="2" result="blur" />
+                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  </filter>
+                </defs>
+                <CartesianGrid strokeDasharray="3 5" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="label" stroke="rgba(255,255,255,0.4)" fontSize={11} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.08)" }} dy={4} />
+                <YAxis yAxisId="left"  stroke="rgba(251,191,36,0.5)" fontSize={11} tickLine={false} axisLine={false} width={28} allowDecimals={false} />
+                <YAxis yAxisId="right" orientation="right" stroke="rgba(167,243,208,0.5)" fontSize={10} tickLine={false} axisLine={false} width={44}
+                  tickFormatter={(v: number) => v >= 1000 ? `$${(v / 1000).toFixed(1)}k` : `$${v}`} />
+                <Tooltip
+                  cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                  contentStyle={CHART_TOOLTIP_STYLE}
+                  labelStyle={CHART_LABEL_STYLE}
+                  formatter={(value: number, name: string) =>
+                    name === "count" ? [value, "笔数"] : [`$${value.toLocaleString()}`, "金额 USDT"]
+                  }
+                />
+                <Bar yAxisId="left"  dataKey="count"  fill="url(#refBarGrad)" radius={[5, 5, 0, 0]} animationDuration={600} />
+                <Line yAxisId="right" type="monotone" dataKey="amount" stroke="#86efac" strokeWidth={2}
+                  dot={{ r: 3, fill: "#86efac", stroke: "#050505", strokeWidth: 1.5 }}
+                  activeDot={{ r: 5, fill: "#86efac" }}
+                  filter="url(#refLineGlow)" animationDuration={900} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── 下排两图并排 ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* 奖励类型分布 pie */}
+        <Card className="surface-3d relative overflow-hidden border-amber-500/50 bg-gradient-to-br from-slate-700/85 to-slate-800/90">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/35 to-transparent pointer-events-none" />
+          <CardHeader className="pb-3 border-b border-amber-500/15 relative z-10">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Coins className="h-4 w-4 text-amber-400" />
+              奖励类型分布
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4 relative z-10">
+            {pieData.length === 0 ? (
+              <div className="h-40 flex items-center justify-center text-white/25 text-xs">暂无佣金数据</div>
+            ) : (
+              <div className="h-44">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={pieData} dataKey="value" nameKey="label" cx="50%" cy="50%"
+                      innerRadius="45%" outerRadius="72%" paddingAngle={3} animationDuration={700}>
+                      {pieData.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} stroke="rgba(0,0,0,0.4)" strokeWidth={1} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={CHART_TOOLTIP_STYLE}
+                      labelStyle={CHART_LABEL_STYLE}
+                      formatter={(v: number, _: string, p: any) =>
+                        [`$${v.toLocaleString()}`, p.payload?.label ?? ""]
+                      }
+                    />
+                    <Legend
+                      iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, paddingTop: 6 }}
+                      formatter={(value: string, entry: any) => (
+                        <span style={{ color: "rgba(255,255,255,0.6)" }}>
+                          {entry.payload?.label ?? value}
+                        </span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 团队等级分布 bar */}
+        <Card className="surface-3d relative overflow-hidden border-amber-500/50 bg-gradient-to-br from-slate-700/85 to-slate-800/90">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/35 to-transparent pointer-events-none" />
+          <CardHeader className="pb-3 border-b border-amber-500/15 relative z-10">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Users className="h-4 w-4 text-amber-400" />
+              团队等级分布
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4 relative z-10">
+            {rankData.length === 0 ? (
+              <div className="h-40 flex items-center justify-center text-white/25 text-xs">暂无团队数据</div>
+            ) : (
+              <div className="h-44">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={rankData} layout="vertical" margin={{ top: 0, right: 24, left: 28, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 4" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                    <XAxis type="number" stroke="rgba(255,255,255,0.35)" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <YAxis type="category" dataKey="rank" stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} width={24} />
+                    <Tooltip
+                      cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                      contentStyle={CHART_TOOLTIP_STYLE}
+                      labelStyle={CHART_LABEL_STYLE}
+                      formatter={(v: number) => [v, "人数"]}
+                    />
+                    <Bar dataKey="count" radius={[0, 5, 5, 0]} animationDuration={700}>
+                      {rankData.map((entry, i) => (
+                        <Cell key={i} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── 业绩对比 ── */}
+      <Card className="surface-3d relative overflow-hidden border-amber-500/50 bg-gradient-to-br from-slate-700/85 to-slate-800/90">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/35 to-transparent pointer-events-none" />
+        <CardHeader className="pb-3 border-b border-amber-500/15 relative z-10">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-amber-400" />
+            直推 vs 团队业绩 (USDT)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4 relative z-10">
+          <div className="h-32">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={perfData} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 4" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="rgba(251,191,36,0.45)" fontSize={10} tickLine={false} axisLine={false} width={40}
+                  tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+                <Tooltip
+                  cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                  contentStyle={CHART_TOOLTIP_STYLE}
+                  labelStyle={CHART_LABEL_STYLE}
+                  formatter={(v: number) => [`$${v.toLocaleString()}`, "USDT"]}
+                />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]} animationDuration={700}>
+                  {perfData.map((entry, i) => (
+                    <Cell key={i} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      <p className="text-[11px] text-white/30 text-center">数据基于链上已索引记录，更新约延迟 5 分钟</p>
     </div>
   );
 }

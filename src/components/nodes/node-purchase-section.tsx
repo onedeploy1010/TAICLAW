@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 interface NodePurchaseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  nodeType: "MAX" | "MINI";
+  nodeType: string;
   walletAddr: string;
   authCode?: string;
 }
@@ -22,9 +22,10 @@ export function NodePurchaseDialog({ open, onOpenChange, nodeType, walletAddr, a
   const { toast } = useToast();
   const payment = usePayment();
 
-  const plan = NODE_PLANS[nodeType];
-  const isMAX = nodeType === "MAX";
-  const dailyRate = isMAX ? "0.9%" : "0.9%";
+  const plan = NODE_PLANS[nodeType as keyof typeof NODE_PLANS] ?? NODE_PLANS["BASIC"];
+  const isPrivileged = nodeType === "MAX" || nodeType === "SUPER" || nodeType === "FOUNDER";
+  const isMAX = isPrivileged;
+  const dailyRate = "0.9%";
 
   const purchaseMutation = useMutation({
     mutationFn: async () => {

@@ -316,6 +316,30 @@ app.get("/api/node-earnings/:wallet", handle(async (req, res) => {
   res.json(toCamel(rows).map((r: any) => ({ ...r, details: r.details || {} })));
 }));
 
+// ── 统一节点奖励端点（新体系）—— 按奖励类型分组返回 ─────────────────────────
+app.get("/api/node-rewards/:wallet", handle(async (req, res) => {
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  if (!p.length) return res.json({ rewards: [], byType: {}, totals: {} });
+
+  const { rows } = await primaryPool.query(
+    "SELECT * FROM node_rewards WHERE user_id = $1 ORDER BY created_at DESC",
+    [p[0].id]
+  );
+  const rewards = toCamel(rows).map((r: any) => ({ ...r, details: r.details || {} }));
+
+  // Group by reward_type and compute per-type totals
+  const byType: Record<string, any[]> = {};
+  const totals: Record<string, number> = {};
+  for (const r of rewards) {
+    const t = r.rewardType || "UNKNOWN";
+    if (!byType[t]) byType[t] = [];
+    byType[t].push(r);
+    totals[t] = (totals[t] ?? 0) + Number(r.amount ?? 0);
+  }
+
+  res.json({ rewards, byType, totals });
+}));
+
 // ── Referral & Rank ───────────────────────────────────────────────────────────
 app.get("/api/referral-tree/:wallet", handle(async (req, res) => {
   const { rows } = await primaryPool.query(

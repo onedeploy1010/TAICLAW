@@ -30,20 +30,111 @@ export const VAULT_PLANS = {
 } as const;
 
 
+/* ── 节点招募计划（新6档体系）──────────────────────────────────────────── */
 export const NODE_PLANS = {
+  /** 初级节点 — 1,000 U · 1000 席 */
+  BASIC: {
+    price: 1000, label: "初级节点", labelEn: "Basic Node",
+    capacity: 1000, directRewardRate: 0.05, dividendWeight: 100,
+    airdropEmber: 1000,
+    features: ["basicStrategies", "communityAccess", "aiApiAccess"],
+    frozenAmount: 1000, dailyRate: 0.009, durationDays: 90,
+  },
+  /** 中级节点 — 2,500 U · 800 席 */
+  STANDARD: {
+    price: 2500, label: "中级节点", labelEn: "Standard Node",
+    capacity: 800, directRewardRate: 0.08, dividendWeight: 120,
+    airdropEmber: 3000,
+    features: ["basicStrategies", "communityAccess", "aiApiAccess", "copyTrading"],
+    frozenAmount: 2500, dailyRate: 0.009, durationDays: 90,
+  },
+  /** 高级节点 — 5,000 U · 400 席 */
+  ADVANCED: {
+    price: 5000, label: "高级节点", labelEn: "Advanced Node",
+    capacity: 400, directRewardRate: 0.10, dividendWeight: 140,
+    airdropEmber: 6250,
+    features: ["allStrategies", "aiApiAccess", "copyTrading", "prioritySupport"],
+    frozenAmount: 5000, dailyRate: 0.009, durationDays: 90,
+  },
+  /** 超级节点 — 10,000 U · 200 席 */
+  SUPER: {
+    price: 10000, label: "超级节点", labelEn: "Super Node",
+    capacity: 200, directRewardRate: 0.12, dividendWeight: 160,
+    airdropEmber: 13000,
+    features: ["allStrategies", "aiApiAccess", "copyTrading", "prioritySupport", "higherVaultYields"],
+    frozenAmount: 10000, dailyRate: 0.009, durationDays: 90,
+  },
+  /** 联创节点 — 50,000 U · 20 席 */
+  FOUNDER: {
+    price: 50000, label: "联创节点", labelEn: "Founder Node",
+    capacity: 20, directRewardRate: 0.15, dividendWeight: 200,
+    airdropEmber: 75000,
+    features: ["allStrategies", "aiApiAccess", "copyTrading", "prioritySupport", "higherVaultYields", "daoVoting"],
+    frozenAmount: 50000, dailyRate: 0.009, durationDays: 90,
+  },
+  /** 创世节点 — 条件达标 */
+  GENESIS: {
+    price: 0, label: "创世节点", labelEn: "Genesis Node",
+    capacity: null, directRewardRate: 0.15, dividendWeight: 200,
+    airdropEmber: 0,
+    genesisConditions: [
+      "直推3个联创节点（50,000U）",
+      "团队内5个联创节点（50,000U）",
+      "团队内30个超级节点（10,000U）",
+    ],
+    features: ["allStrategies", "aiApiAccess", "copyTrading", "prioritySupport", "higherVaultYields", "daoVoting", "coreIncentivePool10%"],
+    frozenAmount: 0, dailyRate: 0.009, durationDays: 90,
+  },
+  /* 旧兼容 — 不在UI显示，仅保持后端数据兼容 */
   MINI: {
-    price: 100, label: "Small Node", frozenAmount: 1000, dailyRate: 0.009, dailyYield: 9,
-    durationDays: 90, contributionRate: 0.10,
-    activationDesc: "存入金库激活V1-V4等级",
-    features: ["basicStrategies", "communityAccess"],
+    price: 100, label: "标准节点(旧)", labelEn: "Mini Node (legacy)",
+    capacity: null, directRewardRate: 0.05, dividendWeight: 100, airdropEmber: 0,
+    features: ["basicStrategies"],
+    frozenAmount: 1000, dailyRate: 0.009, durationDays: 90,
   },
   MAX: {
-    price: 600, label: "Large Node", frozenAmount: 6000, dailyRate: 0.009, dailyYield: 54,
-    durationDays: 120, contributionRate: 0.10,
-    activationDesc: "存入金库激活V1-V6等级",
-    features: ["allStrategiesUnlocked", "prioritySupport", "higherVaultYields"],
+    price: 600, label: "超级节点(旧)", labelEn: "Max Node (legacy)",
+    capacity: null, directRewardRate: 0.12, dividendWeight: 160, airdropEmber: 0,
+    features: ["allStrategiesUnlocked", "prioritySupport"],
+    frozenAmount: 6000, dailyRate: 0.009, durationDays: 120,
   },
 } as const;
+
+export type NodePlanKey = keyof typeof NODE_PLANS;
+
+/** 6档节点显示顺序（不含旧版兼容） */
+export const NODE_PLAN_ORDER: NodePlanKey[] = ["BASIC", "STANDARD", "ADVANCED", "SUPER", "FOUNDER", "GENESIS"];
+
+/* ── 节点分红来源说明 ───────────────────────────────────────────────────── */
+export const NODE_DIVIDEND_SOURCES = [
+  "外部AI造血净收益",
+  "母币买入滑点 2%",
+  "子币买入滑点 2%",
+  "母币卖出盈利税 5%",
+  "子币卖出盈利税 3%",
+  "市场沉淀资金收益",
+] as const;
+
+/* ── 空投解锁规则 ───────────────────────────────────────────────────────── */
+export const AIRDROP_UNLOCK_RULES = [
+  { condition: "底池达到 280万U（初始）",      percent: 10 },
+  { condition: "底池达到 700万 + 有效质押 ≥10万U", percent: 20 },
+  { condition: "底池达到 1750万 + 有效质押 ≥30万U", percent: 30 },
+  { condition: "底池达到 3500万 或 开放满 180天", percent: 40 },
+] as const;
+
+/* ── V1-V9 推广等级体系 ─────────────────────────────────────────────────── */
+export const V_RANKS = [
+  { level: "V1", holding: 1000, performance: 20000,  filled: 2,  commission: 0.04, special: null },
+  { level: "V2", holding: 1000, performance: 50000,  filled: 0,  commission: 0.08, special: null },
+  { level: "V3", holding: 1000, performance: 300000, filled: 5,  commission: 0.12, special: "平级1%" },
+  { level: "V4", holding: 2000, performance: 1000000, filled: 7, commission: 0.16, special: null },
+  { level: "V5", holding: 3000, performance: 3000000, filled: 10,commission: 0.20, special: null },
+  { level: "V6", holding: 4000, performance: 7000000, filled: 13,commission: 0.23, special: "V8沉淀6%+V9沉淀3%" },
+  { level: "V7", holding: 5000, performance: 20000000,filled: 15,commission: 0.25, special: "固定沉淀5%" },
+  { level: "V8", holding: 10000,performance: 50000000,filled: 15,commission: 0.27, special: "固定沉淀5%" },
+  { level: "V9", holding: 20000,performance: 90000000,filled: 15,commission: 0.29, special: "固定沉淀5%+DAO权" },
+] as const;
 
 // Vault deposit thresholds to activate node rank
 export const NODE_ACTIVATION_TIERS = {
@@ -63,8 +154,6 @@ export const NODE_ACTIVATION_TIERS = {
   ],
 } as const;
 
-// Qualification checks at specific days after node activation
-// passAction/failAction: UNLOCK_PARTIAL, UNLOCK_ALL, DESTROY, UNLOCK_FROZEN, CONTINUE, PAUSE, KEEP_LOCKED, KEEP_FROZEN
 export const NODE_QUALIFICATION_CHECKS = {
   MINI: [
     { checkDay: 30, requiredRank: "V2", passAction: "UNLOCK_PARTIAL", failAction: "KEEP_LOCKED",
@@ -72,7 +161,7 @@ export const NODE_QUALIFICATION_CHECKS = {
     { checkDay: 90, requiredRank: "V2", passAction: "UNLOCK_ALL", failAction: "DESTROY",
       earningRange: "1-90", desc: "V2达标：解锁全部收益；不达标：收益销毁" },
     { checkDay: 90, requiredRank: "V4", passAction: "UNLOCK_FROZEN", failAction: "KEEP_FROZEN",
-      earningRange: null, desc: "V4达标：解锁1000U铸造MA" },
+      earningRange: null, desc: "V4达标：解锁铸造MA" },
   ],
   MAX: [
     { checkDay: 15, requiredRank: "V1", passAction: "CONTINUE", failAction: "PAUSE",
@@ -82,33 +171,34 @@ export const NODE_QUALIFICATION_CHECKS = {
     { checkDay: 60, requiredRank: "V4", passAction: "CONTINUE", failAction: "PAUSE",
       earningRange: "61-120", desc: "V4达标：继续领取收益" },
     { checkDay: 120, requiredRank: "V6", passAction: "UNLOCK_FROZEN", failAction: "KEEP_FROZEN",
-      earningRange: null, desc: "V6达标：解锁6000U铸造MA" },
+      earningRange: null, desc: "V6达标：解锁铸造MA" },
   ],
 } as const;
 
-// Legacy NODE_MILESTONES kept for backward compatibility in milestone tracker UI
 export const NODE_MILESTONES = {
   MINI: [
-    { rank: "V1", days: 0, unlocks: "activation", desc: "存入金库100U激活", requiredHolding: 100, requiredReferrals: 0 },
-    { rank: "V2", days: 30, unlocks: "earnings", desc: "达标解锁1-60天收益", requiredHolding: 300, requiredReferrals: 0 },
-    { rank: "V4", days: 90, unlocks: "earnings_and_package", desc: "达标解锁收益+1000U铸造MA", requiredHolding: 600, requiredReferrals: 0 },
+    { rank: "V1", days: 0,  unlocks: "activation", desc: "激活节点",     requiredHolding: 100,  requiredReferrals: 0 },
+    { rank: "V2", days: 30, unlocks: "earnings",    desc: "解锁1-60天收益", requiredHolding: 300,  requiredReferrals: 0 },
+    { rank: "V4", days: 90, unlocks: "earnings_and_package", desc: "解锁全部", requiredHolding: 600, requiredReferrals: 0 },
   ],
   MAX: [
-    { rank: "V1", days: 15, unlocks: "earnings", desc: "100U+推荐3个小节点", requiredHolding: 100, requiredReferrals: 3 },
-    { rank: "V2", days: 30, unlocks: "earnings", desc: "存入金库300U", requiredHolding: 300, requiredReferrals: 0 },
-    { rank: "V4", days: 60, unlocks: "earnings", desc: "存入金库600U", requiredHolding: 600, requiredReferrals: 0 },
-    { rank: "V6", days: 120, unlocks: "earnings_and_package", desc: "存入金库1000U，解锁全部", requiredHolding: 1000, requiredReferrals: 0 },
+    { rank: "V1", days: 15,  unlocks: "earnings",            desc: "100U+推荐3小节点",   requiredHolding: 100,  requiredReferrals: 3 },
+    { rank: "V2", days: 30,  unlocks: "earnings",            desc: "存入金库300U",       requiredHolding: 300,  requiredReferrals: 0 },
+    { rank: "V4", days: 60,  unlocks: "earnings",            desc: "存入金库600U",       requiredHolding: 600,  requiredReferrals: 0 },
+    { rank: "V6", days: 120, unlocks: "earnings_and_package",desc: "存入1000U解锁全部", requiredHolding: 1000, requiredReferrals: 0 },
   ],
 } as const;
 
 export const RANKS = [
-  { level: "V1", commission: 0.05 },
-  { level: "V2", commission: 0.10 },
-  { level: "V3", commission: 0.15 },
-  { level: "V4", commission: 0.20 },
-  { level: "V5", commission: 0.25 },
-  { level: "V6", commission: 0.30 },
-  { level: "V7", commission: 0.50 },
+  { level: "V1", commission: 0.04 },
+  { level: "V2", commission: 0.08 },
+  { level: "V3", commission: 0.12 },
+  { level: "V4", commission: 0.16 },
+  { level: "V5", commission: 0.20 },
+  { level: "V6", commission: 0.23 },
+  { level: "V7", commission: 0.25 },
+  { level: "V8", commission: 0.27 },
+  { level: "V9", commission: 0.29 },
 ] as const;
 
 export const REVENUE_DISTRIBUTION = {
