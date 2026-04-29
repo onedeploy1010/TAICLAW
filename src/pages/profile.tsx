@@ -104,12 +104,17 @@ export default function ProfilePage() {
 
   // On-chain node info from Supabase
   const ownNode = sbTeam?.ownNode || null;
-  const isSuper = ownNode?.nodeId === 401;
-  const isStd = ownNode?.nodeId === 501;
-  const nodeTierLabel = isSuper ? "超级节点" : isStd ? "标准节点" : null;
-  const nodeTierColor = isSuper ? "#f59e0b" : "#60a5fa";
-  const nodeTierBg = isSuper ? "rgba(245,158,11,0.12)" : "rgba(96,165,250,0.1)";
-  const nodeTierBorder = isSuper ? "rgba(245,158,11,0.3)" : "rgba(96,165,250,0.25)";
+  const TIER_CN: Record<string, string> = {
+    BASIC: "初级节点", STANDARD: "中级节点", ADVANCED: "高级节点",
+    SUPER: "超级节点", FOUNDER: "联创节点", GENESIS: "创世节点",
+  };
+  const TIER_COLOR: Record<string, string> = {
+    BASIC: "#94a3b8", STANDARD: "#60a5fa", ADVANCED: "#34d399",
+    SUPER: "#f59e0b", FOUNDER: "#a855f7", GENESIS: "#e879f9",
+  };
+  const rawTier = (ownNode?.nodeTier || "").toUpperCase();
+  const nodeTierLabel = rawTier && TIER_CN[rawTier] ? TIER_CN[rawTier] : null;
+  const nodeTierColor = rawTier && TIER_COLOR[rawTier] ? TIER_COLOR[rawTier] : "#94a3b8";
 
   const referralLink = useMemo(() => {
     if (!walletAddr || typeof window === "undefined") return "";
@@ -165,25 +170,48 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Badges row */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {isConnected && profile ? (
-              <>
-                <span className="text-[11px] px-2.5 py-1 rounded-full font-semibold" style={{ background: "rgba(212,168,50,0.12)", border: "1px solid rgba(212,168,50,0.25)", color: "hsl(43,74%,62%)" }} data-testid="badge-rank">
-                  {profile.rank || "V0"}
-                </span>
-                {nodeTierLabel && (
-                  <span className="text-[11px] px-2.5 py-1 rounded-full font-semibold" style={{ background: nodeTierBg, border: `1px solid ${nodeTierBorder}`, color: nodeTierColor }} data-testid="badge-node-type">
-                    {nodeTierLabel}
-                  </span>
-                )}
-                {profile.isVip && (
-                  <span className="text-[11px] px-2.5 py-1 rounded-full font-bold" style={{ background: "rgba(234,179,8,0.15)", border: "1px solid rgba(234,179,8,0.3)", color: "#fbbf24" }} data-testid="badge-vip">VIP</span>
-                )}
-              </>
-            ) : (
-              <span className="text-[11px] px-2.5 py-1 rounded-full font-medium text-white/30" style={{ background: "rgba(255,255,255,0.05)" }}>-- --</span>
-            )}
+          {/* Rank + Node info row */}
+          <div className="flex items-stretch gap-2 mt-1">
+            {/* 等级 */}
+            <div className="surface-inset flex-1 rounded-xl border border-black/30 bg-black/22 px-3 py-2.5" data-testid="card-rank">
+              <div className="text-[9px] uppercase tracking-[0.18em] text-white/45 mb-1">等级</div>
+              {!isConnected ? (
+                <div className="text-[18px] font-black text-white/20">--</div>
+              ) : profileLoading ? (
+                <Skeleton className="h-5 w-10" />
+              ) : (
+                <div
+                  className="text-[18px] font-black"
+                  style={{ color: "hsl(43,74%,62%)" }}
+                  data-testid="text-rank"
+                >
+                  {profile?.rank || "V0"}
+                </div>
+              )}
+            </div>
+
+            {/* 持有节点 */}
+            <div
+              className="surface-inset flex-[2] rounded-xl border border-black/30 bg-black/22 px-3 py-2.5"
+              data-testid="card-node-tier"
+            >
+              <div className="text-[9px] uppercase tracking-[0.18em] text-white/45 mb-1">持有节点</div>
+              {!isConnected ? (
+                <div className="text-[15px] font-bold text-white/20">--</div>
+              ) : profileLoading ? (
+                <Skeleton className="h-5 w-20" />
+              ) : nodeTierLabel ? (
+                <div
+                  className="text-[15px] font-bold"
+                  style={{ color: nodeTierColor }}
+                  data-testid="text-node-tier"
+                >
+                  {nodeTierLabel}
+                </div>
+              ) : (
+                <div className="text-[13px] font-semibold text-white/40" data-testid="text-node-tier">未持有节点</div>
+              )}
+            </div>
           </div>
         </div>
       </div>
