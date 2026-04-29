@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveAccount } from "thirdweb/react";
 import { useMaPrice } from "@/hooks/use-ma-price";
-import { Copy, WalletCards, ChevronRight, Bell, Settings, History, GitBranch, Server, Share2, ArrowLeftRight, User, Coins, Vault, Flame, Lock, TrendingUp } from "lucide-react";
+import { Copy, WalletCards, ChevronRight, Bell, Settings, History, GitBranch, Server, Share2, User, Coins, Vault, Flame, Lock, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { copyText } from "@/lib/copy";
 import { useMemo } from "react";
@@ -16,7 +16,6 @@ const MENU_ITEMS = [
   { labelKey: "profile.myNodesLabel", icon: Server, path: "/profile/nodes", descKey: "profile.nodeManagementDesc" },
   { labelKey: "profile.myVaultPositions", icon: Vault, path: "/profile/vault", descKey: "profile.myVaultPositionsDesc" },
   { labelKey: "profile.runeToken", icon: Coins, path: "/profile/ma", descKey: "profile.runeTokenDesc" },
-  { labelKey: "profile.swap", icon: ArrowLeftRight, path: "/profile/swap", descKey: "profile.swapDesc" },
   { labelKey: "profile.transactionHistory", icon: History, path: "/profile/transactions", descKey: "profile.transactionHistoryDesc" },
   { labelKey: "profile.notifications", icon: Bell, path: "/profile/notifications", descKey: "profile.notificationsDesc" },
   { labelKey: "profile.settings", icon: Settings, path: "/profile/settings", descKey: "profile.settingsDesc" },
