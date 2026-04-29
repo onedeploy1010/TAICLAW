@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Lock, Zap, Vote, TrendingUp, Star, Clock, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
+import { Lock, Zap, Vote, TrendingUp, Star, ArrowRight, AlertCircle, Loader2, ChevronRight } from "lucide-react";
 import { useActiveAccount } from "thirdweb/react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -14,6 +13,7 @@ import { usePayment, getPaymentStatusLabel } from "@/hooks/use-payment";
 import { useMaPrice } from "@/hooks/use-ma-price";
 import { RUNE_LOCK_CONTRACT_ADDRESS } from "@/lib/contracts";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 
 const LOCK_PERIODS: Array<{ days: number; label: string; pctLabel: string; color: string; best?: boolean }> = [
@@ -24,17 +24,6 @@ const LOCK_PERIODS: Array<{ days: number; label: string; pctLabel: string; color
   { days: 540, label: "540D", pctLabel: "100%",  color: "rgba(239,68,68,0.8)", best: true },
 ];
 
-interface RuneLockPosition {
-  id: string;
-  usdtAmount?: string;
-  runeAmount: string;
-  lockDays: number;
-  veRune: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-}
-
 interface RuneLockStats {
   totalRuneLocked: string;
   totalVeRune: string;
@@ -42,12 +31,14 @@ interface RuneLockStats {
 }
 
 export function RuneLockSection() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isZh = i18n.language === "zh" || i18n.language === "zh-TW";
   const account = useActiveAccount();
   const wallet = account?.address || "";
   const { toast } = useToast();
   const payment = usePayment();
   const { price: runePrice, usdcToMA } = useMaPrice();
+  const [, navigate] = useLocation();
 
   const [open, setOpen] = useState(false);
   const [usdtAmount, setUsdtAmount] = useState("");
@@ -56,12 +47,6 @@ export function RuneLockSection() {
   const { data: stats } = useQuery<RuneLockStats>({
     queryKey: ["/api/rune-lock/stats", wallet],
     queryFn: () => fetch(`/api/rune-lock/stats?wallet=${wallet}`).then(r => r.json()),
-    enabled: !!wallet,
-  });
-
-  const { data: positions = [] } = useQuery<RuneLockPosition[]>({
-    queryKey: ["/api/rune-lock", wallet],
-    queryFn: () => fetch(`/api/rune-lock?wallet=${wallet}`).then(r => r.json()),
     enabled: !!wallet,
   });
 
@@ -111,7 +96,6 @@ export function RuneLockSection() {
   const runeEquiv = usdcToMA(usdtNum);
   const selectedPeriod = LOCK_PERIODS.find(p => p.days === selectedDays) || LOCK_PERIODS[4];
   const veRunePreview = runeEquiv * 0.35 * (selectedDays / 540);
-  const activePositions = positions.filter(p => p.status === "ACTIVE");
 
   const isPaying = lockMutation.isPending;
   const payLabel = payment.status !== "idle" ? getPaymentStatusLabel(payment.status) : t("vault.lock.confirmBtn", "Confirm & Pay");
@@ -124,7 +108,7 @@ export function RuneLockSection() {
   ];
 
   return (
-    <div className="px-4 lg:px-0 space-y-3">
+    <div className="px-4 lg:px-6 space-y-3">
       {/* Header */}
       <div className="flex items-center gap-2">
         <div className="h-5 w-5 rounded-md flex items-center justify-center" style={{ background: "rgba(212,168,50,0.15)", border: "1px solid rgba(212,168,50,0.3)" }}>
@@ -136,19 +120,39 @@ export function RuneLockSection() {
         </Badge>
       </div>
 
-      {/* Stats */}
+      {/* My stats summary (compact) + link to positions */}
       {wallet && (
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { lk: "vault.lock.stakedRune", ld: "RUNE Locked", v: Number(stats?.totalRuneLocked || 0).toLocaleString() },
-            { lk: "vault.lock.myVeRune",   ld: "My veRUNE",   v: Number(stats?.totalVeRune || 0).toFixed(2) },
-          ].map(({ lk, ld, v }) => (
-            <div key={lk} className="rounded-xl p-3" style={{ background: "rgba(212,168,50,0.06)", border: "1px solid rgba(212,168,50,0.15)" }}>
-              <div className="text-[9px] text-muted-foreground uppercase mb-0.5">{t(lk, ld)}</div>
-              <div className="text-lg font-bold tabular-nums" style={{ color: "rgba(212,168,50,0.9)" }}>{v}</div>
+        <button
+          onClick={() => navigate("/profile/vault")}
+          className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-left hover:opacity-80 transition-opacity"
+          style={{ background: "rgba(212,168,50,0.06)", border: "1px solid rgba(212,168,50,0.15)" }}
+          data-testid="button-view-lock-positions"
+        >
+          <div className="flex gap-4">
+            <div>
+              <div className="text-[9px] text-muted-foreground uppercase mb-0.5">{isZh ? "已锁仓RUNE" : "RUNE Locked"}</div>
+              <div className="text-sm font-bold tabular-nums" style={{ color: "rgba(212,168,50,0.9)" }}>
+                {Number(stats?.totalRuneLocked || 0).toLocaleString()}
+              </div>
             </div>
-          ))}
-        </div>
+            <div>
+              <div className="text-[9px] text-muted-foreground uppercase mb-0.5">{isZh ? "我的veRUNE" : "My veRUNE"}</div>
+              <div className="text-sm font-bold tabular-nums" style={{ color: "rgba(212,168,50,0.9)" }}>
+                {Number(stats?.totalVeRune || 0).toFixed(2)}
+              </div>
+            </div>
+            {(stats?.positions || 0) > 0 && (
+              <div>
+                <div className="text-[9px] text-muted-foreground uppercase mb-0.5">{isZh ? "仓位" : "Positions"}</div>
+                <div className="text-sm font-bold tabular-nums text-foreground">{stats?.positions}</div>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-1 text-[10px]" style={{ color: "rgba(212,168,50,0.7)" }}>
+            <span>{isZh ? "查看仓位" : "My positions"}</span>
+            <ChevronRight className="h-3 w-3" />
+          </div>
+        </button>
       )}
 
       {/* Benefits */}
@@ -198,38 +202,6 @@ export function RuneLockSection() {
         {t("vault.lock.lockButton", "Pay USDT · Lock RUNE for veRUNE")}
       </Button>
 
-      {/* Active Positions */}
-      {activePositions.length > 0 && (
-        <div className="space-y-2">
-          <div className="text-[10px] font-semibold text-muted-foreground uppercase">{t("vault.lock.myLocks", "Active Locks")}</div>
-          {activePositions.map(pos => {
-            const daysLeft = Math.max(0, Math.ceil((new Date(pos.endDate).getTime() - Date.now()) / 86400000));
-            const period = LOCK_PERIODS.find(p => p.days === pos.lockDays);
-            return (
-              <div key={pos.id} className="flex items-center justify-between rounded-lg px-3 py-2.5 text-xs"
-                style={{ background: "rgba(212,168,50,0.04)", border: "1px solid rgba(212,168,50,0.12)" }}
-                data-testid={`row-rune-lock-${pos.id}`}>
-                <div>
-                  {pos.usdtAmount && <><span className="text-[10px] text-muted-foreground">$</span><span className="font-bold">{Number(pos.usdtAmount).toFixed(0)} USDT</span><span className="mx-1.5 text-muted-foreground">→</span></>}
-                  <span className="font-bold">{Number(pos.runeAmount).toLocaleString()}</span>
-                  <span className="text-muted-foreground ml-1">RUNE</span>
-                  <span className="ml-2 text-[10px]" style={{ color: period?.color || "rgba(212,168,50,0.9)" }}>{pos.lockDays}D</span>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold" style={{ color: "rgba(212,168,50,0.9)" }}>{Number(pos.veRune).toFixed(2)} veRUNE</div>
-                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
-                    <Clock className="h-2.5 w-2.5" />
-                    <span>{t("vault.lock.daysLeft", "{{days}}d left", { days: daysLeft })}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {!wallet && <div className="text-center py-4 text-xs text-muted-foreground">{t("vault.lock.connectWallet", "Connect wallet to view your locks")}</div>}
-
       {/* Dialog */}
       <Dialog open={open} onOpenChange={v => { if (!isPaying) { setOpen(v); if (!v) payment.reset(); } }}>
         <DialogContent className="bg-card border-border max-w-sm">
@@ -244,7 +216,6 @@ export function RuneLockSection() {
           </DialogHeader>
 
           <div className="space-y-4 py-2">
-            {/* USDT Input */}
             <div>
               <div className="text-xs text-muted-foreground mb-1.5">{t("vault.lock.amountLabel", "USDT Amount")}</div>
               <div className="relative">
@@ -255,10 +226,8 @@ export function RuneLockSection() {
               </div>
             </div>
 
-            {/* Conversion Preview */}
             {usdtNum >= 10 && (
               <div className="rounded-lg p-3 space-y-1.5" style={{ background: "rgba(212,168,50,0.05)", border: "1px solid rgba(212,168,50,0.15)" }}>
-                {/* Arrow flow */}
                 <div className="flex items-center gap-1.5 text-xs flex-wrap">
                   <span className="font-bold">${usdtNum.toFixed(2)} USDT</span>
                   <ArrowRight className="h-3 w-3 text-muted-foreground" />
@@ -274,7 +243,6 @@ export function RuneLockSection() {
               </div>
             )}
 
-            {/* Period Selector in dialog */}
             <div>
               <div className="text-xs text-muted-foreground mb-1.5">{t("vault.lock.periodLabel", "Lock Period")}</div>
               <div className="grid grid-cols-5 gap-1">
@@ -288,7 +256,6 @@ export function RuneLockSection() {
               </div>
             </div>
 
-            {/* Warning */}
             <div className="flex items-start gap-2 text-[10px] text-muted-foreground rounded-lg p-2" style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.12)" }}>
               <AlertCircle className="h-3 w-3 text-red-400 shrink-0 mt-0.5" />
               <span>{t("vault.lock.warning", "RUNE cannot be withdrawn during the lock period. veRUNE decays linearly — extend to reset weight.")}</span>

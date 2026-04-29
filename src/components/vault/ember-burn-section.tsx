@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Flame, Sparkles, Trophy, Coins, AlertCircle, Loader2, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
+import { Flame, Sparkles, Trophy, Coins, AlertCircle, Loader2, ChevronDown, ChevronUp, ArrowRight, ChevronRight } from "lucide-react";
 import { useActiveAccount } from "thirdweb/react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -13,6 +13,7 @@ import { usePayment, getPaymentStatusLabel } from "@/hooks/use-payment";
 import { useMaPrice } from "@/hooks/use-ma-price";
 import { EMBER_BURN_CONTRACT_ADDRESS } from "@/lib/contracts";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 
 const BURN_TIERS: Array<{ minRune: number; maxRune: number; rate: number; rateLabel: string; tierKey: string; tierDefault: string; best?: boolean }> = [
@@ -27,16 +28,6 @@ function getBurnRate(runeAmount: number) {
   return BURN_TIERS.find(t => runeAmount >= t.minRune && runeAmount <= t.maxRune) || BURN_TIERS[0];
 }
 
-interface EmberBurnPosition {
-  id: string;
-  usdtAmount?: string;
-  runeAmount: string;
-  dailyRate: string;
-  totalClaimedEmber: string;
-  lastClaimAt: string;
-  status: string;
-}
-
 interface EmberBurnStats {
   totalRuneBurned: string;
   dailyEmber: string;
@@ -44,12 +35,14 @@ interface EmberBurnStats {
 }
 
 export function EmberBurnSection() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isZh = i18n.language === "zh" || i18n.language === "zh-TW";
   const account = useActiveAccount();
   const wallet = account?.address || "";
   const { toast } = useToast();
   const payment = usePayment();
   const { price: runePrice, usdcToMA } = useMaPrice();
+  const [, navigate] = useLocation();
 
   const [open, setOpen] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -59,12 +52,6 @@ export function EmberBurnSection() {
   const { data: stats } = useQuery<EmberBurnStats>({
     queryKey: ["/api/ember-burn/stats", wallet],
     queryFn: () => fetch(`/api/ember-burn/stats?wallet=${wallet}`).then(r => r.json()),
-    enabled: !!wallet,
-  });
-
-  const { data: positions = [] } = useQuery<EmberBurnPosition[]>({
-    queryKey: ["/api/ember-burn", wallet],
-    queryFn: () => fetch(`/api/ember-burn?wallet=${wallet}`).then(r => r.json()),
     enabled: !!wallet,
   });
 
@@ -102,16 +89,6 @@ export function EmberBurnSection() {
     },
   });
 
-  const claimMutation = useMutation({
-    mutationFn: (positionId: string) => apiPost("/api/ember-burn/claim", { walletAddress: wallet, positionId }),
-    onSuccess: (data: any) => {
-      toast({ title: t("vault.burn.claimSuccess", "Claimed!"), description: t("vault.burn.claimSuccessDesc", "Claimed {{amount}} EMBER", { amount: Number(data.claimed).toFixed(4) }) });
-      queryClient.invalidateQueries({ queryKey: ["/api/ember-burn", wallet] });
-      queryClient.invalidateQueries({ queryKey: ["/api/ember-burn/stats", wallet] });
-    },
-    onError: (err: Error) => { toast({ title: t("vault.burn.claimError", "Claim Failed"), description: err.message, variant: "destructive" }); },
-  });
-
   const handleBurn = () => {
     const usdt = parseFloat(usdtAmount);
     if (!wallet) { toast({ title: t("vault.burn.validationWallet", "Connect wallet first"), variant: "destructive" }); return; }
@@ -127,14 +104,6 @@ export function EmberBurnSection() {
   const dailyEmber = runeEquiv * tier.rate;
   const yearlyEmber = dailyEmber * 365;
 
-  const activePositions = positions.filter(p => p.status === "ACTIVE");
-  const totalDailyEmber = activePositions.reduce((s, p) => s + Number(p.runeAmount) * Number(p.dailyRate), 0);
-
-  function calcPendingEmber(pos: EmberBurnPosition) {
-    const days = Math.max(0, (Date.now() - new Date(pos.lastClaimAt).getTime()) / (1000 * 60 * 60 * 24));
-    return Number(pos.runeAmount) * Number(pos.dailyRate) * days;
-  }
-
   const isPaying = burnMutation.isPending;
   const payLabel = payment.status !== "idle" ? getPaymentStatusLabel(payment.status) : t("vault.burn.confirmBtn", "Confirm Burn");
 
@@ -145,7 +114,7 @@ export function EmberBurnSection() {
   ];
 
   return (
-    <div className="px-4 lg:px-0 space-y-3">
+    <div className="px-4 lg:px-6 space-y-3">
       {/* Header */}
       <div className="flex items-center gap-2">
         <div className="h-5 w-5 rounded-md flex items-center justify-center" style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)" }}>
@@ -157,20 +126,39 @@ export function EmberBurnSection() {
         </Badge>
       </div>
 
-      {/* Stats */}
+      {/* My stats summary + link to positions */}
       {wallet && (
-        <div className="grid grid-cols-3 gap-1.5">
-          {[
-            { lk: "vault.burn.statBurned",  ld: "RUNE Burned",   v: Number(stats?.totalRuneBurned || 0).toLocaleString(), color: "text-red-400" },
-            { lk: "vault.burn.statDaily",   ld: "Daily EMBER",   v: totalDailyEmber.toFixed(2),                          color: "text-orange-400" },
-            { lk: "vault.burn.statClaimed", ld: "EMBER Claimed", v: Number(stats?.totalClaimedEmber || 0).toFixed(2),    color: "text-orange-300" },
-          ].map(({ lk, ld, v, color }) => (
-            <div key={lk} className="rounded-xl p-2.5" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.12)" }}>
-              <div className="text-[9px] text-muted-foreground uppercase mb-0.5">{t(lk, ld)}</div>
-              <div className={`text-base font-bold tabular-nums ${color}`}>{v}</div>
+        <button
+          onClick={() => navigate("/profile/vault")}
+          className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-left hover:opacity-80 transition-opacity"
+          style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}
+          data-testid="button-view-burn-positions"
+        >
+          <div className="flex gap-4">
+            <div>
+              <div className="text-[9px] text-muted-foreground uppercase mb-0.5">{isZh ? "已销毁RUNE" : "RUNE Burned"}</div>
+              <div className="text-sm font-bold tabular-nums text-red-400">
+                {Number(stats?.totalRuneBurned || 0).toLocaleString()}
+              </div>
             </div>
-          ))}
-        </div>
+            <div>
+              <div className="text-[9px] text-muted-foreground uppercase mb-0.5">{isZh ? "每日EMBER" : "Daily EMBER"}</div>
+              <div className="text-sm font-bold tabular-nums text-orange-400">
+                {Number(stats?.dailyEmber || 0).toFixed(4)}
+              </div>
+            </div>
+            <div>
+              <div className="text-[9px] text-muted-foreground uppercase mb-0.5">{isZh ? "已领取" : "Claimed"}</div>
+              <div className="text-sm font-bold tabular-nums text-orange-300">
+                {Number(stats?.totalClaimedEmber || 0).toFixed(2)}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-[10px]" style={{ color: "rgba(239,68,68,0.7)" }}>
+            <span>{isZh ? "查看仓位" : "My positions"}</span>
+            <ChevronRight className="h-3 w-3" />
+          </div>
+        </button>
       )}
 
       {/* Benefits */}
@@ -232,47 +220,6 @@ export function EmberBurnSection() {
         {t("vault.burn.burnButton", "Pay USDT · Burn RUNE → EMBER Yield")}
       </Button>
 
-      {/* Active Positions */}
-      {activePositions.length > 0 && (
-        <div className="space-y-2">
-          <div className="text-[10px] font-semibold text-muted-foreground uppercase">{t("vault.burn.myPositions", "Active Burn Positions")}</div>
-          {activePositions.map(pos => {
-            const pending = calcPendingEmber(pos);
-            const rate = getBurnRate(Number(pos.runeAmount));
-            return (
-              <div key={pos.id} className="rounded-lg px-3 py-2.5 text-xs"
-                style={{ background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.10)" }}
-                data-testid={`row-ember-burn-${pos.id}`}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <div>
-                    {pos.usdtAmount && <><span className="text-[10px] text-muted-foreground">$</span><span className="font-bold">{Number(pos.usdtAmount).toFixed(0)} USDT</span><span className="mx-1.5 text-muted-foreground">→</span></>}
-                    <span className="font-bold text-sm text-red-400">{Number(pos.runeAmount).toLocaleString()}</span>
-                    <span className="text-muted-foreground ml-1">{t("vault.burn.burned", "RUNE burned")}</span>
-                  </div>
-                  <Badge className="text-[9px] border-0" style={{ background: "rgba(239,68,68,0.12)", color: "rgb(248,113,113)" }}>
-                    {t("vault.burn.dailyRate", "Daily")} {rate.rateLabel}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-[10px] text-muted-foreground">
-                    {t("vault.burn.pending", "Pending:")} <span className="text-orange-300 font-semibold">{pending.toFixed(4)} EMBER</span>
-                  </div>
-                  <Button size="sm" className="h-6 text-[10px] px-2"
-                    style={{ background: "rgba(251,191,36,0.15)", color: "rgb(251,191,36)", border: "1px solid rgba(251,191,36,0.25)" }}
-                    onClick={() => claimMutation.mutate(pos.id)}
-                    disabled={claimMutation.isPending || pending < 0.001}
-                    data-testid={`button-claim-ember-${pos.id}`}>
-                    {claimMutation.isPending ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : t("vault.burn.claim", "Claim")}
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {!wallet && <div className="text-center py-4 text-xs text-muted-foreground">{t("vault.burn.connectWallet", "Connect wallet to view burn positions")}</div>}
-
       {/* Dialog */}
       <Dialog open={open} onOpenChange={v => { if (!isPaying) { setOpen(v); if (!v) { payment.reset(); setConfirmed(false); } } }}>
         <DialogContent className="bg-card border-border max-w-sm">
@@ -287,7 +234,6 @@ export function EmberBurnSection() {
           </DialogHeader>
 
           <div className="space-y-4 py-2">
-            {/* USDT Input */}
             <div>
               <div className="text-xs text-muted-foreground mb-1.5">{t("vault.burn.amountLabel", "USDT Amount")}</div>
               <div className="relative">
@@ -298,10 +244,8 @@ export function EmberBurnSection() {
               </div>
             </div>
 
-            {/* Conversion Preview */}
             {usdtNum >= 10 && (
               <div className="rounded-lg p-3 space-y-2" style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)" }}>
-                {/* Arrow flow */}
                 <div className="flex items-center gap-1.5 text-xs flex-wrap">
                   <span className="font-bold">${usdtNum.toFixed(2)} USDT</span>
                   <ArrowRight className="h-3 w-3 text-muted-foreground" />
@@ -324,7 +268,6 @@ export function EmberBurnSection() {
               </div>
             )}
 
-            {/* Irreversible warning + checkbox */}
             <div className="space-y-2">
               <div className="flex items-start gap-2 text-[10px] rounded-lg p-2.5" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.20)" }}>
                 <AlertCircle className="h-3.5 w-3.5 text-red-400 shrink-0 mt-0.5" />
