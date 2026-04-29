@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveAccount } from "thirdweb/react";
 import { useMaPrice } from "@/hooks/use-ma-price";
-import { Copy, WalletCards, Wallet, ArrowUpFromLine, ChevronRight, Bell, Settings, History, GitBranch, Server, TrendingUp, Share2, Link2, ArrowLeftRight, User, Coins } from "lucide-react";
+import { Copy, WalletCards, Wallet, ArrowUpFromLine, ChevronRight, Bell, Settings, History, GitBranch, Server, TrendingUp, Share2, Link2, ArrowLeftRight, User, Coins, Vault } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { copyText } from "@/lib/copy";
 import { useMemo, useState } from "react";
@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 
 const MENU_ITEMS = [
   { labelKey: "profile.myNodesLabel", icon: Server, path: "/profile/nodes", descKey: "profile.nodeManagementDesc" },
+  { labelKey: "profile.myVaultPositions", icon: Vault, path: "/profile/vault", descKey: "profile.myVaultPositionsDesc" },
   { labelKey: "profile.runeToken", icon: Coins, path: "/profile/ma", descKey: "profile.runeTokenDesc" },
   { labelKey: "profile.swap", icon: ArrowLeftRight, path: "/profile/swap", descKey: "profile.swapDesc" },
   { labelKey: "profile.transactionHistory", icon: History, path: "/profile/transactions", descKey: "profile.transactionHistoryDesc" },

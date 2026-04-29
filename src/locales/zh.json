@@ -1018,6 +1018,8 @@
     "nodeDetailsTitle": "节点详情",
     "realLevel": "真实等级",
     "myNodesLabel": "我的节点",
+    "myVaultPositions": "我的金库仓位",
+    "myVaultPositionsDesc": "锁仓RUNE · 销毁RUNE · 锁仓EMBER",
     "applyLargeNode": "申请大节点",
     "applySmallNode": "申请小节点",
     "contribution": "贡献金",

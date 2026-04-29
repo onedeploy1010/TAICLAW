@@ -1006,6 +1006,8 @@
     "nodeDetailsTitle": "Node Details",
     "realLevel": "Real Level",
     "myNodesLabel": "My Nodes",
+    "myVaultPositions": "My Vault Positions",
+    "myVaultPositionsDesc": "Lock RUNE, Burn RUNE & EMBER lock positions",
     "applyLargeNode": "Apply Large Node",
     "applySmallNode": "Apply Small Node",
     "contribution": "Contribution",

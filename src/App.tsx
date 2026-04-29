@@ -29,6 +29,7 @@ import ProfileNodesPage from "@/pages/profile-nodes";
 import ProfileNodeEarningsPage from "@/pages/profile-node-earnings";
 import ProfileSwapPage from "@/pages/profile-swap";
 import ProfileMAPage from "@/pages/profile-ma";
+import ProfileVaultPage from "@/pages/profile-vault";
 import MarketPage from "@/pages/market";
 import AdminApp from "@/admin/admin-app";
 import ProviderApp from "@/provider/provider-app";
@@ -434,6 +435,7 @@ function Router() {
       <Route path="/profile/nodes" component={ProfileNodesPage} />
       <Route path="/profile/swap" component={ProfileSwapPage} />
       <Route path="/profile/ma" component={ProfileMAPage} />
+      <Route path="/profile/vault" component={ProfileVaultPage} />
       <Route path="/copy-trading" component={CopyTradingPage} />
       <Route path="/profile/nodes/earnings" component={ProfileNodeEarningsPage} />
       <Route path="/market" component={MarketPage} />

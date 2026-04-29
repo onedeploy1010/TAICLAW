@@ -1017,6 +1017,77 @@ app.get("/api/ember-burn/stats", handle(async (req, res) => {
   res.json({ totalRuneBurned: rows[0].total_burned, dailyEmber: rows[0].daily_ember, totalClaimedEmber: rows[0].total_claimed });
 }));
 
+// ── Vault LP Pool Stats (protocol-wide, pre-launch node accumulation) ─────────
+app.get("/api/vault/pool-stats", handle(async (_, res) => {
+  const TRADING_POOL_RATIO = 0.45; // 45% of every deposit flows to trading vault
+  const MONTHLY_YIELD_RATE = 0.08; // 8% monthly yield target from AI quant trading
+
+  const [motherLockRes, emberBurnRes, nodeMembRes, revenueRes] = await Promise.all([
+    pool.query(
+      `SELECT COALESCE(SUM(rune_amount),0) AS rune_total,
+              COALESCE(SUM(usdt_amount),0) AS usdt_total,
+              COUNT(*) AS position_count
+       FROM rune_lock_positions WHERE status = 'ACTIVE'`
+    ),
+    pool.query(
+      `SELECT COALESCE(SUM(rune_amount),0) AS rune_total,
+              COALESCE(SUM(usdt_amount),0) AS usdt_total,
+              COUNT(*) AS position_count
+       FROM ember_burn_positions WHERE status = 'ACTIVE'`
+    ),
+    pool.query(
+      `SELECT COALESCE(SUM(deposit_amount),0) AS node_usdt,
+              COALESCE(SUM(contribution_amount),0) AS node_contrib,
+              COUNT(*) AS node_count
+       FROM node_memberships WHERE status NOT IN ('CANCELLED')`
+    ),
+    pool.query(
+      `SELECT COALESCE(SUM(balance),0) AS total FROM revenue_pools`
+    ),
+  ]);
+
+  const motherLock = motherLockRes.rows[0];
+  const emberBurn  = emberBurnRes.rows[0];
+  const nodeMembr  = nodeMembRes.rows[0];
+  const revTotal   = Number(revenueRes.rows[0].total);
+
+  const nodeUsdt        = Number(nodeMembr.node_usdt) + Number(nodeMembr.node_contrib);
+  const motherUsdtTotal = nodeUsdt + Number(motherLock.usdt_total);
+  const motherRuneTotal = Number(motherLock.rune_total);
+  const subUsdtTotal    = Number(emberBurn.usdt_total);
+  const subRuneTotal    = Number(emberBurn.rune_total);
+
+  // 45% of all deposit sources flows into the trading vault pool
+  const allDepositUsdt   = nodeUsdt + Number(motherLock.usdt_total) + Number(emberBurn.usdt_total);
+  const tradingPoolFrom45 = allDepositUsdt * TRADING_POOL_RATIO;
+  const tradingBalance   = tradingPoolFrom45 + revTotal;
+  const monthlyYield     = tradingBalance * MONTHLY_YIELD_RATE;
+  const annualYield      = tradingBalance * MONTHLY_YIELD_RATE * 12;
+
+  res.json({
+    mother: {
+      usdtTotal: motherUsdtTotal.toFixed(2),
+      runeTotal: motherRuneTotal.toFixed(4),
+      lockPositions: parseInt(motherLock.position_count),
+      nodeCount: parseInt(nodeMembr.node_count),
+    },
+    sub: {
+      usdtTotal: subUsdtTotal.toFixed(2),
+      runeTotal: subRuneTotal.toFixed(4),
+      burnPositions: parseInt(emberBurn.position_count),
+    },
+    tradingPool: {
+      balance: tradingBalance.toFixed(2),
+      contributionTotal: allDepositUsdt.toFixed(2),
+      monthlyYield: monthlyYield.toFixed(2),
+      annualYield: annualYield.toFixed(2),
+      monthlyRate: (MONTHLY_YIELD_RATE * 100).toFixed(1),
+      poolRatio: (TRADING_POOL_RATIO * 100).toFixed(0),
+    },
+    isLive: false,
+  });
+}));
+
 const PORT = parseInt(process.env.PORT || "5001");
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`API server running on port ${PORT}`);
