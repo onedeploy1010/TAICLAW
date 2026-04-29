@@ -1143,32 +1143,100 @@ export default function ProfileNodesPage() {
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
         </motion.div>
 
-        {/* ── No node CTA ──────────────────────────────────────────────── */}
-        {isConnected && !nodeType && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: EASE }}
-          >
-            <Card className="surface-3d relative overflow-hidden border-amber-500/55 bg-gradient-to-br from-amber-900/40 to-slate-700/85">
-              <div className="absolute -top-16 -right-12 w-44 h-44 rounded-full bg-amber-500/15 blur-3xl pointer-events-none" />
-              <CardContent className="py-10 text-center space-y-4 relative z-10">
-                <Sparkles className="h-10 w-10 mx-auto text-amber-400/60" />
-                <div className="text-amber-300 font-semibold text-base">购买节点，解锁全部 RUNE 权益</div>
-                <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                  持有节点即可享有：母币空投 · 六脉分红池 · 团队推广奖励 · AI量化平台全功能
-                </p>
-                <Button
-                  onClick={() => { setPurchaseNodeType("BASIC"); setPurchaseDialogOpen(true); }}
-                  className="bg-amber-500 hover:bg-amber-400 text-black font-bold"
-                  data-testid="button-buy-node"
-                >
-                  立即购买节点
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+        {/* ── Node tier selection grid ──────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.01, ease: EASE }}
+        >
+          <Card className="surface-3d relative overflow-hidden bg-gradient-to-br from-slate-600/80 to-slate-700/90 border-amber-500/55">
+            <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gradient-to-br from-amber-500/18 via-transparent to-transparent blur-3xl pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.10),transparent_55%)] pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent pointer-events-none" />
+            <CardHeader className="pb-3 border-b border-amber-500/20 relative z-10">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.7)]" />
+                节点档位 · Node Tiers
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 pb-4 relative z-10">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {(["BASIC","STANDARD","ADVANCED","SUPER","FOUNDER","GENESIS"] as const).map((key, idx) => {
+                  const th      = TIER_THEME[key];
+                  const plan    = NODE_PLANS[key as keyof typeof NODE_PLANS];
+                  const owned   = nodeType === key;
+                  const airdrop = AIRDROP_PER_NODE[key];
+                  const isGenes = key === "GENESIS";
+                  return (
+                    <motion.button
+                      key={key}
+                      type="button"
+                      initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ type: "spring", stiffness: 55, damping: 14, delay: 0.04 + idx * 0.04 }}
+                      whileHover={{ y: -3, scale: 1.025, transition: { type: "spring", stiffness: 320, damping: 18 } }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => handleNodeClick(key)}
+                      data-testid={`button-node-${key.toLowerCase()}`}
+                      style={{ ["--tier-rgb" as string]: th.rgb }}
+                      className={`relative text-left rounded-xl border p-3 overflow-hidden transition-all duration-300 group focus:outline-none focus-visible:ring-2 ${
+                        owned
+                          ? `${th.ring} surface-3d surface-3d-tinted bg-gradient-to-br ${th.from} ${th.to} shadow-[0_0_28px_rgba(var(--tier-rgb),0.22)]`
+                          : "border-amber-500/30 bg-gradient-to-br from-amber-950/20 to-slate-800/70 hover:border-amber-500/55 hover:shadow-[0_0_20px_rgba(251,191,36,0.15),inset_0_1px_0_rgba(251,191,36,0.08)]"
+                      }`}
+                    >
+                      {/* Tier accent stripe */}
+                      <div
+                        className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l"
+                        style={{ background: `rgba(${th.rgb}, ${owned ? 0.9 : 0.45})` }}
+                      />
+                      {/* Glow on hover */}
+                      <div
+                        aria-hidden
+                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                        style={{ background: `radial-gradient(circle at 80% -10%, rgba(${th.rgb}, 0.16), transparent 60%)` }}
+                      />
+
+                      <div className="pl-2 relative">
+                        {/* Names */}
+                        <div className="flex items-center justify-between gap-1 mb-1.5">
+                          <span className={`text-base font-bold leading-none ${owned ? th.accentBright : "text-foreground/90"}`}
+                            style={owned ? { textShadow: `0 0 18px rgba(${th.rgb}, 0.55)` } : undefined}>
+                            {th.nameCn}
+                          </span>
+                          {owned && (
+                            <span className="text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 shrink-0">
+                              ✓ 持有
+                            </span>
+                          )}
+                        </div>
+                        <div className={`text-[10px] font-mono uppercase tracking-[0.2em] mb-2 ${owned ? th.color : "text-muted-foreground/60"}`}>
+                          {th.nameEn.replace(" NODE", "")}
+                        </div>
+
+                        {/* Price */}
+                        <div className="text-[13px] font-bold tabular-nums text-foreground/95 mb-1">
+                          {isGenes ? "资格制" : plan ? `$${plan.price.toLocaleString()}` : "—"}
+                        </div>
+
+                        {/* Airdrop hint */}
+                        <div className="text-[10px] text-muted-foreground/70">
+                          {isGenes
+                            ? "直推 3 联创 触发"
+                            : airdrop ? `空投 ${airdrop.perSeat >= 1000 ? (airdrop.perSeat / 1000).toFixed(0) + "K" : airdrop.perSeat} SUB`
+                            : "—"}
+                        </div>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+              {!isConnected && (
+                <p className="text-center text-[11px] text-muted-foreground/60 mt-3">连接钱包后可购买节点</p>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* ── Referral link card ───────────────────────────────────────── */}
         <motion.div

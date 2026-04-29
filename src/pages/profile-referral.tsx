@@ -67,7 +67,7 @@ function CopyableAddress({
   return (
     <span
       onClick={(e) => e.stopPropagation()}
-      className={`inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-white/[0.04] px-2 py-0.5 font-mono text-[11px] sm:text-xs transition-colors duration-300 ${copied ? "border-emerald-500/50 bg-emerald-500/5" : "hover:border-amber-500/30"} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-950/20 px-2 py-0.5 font-mono text-[11px] sm:text-xs transition-colors duration-300 ${copied ? "border-emerald-500/50 bg-emerald-500/5" : "hover:border-amber-500/55"} ${className}`}
       title={display}
     >
       <span className={isShort ? "" : "select-all"}>{isShort ? shortDisplay : display}</span>
@@ -108,21 +108,18 @@ function Kpi({
       className={`group relative border rounded-xl p-4 sm:p-5 corner-brackets overflow-hidden surface-3d transition-all duration-300 ${
         highlight
           ? "border-amber-500/60 bg-gradient-to-br from-amber-900/45 via-slate-800/75 to-slate-700/85 hover:border-amber-400/80 hover:shadow-[0_0_36px_rgba(251,191,36,0.40),inset_0_1px_0_rgba(251,191,36,0.25)]"
-          : "border-white/20 bg-gradient-to-br from-slate-600/65 to-slate-700/80 hover:border-amber-500/30 hover:shadow-[0_0_20px_rgba(251,191,36,0.12)]"
+          : "border-amber-500/30 bg-gradient-to-br from-amber-950/25 via-slate-800/70 to-slate-700/80 hover:border-amber-500/55 hover:shadow-[0_0_24px_rgba(251,191,36,0.18),inset_0_1px_0_rgba(251,191,36,0.10)]"
       }`}
     >
       <div
         aria-hidden
-        className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ${
-          highlight
-            ? "bg-[radial-gradient(circle_at_75%_-20%,rgba(251,191,36,0.22),transparent_55%)]"
-            : "bg-[radial-gradient(circle_at_75%_-20%,rgba(251,191,36,0.08),transparent_55%)]"
-        }`}
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-[radial-gradient(circle_at_75%_-20%,rgba(251,191,36,0.14),transparent_55%)]"
       />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent pointer-events-none" />
       <div className="relative flex items-center justify-between mb-2">
         <span className="text-xs uppercase tracking-[0.20em] text-muted-foreground/85">{label}</span>
         {Icon && (
-          <Icon className={`h-4 w-4 transition-colors ${highlight ? "text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" : "text-muted-foreground/77 group-hover:text-amber-400/70"}`} />
+          <Icon className={`h-4 w-4 transition-colors ${highlight ? "text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" : "text-amber-500/60 group-hover:text-amber-400"}`} />
         )}
       </div>
       <div className={`relative text-2xl sm:text-3xl num tabular-nums ${highlight ? "num-gold" : "text-foreground"}`}>{value}</div>
@@ -207,7 +204,7 @@ function FocusHeader({
     <div className={`relative overflow-hidden rounded-xl border p-3 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-3 sm:flex-wrap transition-all duration-300 ${
       isSelf
         ? "border-amber-500/55 bg-gradient-to-br from-amber-950/35 via-amber-950/15 to-slate-950/40 shadow-[inset_0_1px_0_rgba(251,191,36,0.12),0_8px_24px_-12px_rgba(251,191,36,0.3)]"
-        : "border-white/18 bg-gradient-to-br from-slate-700/75 to-slate-700/85 hover:border-white/28"
+        : "border-amber-500/28 bg-gradient-to-br from-amber-950/18 to-slate-800/80 hover:border-amber-500/50 hover:shadow-[0_0_16px_rgba(251,191,36,0.12)]"
     }`}>
       {isSelf && (
         <div aria-hidden className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.12),transparent_55%)] pointer-events-none" />
@@ -216,7 +213,7 @@ function FocusHeader({
         <span className={`text-[11px] uppercase tracking-[0.2em] font-semibold px-1.5 py-0.5 rounded border ${
           isSelf
             ? "text-amber-200 border-amber-500/50 bg-amber-500/10 drop-shadow-[0_0_6px_rgba(251,191,36,0.3)]"
-            : "text-muted-foreground border-white/15 bg-white/[0.03]"
+            : "text-amber-500/70 border-amber-500/30 bg-amber-500/[0.06]"
         }`}>
           {isSelf ? "ROOT" : `L${depth}`}
         </span>
@@ -231,7 +228,7 @@ function FocusHeader({
           <span className="text-[11px] px-2 py-0.5 rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-300 font-bold">{rank}</span>
         )}
         {nodeType && nodeType !== "--" && (
-          <span className="text-[11px] px-2 py-0.5 rounded-md border border-white/15 bg-white/[0.04] text-muted-foreground">{nodeType}</span>
+          <span className="text-[11px] px-2 py-0.5 rounded-md border border-amber-500/30 bg-amber-500/[0.07] text-amber-400/80">{nodeType}</span>
         )}
         {directCount !== undefined && (
           <span className="text-[11px] text-muted-foreground tabular-nums">
@@ -261,7 +258,7 @@ function TeamRow({
       <motion.div
         whileHover={{ x: 2 }}
         transition={{ duration: 0.2, ease: EASE }}
-        className="w-full flex items-center gap-2 py-2.5 px-3 rounded-lg border border-white/20 bg-white/[0.045] hover:border-amber-500/55 hover:bg-amber-500/[0.08] hover:shadow-[0_4px_20px_-8px_rgba(251,191,36,0.3)] transition-all duration-300 flex-wrap group"
+        className="w-full flex items-center gap-2 py-2.5 px-3 rounded-lg border border-amber-500/28 bg-gradient-to-r from-amber-950/18 to-slate-800/60 hover:border-amber-500/55 hover:bg-amber-500/[0.08] hover:shadow-[0_4px_20px_-8px_rgba(251,191,36,0.3)] transition-all duration-300 flex-wrap group"
       >
         {/* Expand toggle */}
         {subCount > 0 ? (
@@ -308,7 +305,7 @@ function TeamRow({
             </span>
           )}
           {member.nodeType && member.nodeType !== "--" && (
-            <span className="text-[10px] px-2 py-0.5 rounded-md font-bold border border-white/12 bg-white/[0.06] text-white/50">
+            <span className="text-[10px] px-2 py-0.5 rounded-md font-bold border border-amber-500/30 bg-amber-500/[0.07] text-amber-400/80">
               {member.nodeType}
             </span>
           )}
@@ -571,7 +568,7 @@ export default function ProfileReferralPage() {
                   {currentRank}
                 </span>
                 {nodeTierLabel && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-md font-bold border border-white/15 bg-white/[0.04] text-white/60">
+                  <span className="text-[10px] px-2 py-0.5 rounded-md font-bold border border-amber-500/30 bg-amber-500/[0.07] text-amber-400/80">
                     {nodeTierLabel}
                   </span>
                 )}
@@ -596,7 +593,7 @@ export default function ProfileReferralPage() {
         </div>
 
         {/* ── Tab switcher ── */}
-        <div className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/30 p-1 text-[12px] relative">
+        <div className="inline-flex items-center gap-1 rounded-full border border-amber-500/35 bg-amber-950/30 p-1 text-[12px] relative">
           {([
             { key: "team"    as MainTab, label: t("profile.tabTeam"),    icon: Network    },
             { key: "history" as MainTab, label: t("profile.tabHistory"), icon: History    },
@@ -642,7 +639,7 @@ export default function ProfileReferralPage() {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder={t("profile.searchMember", "搜索钱包地址 / 后4位")}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[12px] text-white/70 placeholder:text-white/20 outline-none focus:border-amber-500/30 transition-colors"
+                className="w-full rounded-xl border border-amber-500/28 bg-amber-950/20 px-3 py-2 text-[12px] text-white/80 placeholder:text-amber-200/20 outline-none focus:border-amber-500/55 focus:shadow-[0_0_16px_rgba(251,191,36,0.15)] transition-all duration-300"
               />
 
               {/* Team tree card */}
@@ -809,7 +806,7 @@ export default function ProfileReferralPage() {
                     className={`shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all border ${
                       historyFilter === f.key
                         ? "border-amber-500/50 bg-amber-500/15 text-amber-300"
-                        : "border-white/10 bg-white/[0.04] text-white/45 hover:border-amber-500/20 hover:text-white/60"
+                        : "border-amber-500/22 bg-amber-950/15 text-amber-500/55 hover:border-amber-500/45 hover:text-amber-300/80"
                     }`}
                     onClick={() => setHistoryFilter(f.key)}
                   >
@@ -845,7 +842,7 @@ export default function ProfileReferralPage() {
                             ? new Date(rec.createdAt || rec.created_at).toLocaleDateString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
                             : "--";
                           return (
-                            <div key={rec.id} className="rounded-xl p-3 flex items-center justify-between border border-white/8 bg-white/[0.03]">
+                            <div key={rec.id} className="rounded-xl p-3 flex items-center justify-between border border-amber-500/20 bg-amber-950/12">
                               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                 <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: bg }}>
                                   <ServerIcon className="h-4 w-4" style={{ color }} />
@@ -884,7 +881,7 @@ export default function ProfileReferralPage() {
                         const cfg = typeConfig[rType] || { label: rType, color: "#9ca3af", bg: "rgba(156,163,175,0.1)", icon: DollarSign };
                         const CfgIcon = cfg.icon;
                         return (
-                          <div key={record.id} className="rounded-xl p-3 flex items-center justify-between border border-white/8 bg-white/[0.03]">
+                          <div key={record.id} className="rounded-xl p-3 flex items-center justify-between border border-amber-500/20 bg-amber-950/12">
                             <div className="flex items-center gap-2.5 min-w-0 flex-1">
                               <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: cfg.bg }}>
                                 <CfgIcon className="h-4 w-4" style={{ color: cfg.color }} />
