@@ -16,6 +16,7 @@ import { NODE_PLANS } from "@/lib/data";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { NodePurchaseDialog } from "@/components/nodes/node-purchase-section";
+import { RecruitModal } from "@/components/nodes/recruit-modal";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -875,6 +876,7 @@ export default function ProfileNodesPage() {
   const walletAddr = account?.address || "";
   const isConnected = !!walletAddr;
 
+  const [recruitOpen, setRecruitOpen]               = useState(false);
   const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
   const [purchaseNodeType, setPurchaseNodeType]     = useState<string>("BASIC");
   const [authCodeDialogOpen, setAuthCodeDialogOpen] = useState(false);
@@ -1143,99 +1145,42 @@ export default function ProfileNodesPage() {
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
         </motion.div>
 
-        {/* ── Node tier selection grid ──────────────────────────────────── */}
+        {/* ── Purchase node button ──────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.01, ease: EASE }}
         >
-          <Card className="surface-3d relative overflow-hidden bg-gradient-to-br from-slate-600/80 to-slate-700/90 border-amber-500/55">
-            <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gradient-to-br from-amber-500/18 via-transparent to-transparent blur-3xl pointer-events-none" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.10),transparent_55%)] pointer-events-none" />
-            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent pointer-events-none" />
-            <CardHeader className="pb-3 border-b border-amber-500/20 relative z-10">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.7)]" />
-                节点档位 · Node Tiers
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 pb-4 relative z-10">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {(["BASIC","STANDARD","ADVANCED","SUPER","FOUNDER","GENESIS"] as const).map((key, idx) => {
-                  const th      = TIER_THEME[key];
-                  const plan    = NODE_PLANS[key as keyof typeof NODE_PLANS];
-                  const owned   = nodeType === key;
-                  const airdrop = AIRDROP_PER_NODE[key];
-                  const isGenes = key === "GENESIS";
-                  return (
-                    <motion.button
-                      key={key}
-                      type="button"
-                      initial={{ opacity: 0, y: 10, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ type: "spring", stiffness: 55, damping: 14, delay: 0.04 + idx * 0.04 }}
-                      whileHover={{ y: -3, scale: 1.025, transition: { type: "spring", stiffness: 320, damping: 18 } }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => handleNodeClick(key)}
-                      data-testid={`button-node-${key.toLowerCase()}`}
-                      style={{ ["--tier-rgb" as string]: th.rgb }}
-                      className={`relative text-left rounded-xl border p-3 overflow-hidden transition-all duration-300 group focus:outline-none focus-visible:ring-2 ${
-                        owned
-                          ? `${th.ring} surface-3d surface-3d-tinted bg-gradient-to-br ${th.from} ${th.to} shadow-[0_0_28px_rgba(var(--tier-rgb),0.22)]`
-                          : "border-amber-500/30 bg-gradient-to-br from-amber-950/20 to-slate-800/70 hover:border-amber-500/55 hover:shadow-[0_0_20px_rgba(251,191,36,0.15),inset_0_1px_0_rgba(251,191,36,0.08)]"
-                      }`}
-                    >
-                      {/* Tier accent stripe */}
-                      <div
-                        className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l"
-                        style={{ background: `rgba(${th.rgb}, ${owned ? 0.9 : 0.45})` }}
-                      />
-                      {/* Glow on hover */}
-                      <div
-                        aria-hidden
-                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                        style={{ background: `radial-gradient(circle at 80% -10%, rgba(${th.rgb}, 0.16), transparent 60%)` }}
-                      />
-
-                      <div className="pl-2 relative">
-                        {/* Names */}
-                        <div className="flex items-center justify-between gap-1 mb-1.5">
-                          <span className={`text-base font-bold leading-none ${owned ? th.accentBright : "text-foreground/90"}`}
-                            style={owned ? { textShadow: `0 0 18px rgba(${th.rgb}, 0.55)` } : undefined}>
-                            {th.nameCn}
-                          </span>
-                          {owned && (
-                            <span className="text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 shrink-0">
-                              ✓ 持有
-                            </span>
-                          )}
-                        </div>
-                        <div className={`text-[10px] font-mono uppercase tracking-[0.2em] mb-2 ${owned ? th.color : "text-muted-foreground/60"}`}>
-                          {th.nameEn.replace(" NODE", "")}
-                        </div>
-
-                        {/* Price */}
-                        <div className="text-[13px] font-bold tabular-nums text-foreground/95 mb-1">
-                          {isGenes ? "资格制" : plan ? `$${plan.price.toLocaleString()}` : "—"}
-                        </div>
-
-                        {/* Airdrop hint */}
-                        <div className="text-[10px] text-muted-foreground/70">
-                          {isGenes
-                            ? "直推 3 联创 触发"
-                            : airdrop ? `空投 ${airdrop.perSeat >= 1000 ? (airdrop.perSeat / 1000).toFixed(0) + "K" : airdrop.perSeat} SUB`
-                            : "—"}
-                        </div>
-                      </div>
-                    </motion.button>
-                  );
-                })}
+          <button
+            type="button"
+            disabled={!isConnected}
+            onClick={() => setRecruitOpen(true)}
+            data-testid="button-purchase-node"
+            className="w-full relative overflow-hidden rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-950/25 to-slate-800/80 px-5 py-4 text-left transition-all duration-300 group hover:border-amber-500/65 hover:shadow-[0_0_28px_rgba(251,191,36,0.18)] disabled:opacity-45 disabled:cursor-not-allowed"
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.09),transparent_55%)] pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/45 to-transparent pointer-events-none" />
+            <div
+              aria-hidden
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+              style={{ background: "radial-gradient(circle at 80% 50%, rgba(251,191,36,0.10), transparent 60%)" }}
+            />
+            <div className="relative flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)", boxShadow: "0 0 16px rgba(251,191,36,0.2)" }}>
+                  <Sparkles className="h-5 w-5 text-amber-400" />
+                </div>
+                <div>
+                  <div className="text-[15px] font-bold text-white">购买节点</div>
+                  <div className="text-[11px] text-white/40 mt-0.5">6 档位 · 初级 → 创世 · 支付 USDT 即刻激活</div>
+                </div>
               </div>
-              {!isConnected && (
-                <p className="text-center text-[11px] text-muted-foreground/60 mt-3">连接钱包后可购买节点</p>
-              )}
-            </CardContent>
-          </Card>
+              <div className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center border border-amber-500/30 bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
+                <Zap className="h-4 w-4 text-amber-400" />
+              </div>
+            </div>
+          </button>
         </motion.div>
 
         {/* ── Referral link card ───────────────────────────────────────── */}
@@ -1299,6 +1244,13 @@ export default function ProfileNodesPage() {
           </Card>
         )}
       </div>
+
+      {/* ── Recruit modal (tier picker from official design) ─────────── */}
+      <RecruitModal
+        open={recruitOpen}
+        onClose={() => setRecruitOpen(false)}
+        onSelectTier={(key) => handleNodeClick(key)}
+      />
 
       {/* ── Purchase dialog ──────────────────────────────────────────────── */}
       <NodePurchaseDialog
