@@ -1,5 +1,5 @@
 import express from "express";
-import { pool, supabasePool } from "./db.js";
+import { pool, supabasePool, primaryPool } from "./db.js";
 import adminRoutes from "./admin-routes.js";
 
 const app = express();
@@ -46,7 +46,7 @@ app.get("/api/health", (_, res) => res.json({ ok: true }));
 // ── Profiles ──────────────────────────────────────────────────────────────────
 app.get("/api/profile/:wallet", handle(async (req, res) => {
   const { wallet } = req.params;
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     `SELECT p.*, r.wallet_address AS parent_wallet
      FROM profiles p
      LEFT JOIN profiles r ON r.id = p.referrer_id
@@ -58,28 +58,62 @@ app.get("/api/profile/:wallet", handle(async (req, res) => {
 }));
 
 app.get("/api/profile-by-refcode/:refCode", handle(async (req, res) => {
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT wallet_address, rank, node_type FROM profiles WHERE ref_code = $1",
     [req.params.refCode]
   );
   res.json(toCamel(rows[0] ?? null));
 }));
 
-// ── auth_wallet RPC ───────────────────────────────────────────────────────────
+// ── auth_wallet (plain SQL — no RPC needed) ───────────────────────────────────
 app.post("/api/auth-wallet", handle(async (req, res) => {
   const { walletAddress, refCode, placementCode } = req.body;
-  const { rows } = await pool.query(
-    "SELECT auth_wallet($1, $2, $3) AS result",
-    [walletAddress, refCode || null, placementCode || null]
+  const addr = (walletAddress || "").toLowerCase();
+  if (!addr) return res.status(400).json({ error: "walletAddress required" });
+
+  // Resolve referrer: accept either wallet address (0x…) or legacy ref_code
+  let referrerId: string | null = null;
+  let placementId: string | null = null;
+
+  if (refCode) {
+    const isWallet = String(refCode).startsWith("0x");
+    const { rows: refRows } = await primaryPool.query(
+      isWallet
+        ? "SELECT id FROM profiles WHERE LOWER(wallet_address) = LOWER($1)"
+        : "SELECT id FROM profiles WHERE ref_code = $1",
+      [refCode]
+    );
+    if (refRows.length > 0) { referrerId = refRows[0].id; placementId = refRows[0].id; }
+  }
+  if (placementCode && placementCode !== refCode) {
+    const isWallet = String(placementCode).startsWith("0x");
+    const { rows: plRows } = await primaryPool.query(
+      isWallet
+        ? "SELECT id FROM profiles WHERE LOWER(wallet_address) = LOWER($1)"
+        : "SELECT id FROM profiles WHERE ref_code = $1",
+      [placementCode]
+    );
+    if (plRows.length > 0) placementId = plRows[0].id;
+  }
+
+  // UPSERT profile — bind referrer/placement only if not already set
+  const { rows } = await primaryPool.query(
+    `INSERT INTO profiles (wallet_address, referrer_id, placement_id)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (wallet_address) DO UPDATE SET
+       referrer_id  = COALESCE(profiles.referrer_id,  EXCLUDED.referrer_id),
+       placement_id = COALESCE(profiles.placement_id, EXCLUDED.placement_id)
+     RETURNING *`,
+    [addr, referrerId, placementId]
   );
-  res.json(toCamel(rows[0].result));
+  res.json(toCamel(rows[0]));
 }));
 
 // ── Vault ─────────────────────────────────────────────────────────────────────
 app.get("/api/vault-positions/:wallet", handle(async (req, res) => {
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
   if (!p.length) return res.json([]);
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM vault_positions WHERE user_id = $1 ORDER BY start_date DESC",
     [p[0].id]
   );
@@ -88,7 +122,7 @@ app.get("/api/vault-positions/:wallet", handle(async (req, res) => {
 
 app.post("/api/vault-deposit", handle(async (req, res) => {
   const { walletAddress, planType, depositAmount, txHash } = req.body;
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT vault_deposit($1, $2, $3, $4) AS result",
     [walletAddress, planType, depositAmount, txHash || null]
   );
@@ -97,7 +131,7 @@ app.post("/api/vault-deposit", handle(async (req, res) => {
 
 app.post("/api/vault-withdraw", handle(async (req, res) => {
   const { walletAddress, positionId } = req.body;
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT vault_withdraw($1, $2) AS result",
     [walletAddress, positionId]
   );
@@ -105,14 +139,14 @@ app.post("/api/vault-withdraw", handle(async (req, res) => {
 }));
 
 app.get("/api/vault-overview", handle(async (_, res) => {
-  const { rows } = await pool.query("SELECT get_vault_overview() AS result");
+  const { rows } = await primaryPool.query("SELECT get_vault_overview() AS result");
   res.json(toCamel(rows[0].result));
 }));
 
 app.get("/api/vault-rewards/:wallet", handle(async (req, res) => {
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
   if (!p.length) return res.json([]);
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM vault_rewards WHERE user_id = $1 AND reward_type = 'DAILY_YIELD' ORDER BY created_at DESC",
     [p[0].id]
   );
@@ -122,20 +156,20 @@ app.get("/api/vault-rewards/:wallet", handle(async (req, res) => {
 // ── Transactions ──────────────────────────────────────────────────────────────
 app.get("/api/transactions/:wallet", handle(async (req, res) => {
   const { type } = req.query;
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
   if (!p.length) return res.json([]);
   const qText = type
     ? "SELECT * FROM transactions WHERE user_id = $1 AND type = $2 ORDER BY created_at DESC"
     : "SELECT * FROM transactions WHERE user_id = $1 ORDER BY created_at DESC";
   const qArgs = type ? [p[0].id, type] : [p[0].id];
-  const { rows } = await pool.query(qText, qArgs);
+  const { rows } = await primaryPool.query(qText, qArgs);
   res.json(toCamel(rows));
 }));
 
 // ── Trade Bets ────────────────────────────────────────────────────────────────
 app.post("/api/place-trade-bet", handle(async (req, res) => {
   const { walletAddress, asset, direction, amount, duration, entryPrice } = req.body;
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT place_trade_bet($1,$2,$3,$4,$5,$6) AS result",
     [walletAddress, asset, direction, amount, duration || "1min", entryPrice || null]
   );
@@ -143,9 +177,9 @@ app.post("/api/place-trade-bet", handle(async (req, res) => {
 }));
 
 app.get("/api/trade-bets/:wallet", handle(async (req, res) => {
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
   if (!p.length) return res.json([]);
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM trade_bets WHERE user_id = $1 ORDER BY created_at DESC",
     [p[0].id]
   );
@@ -153,7 +187,7 @@ app.get("/api/trade-bets/:wallet", handle(async (req, res) => {
 }));
 
 app.get("/api/trade-stats/:wallet", handle(async (req, res) => {
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT get_trade_stats($1) AS result",
     [req.params.wallet]
   );
@@ -162,18 +196,18 @@ app.get("/api/trade-stats/:wallet", handle(async (req, res) => {
 
 // ── Strategies ────────────────────────────────────────────────────────────────
 app.get("/api/strategies", handle(async (_, res) => {
-  const { rows } = await pool.query("SELECT * FROM strategies ORDER BY created_at");
+  const { rows } = await primaryPool.query("SELECT * FROM strategies ORDER BY created_at");
   res.json(toCamel(rows));
 }));
 
 app.get("/api/strategy-overview", handle(async (_, res) => {
-  const { rows } = await pool.query("SELECT get_strategy_overview() AS result");
+  const { rows } = await primaryPool.query("SELECT get_strategy_overview() AS result");
   res.json(toCamel(rows[0].result));
 }));
 
 app.post("/api/subscribe-strategy", handle(async (req, res) => {
   const { walletAddress, strategyId, capital } = req.body;
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT subscribe_strategy($1,$2,$3) AS result",
     [walletAddress, strategyId, capital]
   );
@@ -181,9 +215,9 @@ app.post("/api/subscribe-strategy", handle(async (req, res) => {
 }));
 
 app.get("/api/subscriptions/:wallet", handle(async (req, res) => {
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
   if (!p.length) return res.json([]);
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM strategy_subscriptions WHERE user_id = $1 ORDER BY created_at DESC",
     [p[0].id]
   );
@@ -192,9 +226,9 @@ app.get("/api/subscriptions/:wallet", handle(async (req, res) => {
 
 // ── Nodes ─────────────────────────────────────────────────────────────────────
 app.get("/api/node-membership/:wallet", handle(async (req, res) => {
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
   if (!p.length) return res.json(null);
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM node_memberships WHERE user_id = $1 ORDER BY start_date DESC LIMIT 1",
     [p[0].id]
   );
@@ -202,14 +236,14 @@ app.get("/api/node-membership/:wallet", handle(async (req, res) => {
 }));
 
 app.get("/api/node-memberships/:wallet", handle(async (req, res) => {
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
   if (!p.length) return res.json([]);
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM node_memberships WHERE user_id = $1 ORDER BY start_date DESC",
     [p[0].id]
   );
   const memberships = toCamel(rows);
-  const { rows: txRows } = await pool.query(
+  const { rows: txRows } = await primaryPool.query(
     "SELECT tx_hash, created_at FROM transactions WHERE user_id = $1 AND type = 'NODE_PURCHASE' ORDER BY created_at DESC",
     [p[0].id]
   );
@@ -218,7 +252,7 @@ app.get("/api/node-memberships/:wallet", handle(async (req, res) => {
 }));
 
 app.get("/api/node-overview/:wallet", handle(async (req, res) => {
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT get_node_overview($1) AS result",
     [req.params.wallet]
   );
@@ -229,18 +263,18 @@ app.post("/api/purchase-node", handle(async (req, res) => {
   const { walletAddress, nodeType, txHash, paymentMode, authCode } = req.body;
 
   if (nodeType === "MAX" && authCode) {
-    const { rows: codeRows } = await pool.query(
+    const { rows: codeRows } = await primaryPool.query(
       "SELECT id, status, node_type FROM node_auth_codes WHERE code = $1 AND status = 'ACTIVE'",
       [authCode]
     );
     if (!codeRows.length) throw new Error("Invalid or expired authorization code");
-    await pool.query(
+    await primaryPool.query(
       "UPDATE node_auth_codes SET status = 'USED', used_by_wallet = $1, used_at = NOW(), used_count = 1 WHERE id = $2",
       [walletAddress, codeRows[0].id]
     );
   }
 
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT purchase_node($1,$2,$3,$4) AS result",
     [walletAddress, nodeType, txHash || null, paymentMode || "FULL"]
   );
@@ -248,7 +282,7 @@ app.post("/api/purchase-node", handle(async (req, res) => {
 }));
 
 app.get("/api/validate-auth-code/:code", handle(async (req, res) => {
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT id FROM node_auth_codes WHERE code = $1 AND status = 'ACTIVE'",
     [req.params.code]
   );
@@ -256,7 +290,7 @@ app.get("/api/validate-auth-code/:code", handle(async (req, res) => {
 }));
 
 app.get("/api/node-milestone-requirements/:wallet", handle(async (req, res) => {
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT get_node_milestone_requirements($1) AS result",
     [req.params.wallet]
   );
@@ -265,7 +299,7 @@ app.get("/api/node-milestone-requirements/:wallet", handle(async (req, res) => {
 
 app.post("/api/check-node-milestones", handle(async (req, res) => {
   const { walletAddress } = req.body;
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT check_node_milestones($1) AS result",
     [walletAddress]
   );
@@ -273,9 +307,9 @@ app.post("/api/check-node-milestones", handle(async (req, res) => {
 }));
 
 app.get("/api/node-earnings/:wallet", handle(async (req, res) => {
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
   if (!p.length) return res.json([]);
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM node_rewards WHERE user_id = $1 AND reward_type IN ('FIXED_YIELD', 'POOL_DIVIDEND') ORDER BY created_at DESC",
     [p[0].id]
   );
@@ -284,7 +318,7 @@ app.get("/api/node-earnings/:wallet", handle(async (req, res) => {
 
 // ── Referral & Rank ───────────────────────────────────────────────────────────
 app.get("/api/referral-tree/:wallet", handle(async (req, res) => {
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT get_referral_tree($1) AS result",
     [req.params.wallet]
   );
@@ -292,7 +326,7 @@ app.get("/api/referral-tree/:wallet", handle(async (req, res) => {
 }));
 
 app.get("/api/rank-status/:wallet", handle(async (req, res) => {
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT get_rank_status($1) AS result",
     [req.params.wallet]
   );
@@ -300,7 +334,7 @@ app.get("/api/rank-status/:wallet", handle(async (req, res) => {
 }));
 
 app.get("/api/team-stats/:wallet", handle(async (req, res) => {
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT get_user_team_stats($1) AS result",
     [req.params.wallet]
   );
@@ -309,7 +343,7 @@ app.get("/api/team-stats/:wallet", handle(async (req, res) => {
 
 app.post("/api/check-rank-promotion", handle(async (req, res) => {
   const { walletAddress } = req.body;
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT check_rank_promotion($1) AS result",
     [walletAddress]
   );
@@ -318,10 +352,10 @@ app.post("/api/check-rank-promotion", handle(async (req, res) => {
 
 // ── Commissions ───────────────────────────────────────────────────────────────
 app.get("/api/commissions/:wallet", handle(async (req, res) => {
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
   if (!p.length) return res.json({ totalCommission: "0", directReferralTotal: "0", differentialTotal: "0", records: [] });
 
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM node_rewards WHERE user_id = $1 AND reward_type = 'TEAM_COMMISSION' ORDER BY created_at DESC",
     [p[0].id]
   );
@@ -339,7 +373,7 @@ app.get("/api/commissions/:wallet", handle(async (req, res) => {
   const sourceIds = Array.from(new Set(records.map((r: any) => r.details?.source_user || r.details?.sourceUser).filter(Boolean)));
   const sourceMap: Record<string, any> = {};
   if (sourceIds.length > 0) {
-    const { rows: sources } = await pool.query(
+    const { rows: sources } = await primaryPool.query(
       "SELECT id, wallet_address, rank FROM profiles WHERE id = ANY($1)",
       [sourceIds]
     );
@@ -363,9 +397,9 @@ app.get("/api/commissions/:wallet", handle(async (req, res) => {
 
 // ── Prediction Bets ───────────────────────────────────────────────────────────
 app.get("/api/prediction-bets/:wallet", handle(async (req, res) => {
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
   if (!p.length) return res.json([]);
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM prediction_bets WHERE user_id = $1 ORDER BY created_at DESC",
     [p[0].id]
   );
@@ -374,7 +408,7 @@ app.get("/api/prediction-bets/:wallet", handle(async (req, res) => {
 
 app.post("/api/place-prediction-bet", handle(async (req, res) => {
   const { walletAddress, marketId, marketType, question, choice, odds, amount } = req.body;
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT place_prediction_bet($1,$2,$3,$4,$5,$6,$7) AS result",
     [walletAddress, marketId, marketType || "polymarket", question || "", choice, odds || 1, amount]
   );
@@ -383,7 +417,7 @@ app.post("/api/place-prediction-bet", handle(async (req, res) => {
 
 // ── AI Predictions ────────────────────────────────────────────────────────────
 app.get("/api/ai-predictions", handle(async (_, res) => {
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     `SELECT id, asset, timeframe, model, prediction, confidence, target_price, current_price,
             reasoning, fear_greed_index, NULL::TEXT AS fear_greed_label, expires_at, created_at
      FROM ai_prediction_records WHERE status = 'pending' ORDER BY created_at DESC`
@@ -597,7 +631,7 @@ app.post("/api/proxy", handle(async (req, res) => {
 
 // ── News Predictions ──────────────────────────────────────────────────────────
 app.get("/api/news-predictions", handle(async (_, res) => {
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     `SELECT id, asset, timeframe, model, prediction, confidence, target_price, current_price,
             reasoning, fear_greed_index, expires_at, created_at
      FROM ai_prediction_records WHERE status = 'pending' ORDER BY created_at DESC LIMIT 20`
@@ -607,14 +641,14 @@ app.get("/api/news-predictions", handle(async (_, res) => {
 
 // ── System Config / MA Price ──────────────────────────────────────────────────
 app.get("/api/system-config", handle(async (_, res) => {
-  const { rows } = await pool.query("SELECT key, value FROM system_config");
+  const { rows } = await primaryPool.query("SELECT key, value FROM system_config");
   const map: Record<string, string> = {};
   for (const r of rows) map[r.key] = r.value;
   res.json(map);
 }));
 
 app.get("/api/ma-price", handle(async (_, res) => {
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT key, value FROM system_config WHERE key IN ('MA_TOKEN_PRICE', 'MA_PRICE_SOURCE')"
   );
   const priceRow = rows.find((r: any) => r.key === "MA_TOKEN_PRICE");
@@ -624,9 +658,9 @@ app.get("/api/ma-price", handle(async (_, res) => {
 
 // ── Insurance ─────────────────────────────────────────────────────────────────
 app.get("/api/hedge-positions/:wallet", handle(async (req, res) => {
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
   if (!p.length) return res.json([]);
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM hedge_positions WHERE user_id = $1 ORDER BY created_at DESC",
     [p[0].id]
   );
@@ -634,9 +668,9 @@ app.get("/api/hedge-positions/:wallet", handle(async (req, res) => {
 }));
 
 app.get("/api/hedge-purchases/:wallet", handle(async (req, res) => {
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
   if (!p.length) return res.json([]);
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM insurance_purchases WHERE user_id = $1 ORDER BY created_at DESC",
     [p[0].id]
   );
@@ -645,7 +679,7 @@ app.get("/api/hedge-purchases/:wallet", handle(async (req, res) => {
 
 app.post("/api/purchase-hedge", handle(async (req, res) => {
   const { walletAddress, hedgeAmount } = req.body;
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT purchase_hedge($1,$2) AS result",
     [walletAddress, hedgeAmount]
   );
@@ -653,14 +687,14 @@ app.post("/api/purchase-hedge", handle(async (req, res) => {
 }));
 
 app.get("/api/insurance-pool", handle(async (_, res) => {
-  const { rows } = await pool.query("SELECT get_insurance_pool() AS result");
+  const { rows } = await primaryPool.query("SELECT get_insurance_pool() AS result");
   res.json(toCamel(rows[0].result));
 }));
 
 // ── VIP ───────────────────────────────────────────────────────────────────────
 app.post("/api/subscribe-vip", handle(async (req, res) => {
   const { walletAddress, txHash, planLabel } = req.body;
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT subscribe_vip($1,$2,$3) AS result",
     [walletAddress, txHash || null, planLabel || "monthly"]
   );
@@ -670,7 +704,7 @@ app.post("/api/subscribe-vip", handle(async (req, res) => {
 // ── Earnings Releases ─────────────────────────────────────────────────────────
 app.post("/api/request-earnings-release", handle(async (req, res) => {
   const { walletAddress, releaseDays, amount, sourceType } = req.body;
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT request_earnings_release($1,$2,$3,$4) AS result",
     [walletAddress, releaseDays, amount, sourceType || "VAULT"]
   );
@@ -678,7 +712,7 @@ app.post("/api/request-earnings-release", handle(async (req, res) => {
 }));
 
 app.get("/api/earnings-releases/:wallet", handle(async (req, res) => {
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT get_earnings_releases($1) AS result",
     [req.params.wallet]
   );
@@ -688,7 +722,7 @@ app.get("/api/earnings-releases/:wallet", handle(async (req, res) => {
 // ── Trade Signals & Paper Trades ──────────────────────────────────────────────
 app.get("/api/trade-signals", handle(async (req, res) => {
   const { limit = 20, status = "active" } = req.query;
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM trade_signals WHERE status = $1 ORDER BY created_at DESC LIMIT $2",
     [status, Number(limit)]
   );
@@ -701,13 +735,13 @@ app.get("/api/paper-trades", handle(async (req, res) => {
     ? "SELECT * FROM paper_trades WHERE status = $1 ORDER BY opened_at DESC LIMIT $2"
     : "SELECT * FROM paper_trades ORDER BY opened_at DESC LIMIT $1";
   const qArgs = status ? [status, Number(limit)] : [Number(limit)];
-  const { rows } = await pool.query(qText, qArgs);
+  const { rows } = await primaryPool.query(qText, qArgs);
   res.json(toCamel(rows));
 }));
 
 // ── AI Model Accuracy ─────────────────────────────────────────────────────────
 app.get("/api/ai-model-accuracy", handle(async (_, res) => {
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM ai_model_accuracy ORDER BY updated_at DESC"
   );
   res.json(toCamel(rows));
@@ -717,7 +751,7 @@ app.get("/api/ai-model-accuracy", handle(async (_, res) => {
 app.get("/api/bind-exchange-key", handle(async (req, res) => {
   const { userId } = req.query;
   if (!userId) return res.json([]);
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT id, exchange, label, masked_key, testnet, is_valid, last_validated, created_at FROM user_exchange_keys WHERE user_id = $1 ORDER BY created_at DESC",
     [userId]
   );
@@ -726,7 +760,7 @@ app.get("/api/bind-exchange-key", handle(async (req, res) => {
 
 app.delete("/api/bind-exchange-key", handle(async (req, res) => {
   const { userId, exchange } = req.body;
-  await pool.query("DELETE FROM user_exchange_keys WHERE user_id = $1 AND exchange = $2", [userId, exchange]);
+  await primaryPool.query("DELETE FROM user_exchange_keys WHERE user_id = $1 AND exchange = $2", [userId, exchange]);
   res.json({ ok: true });
 }));
 
@@ -734,7 +768,7 @@ app.delete("/api/bind-exchange-key", handle(async (req, res) => {
 app.get("/api/provider/dashboard", handle(async (req, res) => {
   const apiKey = req.headers.authorization?.replace("Bearer ", "");
   if (!apiKey) return res.status(401).json({ error: "Unauthorized" });
-  const { rows } = await pool.query("SELECT * FROM strategy_providers WHERE api_key = $1", [apiKey]);
+  const { rows } = await primaryPool.query("SELECT * FROM strategy_providers WHERE api_key = $1", [apiKey]);
   if (!rows.length) return res.status(404).json({ error: "Provider not found" });
   res.json({ provider: toCamel(rows[0]) });
 }));
@@ -743,15 +777,15 @@ app.get("/api/provider/signals", handle(async (req, res) => {
   const apiKey = req.headers.authorization?.replace("Bearer ", "");
   const limit = parseInt(req.query.limit as string) || 100;
   if (!apiKey) return res.status(401).json({ error: "Unauthorized" });
-  const { rows: p } = await pool.query("SELECT id FROM strategy_providers WHERE api_key = $1", [apiKey]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM strategy_providers WHERE api_key = $1", [apiKey]);
   if (!p.length) return res.status(404).json({ error: "Provider not found" });
-  const { rows } = await pool.query("SELECT * FROM trade_signals WHERE provider_id = $1 ORDER BY created_at DESC LIMIT $2", [p[0].id, limit]);
+  const { rows } = await primaryPool.query("SELECT * FROM trade_signals WHERE provider_id = $1 ORDER BY created_at DESC LIMIT $2", [p[0].id, limit]);
   res.json({ signals: toCamel(rows) });
 }));
 
 // ── Copy Trading ──────────────────────────────────────────────────────────────
 app.get("/api/trade-config/:wallet", handle(async (req, res) => {
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM user_trade_configs WHERE wallet_address = $1",
     [req.params.wallet]
   );
@@ -760,12 +794,12 @@ app.get("/api/trade-config/:wallet", handle(async (req, res) => {
 
 app.post("/api/trade-config", handle(async (req, res) => {
   const { walletAddress, ...config } = req.body;
-  const { rows: existing } = await pool.query(
+  const { rows: existing } = await primaryPool.query(
     "SELECT id FROM user_trade_configs WHERE wallet_address = $1",
     [walletAddress]
   );
   if (existing.length) {
-    const { rows } = await pool.query(
+    const { rows } = await primaryPool.query(
       `UPDATE user_trade_configs SET
         exchange = COALESCE($2, exchange),
         is_active = COALESCE($3, is_active),
@@ -778,7 +812,7 @@ app.post("/api/trade-config", handle(async (req, res) => {
     );
     return res.json(toCamel(rows[0]));
   }
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "INSERT INTO user_trade_configs (wallet_address, exchange) VALUES ($1, $2) RETURNING *",
     [walletAddress, config.exchange || "binance"]
   );
@@ -786,7 +820,7 @@ app.post("/api/trade-config", handle(async (req, res) => {
 }));
 
 app.get("/api/copy-orders/:wallet", handle(async (req, res) => {
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM copy_trade_orders WHERE user_wallet = $1 ORDER BY opened_at DESC LIMIT 100",
     [req.params.wallet]
   );
@@ -795,9 +829,9 @@ app.get("/api/copy-orders/:wallet", handle(async (req, res) => {
 
 // ── MA Swap Records ───────────────────────────────────────────────────────────
 app.get("/api/ma-swap/:wallet", handle(async (req, res) => {
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
   if (!p.length) return res.json([]);
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM ma_swap_records WHERE user_id = $1 ORDER BY created_at DESC",
     [p[0].id]
   );
@@ -806,7 +840,7 @@ app.get("/api/ma-swap/:wallet", handle(async (req, res) => {
 
 // ── Admin: Daily Settlement ───────────────────────────────────────────────────
 app.post("/api/admin/daily-settlement", handle(async (_, res) => {
-  const { rows } = await pool.query("SELECT run_daily_settlement() AS result");
+  const { rows } = await primaryPool.query("SELECT run_daily_settlement() AS result");
   res.json(rows[0].result);
 }));
 
@@ -814,7 +848,7 @@ app.post("/api/admin/daily-settlement", handle(async (_, res) => {
 app.get("/api/profile", handle(async (req, res) => {
   const wallet = req.query.wallet as string;
   if (!wallet) return res.status(400).json({ error: "wallet required" });
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     `SELECT p.*, r.wallet_address AS parent_wallet FROM profiles p LEFT JOIN profiles r ON r.id = p.referrer_id WHERE p.wallet_address = $1`,
     [wallet]
   );
@@ -829,7 +863,7 @@ app.get("/api/trade-signals", handle(async (req, res) => {
   if (asset) { q += " WHERE asset = $1"; args.push(asset); }
   q += ` ORDER BY created_at DESC LIMIT $${args.length + 1}`;
   args.push(limit);
-  const { rows } = await pool.query(q, args);
+  const { rows } = await primaryPool.query(q, args);
   res.json(toCamel(rows));
 }));
 
@@ -845,8 +879,8 @@ app.get("/api/paper-trades", handle(async (req, res) => {
   if (asset) { args.push(asset); where += ` AND asset = $${args.length}`; }
   args.push(pageSize); args.push(offset);
   const [{ rows }, { rows: cnt }] = await Promise.all([
-    pool.query(`SELECT * FROM paper_trades ${where} ORDER BY COALESCE(opened_at, created_at) DESC LIMIT $${args.length - 1} OFFSET $${args.length}`, args),
-    pool.query(`SELECT COUNT(*) FROM paper_trades ${where}`, args.slice(0, -2)),
+    primaryPool.query(`SELECT * FROM paper_trades ${where} ORDER BY COALESCE(opened_at, created_at) DESC LIMIT $${args.length - 1} OFFSET $${args.length}`, args),
+    primaryPool.query(`SELECT COUNT(*) FROM paper_trades ${where}`, args.slice(0, -2)),
   ]);
   if (status === "CLOSED") return res.json({ data: toCamel(rows), count: parseInt(cnt[0].count) });
   res.json(toCamel(rows));
@@ -855,7 +889,7 @@ app.get("/api/paper-trades", handle(async (req, res) => {
 // ── User Risk Config ──────────────────────────────────────────────────────────
 app.post("/api/user-risk-config", handle(async (req, res) => {
   const { userId, killSwitch, copyEnabled } = req.body;
-  await pool.query(
+  await primaryPool.query(
     `INSERT INTO user_risk_config (user_id, kill_switch, copy_enabled, updated_at)
      VALUES ($1, $2, $3, NOW())
      ON CONFLICT (user_id) DO UPDATE SET kill_switch = $2, copy_enabled = $3, updated_at = NOW()`,
@@ -868,9 +902,9 @@ app.post("/api/user-risk-config", handle(async (req, res) => {
 app.get("/api/vault-yield", handle(async (req, res) => {
   const wallet = req.query.wallet as string;
   if (!wallet) return res.status(400).json({ error: "wallet required" });
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [wallet]);
   if (!p.length) return res.json({ yieldUsd: 0, positions: [] });
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     "SELECT * FROM vault_positions WHERE user_id = $1 AND status = 'ACTIVE'",
     [p[0].id]
   );
@@ -888,9 +922,9 @@ app.get("/api/vault-yield", handle(async (req, res) => {
 // ── Vault Record ──────────────────────────────────────────────────────────────
 app.post("/api/vault-record", handle(async (req, res) => {
   const { walletAddress, txHash, planType, principal, dailyRate, days, maPrice, maMinted } = req.body;
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [walletAddress]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [walletAddress]);
   if (!p.length) return res.status(404).json({ error: "Profile not found" });
-  await pool.query(
+  await primaryPool.query(
     `INSERT INTO vault_positions (user_id, plan_type, principal, daily_rate, duration_days, ma_price, ma_minted, tx_hash, status, start_date)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'ACTIVE',NOW())
      ON CONFLICT (tx_hash) DO NOTHING`,
@@ -902,7 +936,7 @@ app.post("/api/vault-record", handle(async (req, res) => {
 // ── Claim Yield ───────────────────────────────────────────────────────────────
 app.post("/api/claim-yield", handle(async (req, res) => {
   const { walletAddress, planIndex, amount } = req.body;
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [walletAddress]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [walletAddress]);
   if (!p.length) return res.status(404).json({ error: "Profile not found" });
   res.json({ ok: true, message: "Claim recorded", walletAddress, planIndex, amount });
 }));
@@ -911,9 +945,9 @@ app.post("/api/claim-yield", handle(async (req, res) => {
 app.get("/api/rune-lock", handle(async (req, res) => {
   const { wallet } = req.query;
   if (!wallet) return res.status(400).json({ error: "wallet required" });
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [wallet]);
   if (!p.length) return res.json([]);
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     `SELECT * FROM rune_lock_positions WHERE user_id = $1 ORDER BY created_at DESC`,
     [p[0].id]
   );
@@ -923,13 +957,13 @@ app.get("/api/rune-lock", handle(async (req, res) => {
 app.post("/api/rune-lock", handle(async (req, res) => {
   const { walletAddress, runeAmount, lockDays, txHash, usdtAmount, runePrice } = req.body;
   if (!walletAddress || !runeAmount || !lockDays) return res.status(400).json({ error: "Missing required fields" });
-  const { rows: p } = await pool.query(
+  const { rows: p } = await primaryPool.query(
     "INSERT INTO profiles (wallet_address) VALUES ($1) ON CONFLICT (wallet_address) DO UPDATE SET wallet_address = EXCLUDED.wallet_address RETURNING id",
     [walletAddress]
   );
   const veRune = Number(runeAmount) * 0.35 * (Number(lockDays) / 540);
   const endDate = new Date(Date.now() + Number(lockDays) * 86400 * 1000).toISOString();
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     `INSERT INTO rune_lock_positions (user_id, usdt_amount, rune_amount, rune_price, lock_days, ve_rune, tx_hash, end_date)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
     [p[0].id, usdtAmount || null, runeAmount, runePrice || null, lockDays, veRune.toFixed(6), txHash || null, endDate]
@@ -940,9 +974,9 @@ app.post("/api/rune-lock", handle(async (req, res) => {
 app.get("/api/rune-lock/stats", handle(async (req, res) => {
   const { wallet } = req.query;
   if (!wallet) return res.status(400).json({ error: "wallet required" });
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [wallet]);
   if (!p.length) return res.json({ totalRuneLocked: "0", totalVeRune: "0", positions: 0 });
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     `SELECT COALESCE(SUM(rune_amount), 0) AS total_rune, COALESCE(SUM(ve_rune), 0) AS total_ve_rune, COUNT(*) AS pos_count
      FROM rune_lock_positions WHERE user_id = $1 AND status = 'ACTIVE'`,
     [p[0].id]
@@ -954,9 +988,9 @@ app.get("/api/rune-lock/stats", handle(async (req, res) => {
 app.get("/api/ember-burn", handle(async (req, res) => {
   const { wallet } = req.query;
   if (!wallet) return res.status(400).json({ error: "wallet required" });
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [wallet]);
   if (!p.length) return res.json([]);
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     `SELECT * FROM ember_burn_positions WHERE user_id = $1 ORDER BY created_at DESC`,
     [p[0].id]
   );
@@ -966,13 +1000,13 @@ app.get("/api/ember-burn", handle(async (req, res) => {
 app.post("/api/ember-burn", handle(async (req, res) => {
   const { walletAddress, runeAmount, txHash, usdtAmount, runePrice } = req.body;
   if (!walletAddress || !runeAmount) return res.status(400).json({ error: "Missing required fields" });
-  const { rows: p } = await pool.query(
+  const { rows: p } = await primaryPool.query(
     "INSERT INTO profiles (wallet_address) VALUES ($1) ON CONFLICT (wallet_address) DO UPDATE SET wallet_address = EXCLUDED.wallet_address RETURNING id",
     [walletAddress]
   );
   const amount = Number(runeAmount);
   const dailyRate = amount >= 5000 ? 0.015 : amount >= 1000 ? 0.014 : amount >= 500 ? 0.013 : amount >= 100 ? 0.012 : 0.010;
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     `INSERT INTO ember_burn_positions (user_id, usdt_amount, rune_amount, rune_price, daily_rate, tx_hash)
      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
     [p[0].id, usdtAmount || null, runeAmount, runePrice || null, dailyRate, txHash || null]
@@ -983,9 +1017,9 @@ app.post("/api/ember-burn", handle(async (req, res) => {
 app.post("/api/ember-burn/claim", handle(async (req, res) => {
   const { walletAddress, positionId } = req.body;
   if (!walletAddress || !positionId) return res.status(400).json({ error: "Missing required fields" });
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [walletAddress]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [walletAddress]);
   if (!p.length) return res.status(404).json({ error: "Profile not found" });
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     `SELECT * FROM ember_burn_positions WHERE id = $1 AND user_id = $2 AND status = 'ACTIVE'`,
     [positionId, p[0].id]
   );
@@ -993,7 +1027,7 @@ app.post("/api/ember-burn/claim", handle(async (req, res) => {
   const pos = rows[0];
   const daysSinceLastClaim = Math.max(0, (Date.now() - new Date(pos.last_claim_at).getTime()) / (1000 * 60 * 60 * 24));
   const pendingEmber = Number(pos.rune_amount) * Number(pos.daily_rate) * daysSinceLastClaim;
-  await pool.query(
+  await primaryPool.query(
     `UPDATE ember_burn_positions
      SET pending_ember = 0, total_claimed_ember = total_claimed_ember + $1, last_claim_at = NOW()
      WHERE id = $2`,
@@ -1005,9 +1039,9 @@ app.post("/api/ember-burn/claim", handle(async (req, res) => {
 app.get("/api/ember-burn/stats", handle(async (req, res) => {
   const { wallet } = req.query;
   if (!wallet) return res.status(400).json({ error: "wallet required" });
-  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [wallet]);
   if (!p.length) return res.json({ totalRuneBurned: "0", dailyEmber: "0", totalClaimedEmber: "0" });
-  const { rows } = await pool.query(
+  const { rows } = await primaryPool.query(
     `SELECT COALESCE(SUM(rune_amount), 0) AS total_burned,
             COALESCE(SUM(rune_amount * daily_rate), 0) AS daily_ember,
             COALESCE(SUM(total_claimed_ember), 0) AS total_claimed
@@ -1027,21 +1061,21 @@ app.get("/api/vault/pool-stats", handle(async (_, res) => {
   // ── Queries run in parallel across both databases ──────────────────────────
   const queries: Promise<any>[] = [
     // local DB: rune lock positions
-    pool.query(
+    primaryPool.query(
       `SELECT COALESCE(SUM(rune_amount),0) AS rune_total,
               COALESCE(SUM(usdt_amount),0) AS usdt_total,
               COUNT(*) AS position_count
        FROM rune_lock_positions WHERE status = 'ACTIVE'`
     ),
     // local DB: ember burn positions
-    pool.query(
+    primaryPool.query(
       `SELECT COALESCE(SUM(rune_amount),0) AS rune_total,
               COALESCE(SUM(usdt_amount),0) AS usdt_total,
               COUNT(*) AS position_count
        FROM ember_burn_positions WHERE status = 'ACTIVE'`
     ),
     // local DB: revenue pools
-    pool.query(`SELECT COALESCE(SUM(balance),0) AS total FROM revenue_pools`),
+    primaryPool.query(`SELECT COALESCE(SUM(balance),0) AS total FROM revenue_pools`),
   ];
 
   // Supabase: real on-chain node purchases (USDT amounts in wei / 1e18)
@@ -1187,18 +1221,20 @@ app.get("/api/vault/node-purchases", handle(async (req, res) => {
 
 // ── Supabase global member stats ─────────────────────────────────────────────
 app.get("/api/supabase/global-stats", handle(async (req, res) => {
-  if (!supabasePool) return res.json({ totalMembers: 0, totalPurchases: 0, totalUsdt: 0, superNodes: 0, stdNodes: 0 });
-  const [membersRes, purchasesRes] = await Promise.all([
+  if (!supabasePool) return res.json({ totalMembers: 0, activeMembers: 0, totalNodes: 0, superNodes: 0, stdNodes: 0 });
+  const [membersRes, purchasesRes, activeRes] = await Promise.all([
     supabasePool.query("SELECT COUNT(*) as total FROM rune_members"),
-    supabasePool.query(`SELECT COUNT(*) as total_purchases, COALESCE(SUM(amount/1e18),0) as total_usdt,
-       COUNT(CASE WHEN node_id=401 THEN 1 END) as super_nodes, COUNT(CASE WHEN node_id=501 THEN 1 END) as std_nodes
+    supabasePool.query(`SELECT COUNT(*) as total_purchases,
+       COUNT(CASE WHEN node_id=401 THEN 1 END) as super_nodes,
+       COUNT(CASE WHEN node_id=501 THEN 1 END) as std_nodes
        FROM rune_purchases WHERE chain_id=56`),
+    supabasePool.query(`SELECT COUNT(DISTINCT "user") as active FROM rune_purchases WHERE chain_id=56`),
   ]);
   const p = purchasesRes.rows[0];
   res.json({
     totalMembers:   Number(membersRes.rows[0].total),
-    totalPurchases: Number(p.total_purchases),
-    totalUsdt:      Number(p.total_usdt),
+    activeMembers:  Number(activeRes.rows[0].active),
+    totalNodes:     Number(p.total_purchases),
     superNodes:     Number(p.super_nodes),
     stdNodes:       Number(p.std_nodes),
   });
@@ -1210,10 +1246,10 @@ app.get("/api/supabase/team/:wallet", handle(async (req, res) => {
   const wallet = req.params.wallet.toLowerCase();
   const NODE_TIER: Record<number, string> = { 401: "超级节点", 501: "标准节点" };
 
-  // Own node info + referrer
+  // Own node info + referrer (exclude self-referral rows)
   const [ownPurchase, ownRef] = await Promise.all([
     supabasePool.query(`SELECT node_id, amount/1e18 as usdt_amount FROM rune_purchases WHERE "user"=$1 AND chain_id=56 LIMIT 1`, [wallet]),
-    supabasePool.query(`SELECT referrer FROM rune_referrers WHERE "user"=$1 AND chain_id=56 LIMIT 1`, [wallet]),
+    supabasePool.query(`SELECT referrer FROM rune_referrers WHERE "user"=$1 AND chain_id=56 AND LOWER(referrer) != $1 LIMIT 1`, [wallet]),
   ]);
 
   // Direct referrals (level 1)
@@ -1254,10 +1290,19 @@ app.get("/api/supabase/team/:wallet", handle(async (req, res) => {
   const referrals = directRows.map((r: any) => mapMember(r));
   const teamSize  = referrals.reduce((s, r) => s + 1 + (r.subReferrals?.length || 0), 0);
 
+  // Performance totals (USDT invested by direct/team members)
+  const directUsdt = directRows.reduce((s: number, r: any) => s + Number(r.usdt_amount || 0), 0);
+  const subUsdt = Object.values(subMap).flat().reduce((s: number, r: any) => s + Number((r as any).usdt_amount || 0), 0);
+  const teamUsdt = directUsdt + subUsdt;
+  const ownUsdt  = Number(ownPurchase.rows[0]?.usdt_amount || 0);
+
   res.json({
     referrals,
     teamSize,
     directCount: directRows.length,
+    ownUsdt,
+    directUsdt,
+    teamUsdt,
     ownNode: ownPurchase.rows[0]
       ? { nodeId: ownPurchase.rows[0].node_id, nodeTier: NODE_TIER[ownPurchase.rows[0].node_id] || "注册会员", usdtAmount: Number(ownPurchase.rows[0].usdt_amount) }
       : null,

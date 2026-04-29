@@ -75,7 +75,7 @@ export default function ProfileReferralPage() {
 
   // ── Supabase on-chain data ───────────────────────────────────────────────
   const { data: globalStats } = useQuery<{
-    totalMembers: number; totalPurchases: number; totalUsdt: number; superNodes: number; stdNodes: number;
+    totalMembers: number; activeMembers: number; totalNodes: number; superNodes: number; stdNodes: number;
   }>({
     queryKey: ["supabase-global-stats"],
     queryFn: async () => { const r = await fetch("/api/supabase/global-stats"); return r.json(); },
@@ -83,6 +83,7 @@ export default function ProfileReferralPage() {
 
   const { data: sbTeam, isLoading } = useQuery<{
     referrals: ReferralMember[]; teamSize: number; directCount: number;
+    ownUsdt: number; directUsdt: number; teamUsdt: number;
     ownNode: { nodeId: number; nodeTier: string; usdtAmount: number } | null;
     referrer: string | null;
   }>({
@@ -122,9 +123,14 @@ export default function ProfileReferralPage() {
   // Use Supabase data for team stats
   const teamData = sbTeam;
   const ownNode   = sbTeam?.ownNode || null;
-  const referrer  = sbTeam?.referrer || (profile as any)?.parentWallet || null;
+  const rawReferrer = sbTeam?.referrer || (profile as any)?.parentWallet || null;
+  // Exclude self-referral in case on-chain data has it
+  const referrer = rawReferrer && rawReferrer.toLowerCase() !== walletAddr.toLowerCase() ? rawReferrer : null;
   const directCount = sbTeam?.directCount ?? 0;
   const teamSize    = sbTeam?.teamSize ?? 0;
+  const ownUsdt   = sbTeam?.ownUsdt ?? 0;
+  const directUsdt = sbTeam?.directUsdt ?? 0;
+  const teamUsdt  = sbTeam?.teamUsdt ?? 0;
 
   // Node tier derived values
   const isSuper = ownNode?.nodeId === 401;
@@ -166,40 +172,12 @@ export default function ProfileReferralPage() {
             <h1 className="text-[17px] font-bold tracking-wide text-white">{t("profile.promotionCenter")}</h1>
           </div>
 
-          {/* ── Current V-level + node tier + info icon ── */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-4 rounded-full" style={{ background: "linear-gradient(180deg, hsl(43,74%,58%), hsl(43,74%,52%))" }} />
-              <span className="text-[13px] font-bold text-white">当前等级</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {ownNode && (
-                <span className="text-[10px] px-2 py-0.5 rounded-md font-bold"
-                  style={{ background: nodeTierBg, border: `1px solid ${nodeTierBorder}`, color: nodeTierColor }}>
-                  {nodeTierLabel}
-                </span>
-              )}
-              <span className="text-[13px] font-black px-3 py-1 rounded-lg"
-                style={{ background: "linear-gradient(135deg, rgba(212,168,50,0.15), rgba(212,168,50,0.1))", border: "1px solid rgba(212,168,50,0.3)", color: "hsl(43,74%,58%)" }}>
-                {currentRank}
-              </span>
-              <button
-                onClick={() => navigate("/profile/referral/info")}
-                className="w-7 h-7 flex items-center justify-center rounded-full transition-colors"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}
-                title="等级要求说明"
-              >
-                <Info className="h-3.5 w-3.5 text-white/50" />
-              </button>
-            </div>
-          </div>
-
           {/* ── Global Stats Strip ── */}
           <div className="grid grid-cols-3 gap-2 mb-1">
             {[
               { label: "全球会员", value: globalStats ? `${globalStats.totalMembers}` : "--" },
-              { label: "超级节点", value: globalStats ? `${globalStats.superNodes}` : "--" },
-              { label: "标准节点", value: globalStats ? `${globalStats.stdNodes}` : "--" },
+              { label: "激活会员", value: globalStats ? `${globalStats.activeMembers}` : "--" },
+              { label: "总节点数", value: globalStats ? `${globalStats.totalNodes}` : "--" },
             ].map((s, i) => (
               <div key={i} className="rounded-xl p-2.5 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <div className="text-[9px] text-white/30 mb-1">{s.label}</div>
@@ -241,22 +219,69 @@ export default function ProfileReferralPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2.5">
-          <div className="rounded-xl p-3.5 text-center" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.4)" }}>
-            <div className="text-[11px] text-white/50 font-medium mb-2">直推人数</div>
-            <UserPlus className="h-5 w-5 mx-auto text-white/50 mb-1.5" />
-            <div className="text-[18px] font-black text-white">{isConnected ? directCount : "--"}</div>
+        {/* ── My performance + team stats ── */}
+        <div className="rounded-2xl p-4 space-y-3" style={{ background: "#181818", border: "1px solid rgba(255,255,255,0.08)" }}>
+          {/* V-rank + performance row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-white/40">当前等级</span>
+              <span className="text-[13px] font-black px-2.5 py-0.5 rounded-lg"
+                style={{ background: "rgba(212,168,50,0.12)", border: "1px solid rgba(212,168,50,0.3)", color: "hsl(43,74%,58%)" }}>
+                {currentRank}
+              </span>
+              {ownNode && (
+                <span className="text-[10px] px-2 py-0.5 rounded-md font-bold"
+                  style={{ background: nodeTierBg, border: `1px solid ${nodeTierBorder}`, color: nodeTierColor }}>
+                  {nodeTierLabel}
+                </span>
+              )}
+              <button
+                onClick={() => navigate("/profile/referral/info")}
+                className="w-6 h-6 flex items-center justify-center rounded-full"
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}
+              >
+                <Info className="h-3 w-3 text-white/40" />
+              </button>
+            </div>
+            <div className="text-right">
+              <div className="text-[10px] text-white/30">个人业绩</div>
+              <div className="text-[14px] font-black" style={{ color: "hsl(43,74%,58%)" }}>
+                {isConnected ? `$${ownUsdt.toFixed(0)}` : "--"}
+              </div>
+            </div>
           </div>
-          <div className="rounded-xl p-3.5 text-center" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="text-[11px] text-white/50 font-medium mb-2">团队总人数</div>
-            <Users className="h-5 w-5 mx-auto text-white/50 mb-1.5" />
-            <div className="text-[18px] font-black text-white">{isConnected ? teamSize : "--"}</div>
+          <div className="h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+          {/* 3-count row */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="text-center">
+              <div className="text-[10px] text-white/35 mb-1">直推人数</div>
+              <div className="text-[17px] font-black text-white">{isConnected ? directCount : "--"}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-[10px] text-white/35 mb-1">团队总人数</div>
+              <div className="text-[17px] font-black text-white">{isConnected ? teamSize : "--"}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-[10px] text-white/35 mb-1">团队节点数</div>
+              <div className="text-[17px] font-black text-white">
+                {isConnected ? (sbTeam?.referrals.filter(r => r.nodeType !== "--").length ?? 0) : "--"}
+              </div>
+            </div>
           </div>
-          <div className="rounded-xl p-3.5 text-center" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="text-[11px] text-white/50 font-medium mb-2">团队节点数</div>
-            <DollarSign className="h-5 w-5 mx-auto text-white/50 mb-1.5" />
-            <div className="text-[18px] font-black text-white">
-              {isConnected ? (sbTeam?.referrals.filter(r => r.nodeType !== "--").length ?? 0) : "--"}
+          <div className="h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+          {/* Team performance row */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <div className="text-[10px] text-white/35 mb-1">直推业绩 (USDT)</div>
+              <div className="text-[15px] font-black text-white/80">
+                {isConnected ? `$${directUsdt.toFixed(0)}` : "--"}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-white/35 mb-1">团队业绩 (USDT)</div>
+              <div className="text-[15px] font-black" style={{ color: "hsl(43,74%,58%)" }}>
+                {isConnected ? `$${teamUsdt.toFixed(0)}` : "--"}
+              </div>
             </div>
           </div>
         </div>
@@ -324,7 +349,7 @@ export default function ProfileReferralPage() {
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-[12px] text-white/70 placeholder:text-white/20 outline-none focus:border-primary/30"
               />
               <div className="flex gap-1 overflow-x-auto pb-0.5">
-                {["all", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "none"].map(r => (
+                {["all", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "none"].map(r => (
                   <button
                     key={r}
                     onClick={() => setRankFilter(r)}
@@ -481,31 +506,29 @@ export default function ProfileReferralPage() {
                       ) : (
                         <div className="h-2 w-2 rounded-full shrink-0" style={{ background: "rgba(255,255,255,0.2)" }} />
                       )}
-                      <div className="flex-1 min-w-0">
-                        <button
-                          className="text-left w-full"
-                          onClick={() => drillInto(ref.walletAddress, shortenAddress(ref.walletAddress))}
-                        >
+                      <div className="flex-1 min-w-0 cursor-pointer" onClick={() => drillInto(ref.walletAddress, shortenAddress(ref.walletAddress))}>
                           <div className="flex items-center gap-1.5">
                             <span className="text-[12px] font-mono text-white/80 truncate">
                               {shortenAddress(ref.walletAddress)}
                             </span>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); copyToClipboard(ref.walletAddress); }}
-                              className="shrink-0 p-0.5 rounded transition-colors hover:bg-white/10"
+                            <span
+                              role="button"
+                              onClick={(e) => { e.stopPropagation(); copyToClipboard(ref.walletAddress); }}
+                              className="shrink-0 p-0.5 rounded transition-colors hover:bg-white/10 cursor-pointer"
                             >
                               <Copy className="h-3 w-3 text-white/30" />
-                            </button>
+                            </span>
                             {refCode && ref.refCode && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); e.preventDefault(); copyToClipboard(`${window.location.origin}/r/${refCode}/${ref.refCode}`); }}
-                                className="shrink-0 px-1.5 py-0.5 rounded-md text-[9px] font-bold flex items-center gap-1 transition-all hover:brightness-125 active:scale-95"
+                              <span
+                                role="button"
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(`${window.location.origin}/r/${refCode}/${ref.refCode}`); }}
+                                className="shrink-0 px-1.5 py-0.5 rounded-md text-[9px] font-bold flex items-center gap-1 transition-all hover:brightness-125 active:scale-95 cursor-pointer"
                                 style={{ background: "rgba(234,179,8,0.12)", border: "1px solid rgba(234,179,8,0.25)", color: "#facc15" }}
                                 title={`${window.location.origin}/r/${refCode}/${ref.refCode}`}
                               >
                                 <Link2 className="h-2.5 w-2.5" />
                                 {t("profile.placementLink", "安置链接")}
-                              </button>
+                              </span>
                             )}
                           </div>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -519,7 +542,6 @@ export default function ProfileReferralPage() {
                               {t("profile.teamPerformance")}: {formatCompact(teamDeposits)}
                             </span>
                           </div>
-                        </button>
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <span
@@ -606,11 +628,11 @@ export default function ProfileReferralPage() {
             <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1">
               {([
                 { key: "all" as HistoryFilter, label: "全部" },
-                { key: "direct" as HistoryFilter, label: "直推奖励" },
-                { key: "diff" as HistoryFilter, label: "团队级差" },
-                { key: "same_rank" as HistoryFilter, label: "同级奖励" },
+                { key: "direct" as HistoryFilter, label: "直推佣金" },
+                { key: "diff" as HistoryFilter, label: "差异奖励" },
+                { key: "same_rank" as HistoryFilter, label: "平级奖励" },
                 { key: "override" as HistoryFilter, label: "越级奖励" },
-                { key: "node_reward" as HistoryFilter, label: "节点奖励" },
+                { key: "node_reward" as HistoryFilter, label: "节点收益" },
               ]).map((f) => (
                 <button
                   key={f.key}
