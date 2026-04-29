@@ -144,7 +144,7 @@ export default function ProfilePage() {
       <div className="relative overflow-hidden" style={{ background: "linear-gradient(180deg, #1a1408 0%, #0e0c08 50%, #060606 100%)" }}>
         <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(212,168,50,0.1) 0%, transparent 65%)" }} />
         <div className="relative px-4 pt-6 pb-5">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3">
             <div
               className="h-12 w-12 rounded-full flex items-center justify-center shrink-0"
               style={{ background: "linear-gradient(135deg, hsl(43,74%,50%), hsl(38,70%,38%))", boxShadow: "0 0 24px rgba(212,168,50,0.2)" }}
@@ -164,53 +164,42 @@ export default function ProfilePage() {
                       <Copy className="h-3.5 w-3.5 text-white/50" />
                     </button>
                   </div>
-                  <div className="font-mono text-[10px] text-white/55 mt-0.5 truncate">{walletAddr}</div>
+                  <div className="font-mono text-[10px] text-white/55 truncate">{walletAddr}</div>
                 </>
               )}
-            </div>
-          </div>
 
-          {/* Rank + Node info row */}
-          <div className="flex items-stretch gap-2 mt-1">
-            {/* 等级 */}
-            <div className="surface-inset flex-1 rounded-xl border border-black/30 bg-black/22 px-3 py-2.5" data-testid="card-rank">
-              <div className="text-[9px] uppercase tracking-[0.18em] text-white/45 mb-1">等级</div>
-              {!isConnected ? (
-                <div className="text-[18px] font-black text-white/20">--</div>
-              ) : profileLoading ? (
-                <Skeleton className="h-5 w-10" />
-              ) : (
-                <div
-                  className="text-[18px] font-black"
-                  style={{ color: "hsl(43,74%,62%)" }}
-                  data-testid="text-rank"
-                >
-                  {profile?.rank || "V0"}
+              {/* Rank + Node inline below address */}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                {/* 等级 */}
+                <div className="surface-inset flex items-center gap-1.5 rounded-lg border border-black/30 bg-black/25 px-2.5 py-1" data-testid="card-rank">
+                  <span className="text-[9px] uppercase tracking-[0.15em] text-white/45">等级</span>
+                  {!isConnected || profileLoading ? (
+                    <span className="text-[12px] font-black text-white/25">--</span>
+                  ) : (
+                    <span className="text-[13px] font-black" style={{ color: "hsl(43,74%,65%)" }} data-testid="text-rank">
+                      {profile?.rank || "V0"}
+                    </span>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* 持有节点 */}
-            <div
-              className="surface-inset flex-[2] rounded-xl border border-black/30 bg-black/22 px-3 py-2.5"
-              data-testid="card-node-tier"
-            >
-              <div className="text-[9px] uppercase tracking-[0.18em] text-white/45 mb-1">持有节点</div>
-              {!isConnected ? (
-                <div className="text-[15px] font-bold text-white/20">--</div>
-              ) : profileLoading ? (
-                <Skeleton className="h-5 w-20" />
-              ) : nodeTierLabel ? (
-                <div
-                  className="text-[15px] font-bold"
-                  style={{ color: nodeTierColor }}
-                  data-testid="text-node-tier"
-                >
-                  {nodeTierLabel}
+                {/* 持有节点 */}
+                <div className="surface-inset flex items-center gap-1.5 rounded-lg border border-black/30 bg-black/25 px-2.5 py-1" data-testid="card-node-tier">
+                  <span className="text-[9px] uppercase tracking-[0.15em] text-white/45">节点</span>
+                  {!isConnected || profileLoading ? (
+                    <span className="text-[12px] font-bold text-white/25">--</span>
+                  ) : nodeTierLabel ? (
+                    <span className="text-[12px] font-bold" style={{ color: nodeTierColor }} data-testid="text-node-tier">
+                      {nodeTierLabel}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-semibold text-white/35" data-testid="text-node-tier">未持有</span>
+                  )}
                 </div>
-              ) : (
-                <div className="text-[13px] font-semibold text-white/40" data-testid="text-node-tier">未持有节点</div>
-              )}
+
+                {profile?.isVip && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(234,179,8,0.15)", border: "1px solid rgba(234,179,8,0.3)", color: "#fbbf24" }} data-testid="badge-vip">VIP</span>
+                )}
+              </div>
             </div>
           </div>
         </div>
