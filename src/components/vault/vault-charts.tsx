@@ -220,10 +220,6 @@ export function VaultCharts() {
           <span style={{ color: AMBER }}>目标上线价 $0.028/RUNE</span>
         </div>
         <div className="mt-2 flex gap-3 text-[9px] text-muted-foreground">
-          <span>锁仓仓位 <span className="font-bold text-foreground">{lockCount}</span></span>
-          <span>·</span>
-          <span>销毁仓位 <span className="font-bold text-red-400">{burnCount}</span></span>
-          <span>·</span>
           <span>底池比例 <span className="font-bold" style={{ color: BLUE }}>280万USDT : 1亿RUNE</span></span>
         </div>
       </motion.div>
