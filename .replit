@@ -51,3 +51,4 @@ run = ["node", "./dist/index.cjs"]
 [userenv.shared]
 VITE_VIP_RECEIVER_ADDRESS = "0x8dE73Dc07cdf679B29731827744464161132b581"
 VITE_THIRDWEB_CLIENT_ID = "821adf6c06a2e527b87f32dd6c49e5b9"
+SUPABASE_DATABASE_URL = "postgresql://postgres:one2317888!!@db.mefjuecwawmjfmeofnck.supabase.co:5432/postgres"

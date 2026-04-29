@@ -85,9 +85,9 @@ export function VaultCharts() {
     refetchInterval: 60_000,
   });
 
-  const motherUsdt  = Number(data?.mother.usdtTotal  ?? 0);
+  const motherUsdt  = Number(data?.mother?.usdtTotal  ?? 0);
   const reserveUsdt = Number(data?.reservePool?.balance ?? 0);
-  const tradingUsdt = Number(data?.tradingPool.balance  ?? 0);
+  const tradingUsdt = Number(data?.tradingPool?.balance  ?? 0);
   const totalUsdt   = motherUsdt + reserveUsdt + tradingUsdt;
 
   // Fixed protocol ratios: 35% / 45% / 20%
@@ -97,9 +97,9 @@ export function VaultCharts() {
     { name: "储备金库", value: reserveUsdt, color: PURPLE, pct: "20" },
   ];
 
-  const nodeCount  = data?.mother.nodeCount    ?? 0;
-  const lockCount  = data?.mother.lockPositions ?? 0;
-  const burnCount  = data?.sub.burnPositions   ?? 0;
+  const nodeCount  = data?.mother?.nodeCount    ?? 0;
+  const lockCount  = data?.mother?.lockPositions ?? 0;
+  const burnCount  = data?.sub?.burnPositions   ?? 0;
   const targetNodes = 100;
   const nodeProgress = Math.min((nodeCount / targetNodes) * 100, 100);
 

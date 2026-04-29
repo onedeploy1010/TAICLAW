@@ -1,5 +1,5 @@
 import express from "express";
-import { pool } from "./db.js";
+import { pool, supabasePool } from "./db.js";
 import adminRoutes from "./admin-routes.js";
 
 const app = express();
@@ -1019,80 +1019,169 @@ app.get("/api/ember-burn/stats", handle(async (req, res) => {
 
 // ── Vault LP Pool Stats (protocol-wide, pre-launch node accumulation) ─────────
 app.get("/api/vault/pool-stats", handle(async (_, res) => {
-  const MOTHER_POOL_RATIO  = 0.35; // 35% → 母币底池
-  const TRADING_POOL_RATIO = 0.45; // 45% → 交易金库
-  const RESERVE_POOL_RATIO = 0.20; // 20% → 储备金库
-  const MONTHLY_YIELD_RATE = 0.08; // 8% monthly yield target from AI quant trading
+  const MOTHER_POOL_RATIO  = 0.35;
+  const TRADING_POOL_RATIO = 0.45;
+  const RESERVE_POOL_RATIO = 0.20;
+  const MONTHLY_YIELD_RATE = 0.08;
 
-  const [motherLockRes, emberBurnRes, nodeMembRes, revenueRes] = await Promise.all([
+  // ── Queries run in parallel across both databases ──────────────────────────
+  const queries: Promise<any>[] = [
+    // local DB: rune lock positions
     pool.query(
       `SELECT COALESCE(SUM(rune_amount),0) AS rune_total,
               COALESCE(SUM(usdt_amount),0) AS usdt_total,
               COUNT(*) AS position_count
        FROM rune_lock_positions WHERE status = 'ACTIVE'`
     ),
+    // local DB: ember burn positions
     pool.query(
       `SELECT COALESCE(SUM(rune_amount),0) AS rune_total,
               COALESCE(SUM(usdt_amount),0) AS usdt_total,
               COUNT(*) AS position_count
        FROM ember_burn_positions WHERE status = 'ACTIVE'`
     ),
-    pool.query(
-      `SELECT COALESCE(SUM(deposit_amount),0) AS node_usdt,
-              COALESCE(SUM(contribution_amount),0) AS node_contrib,
-              COUNT(*) AS node_count
-       FROM node_memberships WHERE status NOT IN ('CANCELLED')`
-    ),
-    pool.query(
-      `SELECT COALESCE(SUM(balance),0) AS total FROM revenue_pools`
-    ),
-  ]);
+    // local DB: revenue pools
+    pool.query(`SELECT COALESCE(SUM(balance),0) AS total FROM revenue_pools`),
+  ];
 
-  const motherLock = motherLockRes.rows[0];
-  const emberBurn  = emberBurnRes.rows[0];
-  const nodeMembr  = nodeMembRes.rows[0];
-  const revTotal   = Number(revenueRes.rows[0].total);
+  // Supabase: real on-chain node purchases (USDT amounts in wei / 1e18)
+  if (supabasePool) {
+    queries.push(
+      supabasePool.query(
+        `SELECT
+           COALESCE(SUM(amount),0)                             AS total_wei,
+           COUNT(DISTINCT "user")                              AS buyer_count,
+           COUNT(*)                                            AS purchase_count,
+           COUNT(*) FILTER (WHERE node_id = 401)              AS super_node_count,
+           COALESCE(SUM(amount) FILTER (WHERE node_id = 401),0) AS super_wei,
+           COUNT(*) FILTER (WHERE node_id = 501)              AS std_node_count,
+           COALESCE(SUM(amount) FILTER (WHERE node_id = 501),0) AS std_wei
+         FROM rune_purchases`
+      ),
+      supabasePool.query(`SELECT COUNT(*) AS member_count FROM rune_members`),
+    );
+  }
 
-  const nodeUsdt        = Number(nodeMembr.node_usdt) + Number(nodeMembr.node_contrib);
-  const motherUsdtTotal = nodeUsdt + Number(motherLock.usdt_total);
-  const motherRuneTotal = Number(motherLock.rune_total);
-  const subUsdtTotal    = Number(emberBurn.usdt_total);
-  const subRuneTotal    = Number(emberBurn.rune_total);
+  const results = await Promise.all(queries);
+  const motherLock = results[0].rows[0];
+  const emberBurn  = results[1].rows[0];
+  const revTotal   = Number(results[2].rows[0].total);
 
-  // Split all deposits: 35% mother LP, 45% trading vault, 20% reserve vault
-  const allDepositUsdt    = nodeUsdt + Number(motherLock.usdt_total) + Number(emberBurn.usdt_total);
+  // Real on-chain node deposit data (falls back to 0 when Supabase unavailable)
+  let nodeDepositUsdt  = 0;
+  let nodeBuyerCount   = 0;
+  let purchaseCount    = 0;
+  let superNodeCount   = 0;
+  let stdNodeCount     = 0;
+  let superNodeUsdt    = 0;
+  let stdNodeUsdt      = 0;
+  let memberCount      = 0;
+
+  if (supabasePool && results[3]) {
+    const sp = results[3].rows[0];
+    const WEI = 1e18;
+    nodeDepositUsdt = Number(sp.total_wei) / WEI;
+    nodeBuyerCount  = Number(sp.buyer_count);
+    purchaseCount   = Number(sp.purchase_count);
+    superNodeCount  = Number(sp.super_node_count);
+    stdNodeCount    = Number(sp.std_node_count);
+    superNodeUsdt   = Number(sp.super_wei) / WEI;
+    stdNodeUsdt     = Number(sp.std_wei) / WEI;
+    memberCount     = Number(results[4].rows[0].member_count);
+  }
+
+  const lockUsdt  = Number(motherLock.usdt_total);
+  const burnUsdt  = Number(emberBurn.usdt_total);
+  const lockRune  = Number(motherLock.rune_total);
+  const burnRune  = Number(emberBurn.rune_total);
+
+  // All deposits = real on-chain node USDT + any app-level lock/burn deposits
+  const allDepositUsdt    = nodeDepositUsdt + lockUsdt + burnUsdt;
   const motherPoolBalance = allDepositUsdt * MOTHER_POOL_RATIO;
   const tradingBalance    = allDepositUsdt * TRADING_POOL_RATIO + revTotal;
   const reserveBalance    = allDepositUsdt * RESERVE_POOL_RATIO;
   const monthlyYield      = tradingBalance * MONTHLY_YIELD_RATE;
-  const annualYield       = tradingBalance * MONTHLY_YIELD_RATE * 12;
+  const annualYield       = monthlyYield * 12;
 
   res.json({
     mother: {
-      usdtTotal: motherPoolBalance.toFixed(2),
-      runeTotal: motherRuneTotal.toFixed(4),
+      usdtTotal:     motherPoolBalance.toFixed(2),
+      runeTotal:     lockRune.toFixed(4),
       lockPositions: parseInt(motherLock.position_count),
-      nodeCount: parseInt(nodeMembr.node_count),
-      ratio: (MOTHER_POOL_RATIO * 100).toFixed(0),
+      nodeCount:     nodeBuyerCount || memberCount,
+      ratio:         (MOTHER_POOL_RATIO * 100).toFixed(0),
     },
     sub: {
-      usdtTotal: subUsdtTotal.toFixed(2),
-      runeTotal: subRuneTotal.toFixed(4),
+      usdtTotal:     burnUsdt.toFixed(2),
+      runeTotal:     burnRune.toFixed(4),
       burnPositions: parseInt(emberBurn.position_count),
     },
     reservePool: {
       balance: reserveBalance.toFixed(2),
-      ratio: (RESERVE_POOL_RATIO * 100).toFixed(0),
+      ratio:   (RESERVE_POOL_RATIO * 100).toFixed(0),
     },
     tradingPool: {
-      balance: tradingBalance.toFixed(2),
+      balance:           tradingBalance.toFixed(2),
       contributionTotal: allDepositUsdt.toFixed(2),
-      monthlyYield: monthlyYield.toFixed(2),
-      annualYield: annualYield.toFixed(2),
-      monthlyRate: (MONTHLY_YIELD_RATE * 100).toFixed(1),
-      poolRatio: (TRADING_POOL_RATIO * 100).toFixed(0),
+      monthlyYield:      monthlyYield.toFixed(2),
+      annualYield:       annualYield.toFixed(2),
+      monthlyRate:       (MONTHLY_YIELD_RATE * 100).toFixed(1),
+      poolRatio:         (TRADING_POOL_RATIO * 100).toFixed(0),
+    },
+    // Real on-chain node breakdown
+    nodes: {
+      totalMembers:   memberCount,
+      totalBuyers:    nodeBuyerCount,
+      purchaseCount,
+      totalDepositUsdt: nodeDepositUsdt.toFixed(2),
+      superNode: { count: superNodeCount, totalUsdt: superNodeUsdt.toFixed(2), unitPrice: 2500 },
+      stdNode:   { count: stdNodeCount,   totalUsdt: stdNodeUsdt.toFixed(2),   unitPrice: 1000 },
     },
     isLive: false,
+  });
+}));
+
+// ── Real on-chain node purchase list ─────────────────────────────────────────
+app.get("/api/vault/node-purchases", handle(async (req, res) => {
+  if (!supabasePool) return res.json({ purchases: [], members: 0 });
+
+  const limit  = Math.min(Number(req.query.limit  ?? 50), 200);
+  const offset = Number(req.query.offset ?? 0);
+
+  const [purchasesRes, membersRes] = await Promise.all([
+    supabasePool.query(
+      `SELECT
+         p."user"     AS wallet,
+         p.node_id,
+         p.amount / 1e18 AS usdt_amount,
+         p.paid_at,
+         p.tx_hash,
+         p.chain_id,
+         r.referrer
+       FROM rune_purchases p
+       LEFT JOIN rune_referrers r ON r."user" = p."user" AND r.chain_id = p.chain_id
+       ORDER BY p.paid_at DESC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    ),
+    supabasePool.query(`SELECT COUNT(*) AS total FROM rune_members`),
+  ]);
+
+  const NODE_TIER: Record<number, string> = { 401: "超级节点", 501: "标准节点" };
+
+  res.json({
+    purchases: purchasesRes.rows.map((r: any) => ({
+      wallet:     r.wallet,
+      nodeId:     r.node_id,
+      nodeTier:   NODE_TIER[r.node_id] ?? `节点 ${r.node_id}`,
+      usdtAmount: Number(r.usdt_amount).toFixed(2),
+      paidAt:     r.paid_at,
+      txHash:     r.tx_hash,
+      chainId:    r.chain_id,
+      referrer:   r.referrer,
+    })),
+    totalMembers: Number(membersRes.rows[0].total),
+    total: purchasesRes.rowCount,
   });
 }));
 

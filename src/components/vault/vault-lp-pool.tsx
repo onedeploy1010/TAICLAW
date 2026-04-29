@@ -6,29 +6,17 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 interface PoolStats {
-  mother: {
-    usdtTotal: string;
-    runeTotal: string;
-    lockPositions: number;
-    nodeCount: number;
-    ratio: string;
-  };
-  sub: {
-    usdtTotal: string;
-    runeTotal: string;
-    burnPositions: number;
-  };
-  reservePool: {
-    balance: string;
-    ratio: string;
-  };
-  tradingPool: {
-    balance: string;
-    contributionTotal: string;
-    monthlyYield: string;
-    annualYield: string;
-    monthlyRate: string;
-    poolRatio: string;
+  mother: { usdtTotal: string; runeTotal: string; lockPositions: number; nodeCount: number; ratio: string };
+  sub: { usdtTotal: string; runeTotal: string; burnPositions: number };
+  reservePool: { balance: string; ratio: string };
+  tradingPool: { balance: string; contributionTotal: string; monthlyYield: string; annualYield: string; monthlyRate: string; poolRatio: string };
+  nodes: {
+    totalMembers: number;
+    totalBuyers: number;
+    purchaseCount: number;
+    totalDepositUsdt: string;
+    superNode: { count: number; totalUsdt: string; unitPrice: number };
+    stdNode:   { count: number; totalUsdt: string; unitPrice: number };
   };
   isLive: boolean;
 }
@@ -169,49 +157,73 @@ export function VaultLpPool() {
 
         {/* Pool stats */}
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-2">
             <Skeleton className="h-14 rounded-xl" />
-            <Skeleton className="h-14 rounded-xl" />
+            <Skeleton className="h-10 rounded-xl" />
           </div>
         ) : view === "mother" ? (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-2">
+            {/* Total USDT bar */}
             <div className="rounded-xl px-3 py-2.5" style={{ background: `${AMBER}08`, border: `1px solid ${AMBER}18` }}>
-              <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">
-                {isZh ? "USDT 沉淀" : "USDT Deposited"}
-              </div>
-              <div className="text-xl font-bold tabular-nums" style={{ color: AMBER }}>
-                {fmtUsdt(data?.mother.usdtTotal ?? 0)}
-              </div>
-              <div className="text-[9px] text-muted-foreground mt-0.5">
-                {isZh
-                  ? `${data?.mother.nodeCount ?? 0} 节点 + ${data?.mother.lockPositions ?? 0} 锁仓`
-                  : `${data?.mother.nodeCount ?? 0} nodes · ${data?.mother.lockPositions ?? 0} locks`}
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">
+                    {isZh ? "节点总入金 (链上)" : "Node Deposits (On-chain)"}
+                  </div>
+                  <div className="text-xl font-bold tabular-nums" style={{ color: AMBER }}>
+                    {fmtUsdt(data?.nodes?.totalDepositUsdt ?? data?.mother?.usdtTotal ?? 0)}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[9px] text-muted-foreground">{isZh ? "注册会员" : "Members"}</div>
+                  <div className="text-base font-bold" style={{ color: AMBER }}>
+                    {data?.nodes?.totalMembers ?? data?.mother?.nodeCount ?? 0}
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">
-                {isZh ? "母币数量" : "RUNE Locked"}
+            {/* Node tier breakdown */}
+            <div className="grid grid-cols-2 gap-2">
+              {/* Super node */}
+              <div className="rounded-xl px-3 py-2" style={{ background: "rgba(168,85,247,0.07)", border: "1px solid rgba(168,85,247,0.2)" }}>
+                <div className="text-[8.5px] text-purple-400/70 uppercase tracking-wider mb-1">
+                  {isZh ? "超级节点 · $2,500" : "Super Node · $2,500"}
+                </div>
+                <div className="text-base font-bold text-purple-300">
+                  {data?.nodes?.superNode?.count ?? 0}
+                  <span className="text-[9px] font-normal text-purple-400/60 ml-1">{isZh ? "个" : "nodes"}</span>
+                </div>
+                <div className="text-[9px] text-muted-foreground">
+                  {fmtUsdt(data?.nodes?.superNode?.totalUsdt ?? 0)}
+                </div>
               </div>
-              {isLive ? (
-                <>
-                  <div className="text-xl font-bold tabular-nums text-foreground">{fmtRune(data?.mother.runeTotal ?? 0)}</div>
-                  <div className="text-[9px] text-muted-foreground mt-0.5">RUNE</div>
-                </>
-              ) : (
-                <>
-                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold mt-0.5"
-                    style={{ background: "rgba(212,168,50,0.12)", border: "1px solid rgba(212,168,50,0.25)", color: "rgba(212,168,50,0.9)" }}>
-                    {isZh ? "未上线" : "Pre-launch"}
-                  </div>
-                  <div className="text-[9px] text-muted-foreground mt-1.5">
-                    {isZh ? "上线价 $0.028 / RUNE" : "Launch price $0.028 / RUNE"}
-                  </div>
-                  <div className="text-[8.5px] mt-0.5" style={{ color: "rgba(212,168,50,0.6)" }}>
-                    {isZh ? "280万USDT : 1亿RUNE" : "2.8M USDT : 100M RUNE"}
-                  </div>
-                </>
-              )}
+              {/* Standard node */}
+              <div className="rounded-xl px-3 py-2" style={{ background: `${AMBER}06`, border: `1px solid ${AMBER}20` }}>
+                <div className="text-[8.5px] uppercase tracking-wider mb-1" style={{ color: `${AMBER}80` }}>
+                  {isZh ? "标准节点 · $1,000" : "Std Node · $1,000"}
+                </div>
+                <div className="text-base font-bold" style={{ color: AMBER }}>
+                  {data?.nodes?.stdNode?.count ?? 0}
+                  <span className="text-[9px] font-normal ml-1" style={{ color: `${AMBER}60` }}>{isZh ? "个" : "nodes"}</span>
+                </div>
+                <div className="text-[9px] text-muted-foreground">
+                  {fmtUsdt(data?.nodes?.stdNode?.totalUsdt ?? 0)}
+                </div>
+              </div>
             </div>
+            {/* Pre-launch RUNE info strip */}
+            {!isLive && (
+              <div className="flex items-center justify-between rounded-lg px-3 py-1.5"
+                style={{ background: "rgba(212,168,50,0.06)", border: "1px solid rgba(212,168,50,0.14)" }}>
+                <div className="text-[9px]" style={{ color: "rgba(212,168,50,0.7)" }}>
+                  {isZh ? "上线价 $0.028 / RUNE · 280万USDT : 1亿RUNE" : "Launch $0.028/RUNE · 2.8M USDT : 100M RUNE"}
+                </div>
+                <div className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                  style={{ background: "rgba(212,168,50,0.12)", color: "rgba(212,168,50,0.9)" }}>
+                  {isZh ? "未上线" : "Pre-launch"}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           /* Reserve Pool view */
@@ -221,7 +233,7 @@ export function VaultLpPool() {
                 {isZh ? "储备余额" : "Reserve Balance"}
               </div>
               <div className="text-xl font-bold tabular-nums" style={{ color: GREEN }}>
-                {fmtUsdt(data?.reservePool.balance ?? 0)}
+                {fmtUsdt(data?.reservePool?.balance ?? 0)}
               </div>
               <div className="text-[9px] text-muted-foreground mt-0.5">
                 {isZh ? "总入金 20%" : "20% of deposits"}
@@ -259,7 +271,7 @@ export function VaultLpPool() {
             {isLoading ? <Skeleton className="h-5 w-16" /> : (
               <>
                 <div className="text-sm font-bold tabular-nums text-blue-300">
-                  {fmtUsdt(data?.tradingPool.balance ?? 0)}
+                  {fmtUsdt(data?.tradingPool?.balance ?? 0)}
                 </div>
                 <div className="text-[9px] text-muted-foreground">USDT</div>
               </>

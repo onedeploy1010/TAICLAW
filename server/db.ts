@@ -12,3 +12,13 @@ if (!process.env.DATABASE_URL) {
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle(pool, { schema });
+
+// Supabase pool — reads real on-chain node recruitment data
+export const supabasePool = process.env.SUPABASE_DATABASE_URL
+  ? new Pool({
+      connectionString: process.env.SUPABASE_DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      max: 5,
+      idleTimeoutMillis: 30_000,
+    })
+  : null;
