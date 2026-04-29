@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { copyText } from "@/lib/copy";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { getProfile, getReferralTree, getCommissionRecords, getRankStatus, getUserTeamStats } from "@/lib/api";
+import { getProfile, getCommissionRecords } from "@/lib/api";
 import type { Profile, CommissionSummary } from "@shared/types";
 import { useTranslation } from "react-i18next";
 
@@ -73,12 +73,25 @@ export default function ProfileReferralPage() {
     enabled: isConnected,
   });
 
-  const { data: teamData, isLoading } = useQuery<ReferralData>({
-    queryKey: ["referrals", viewingAddr],
-    queryFn: () => getReferralTree(viewingAddr),
+  // ── Supabase on-chain data ───────────────────────────────────────────────
+  const { data: globalStats } = useQuery<{
+    totalMembers: number; totalPurchases: number; totalUsdt: number; superNodes: number; stdNodes: number;
+  }>({
+    queryKey: ["supabase-global-stats"],
+    queryFn: async () => { const r = await fetch("/api/supabase/global-stats"); return r.json(); },
+  });
+
+  const { data: sbTeam, isLoading } = useQuery<{
+    referrals: ReferralMember[]; teamSize: number; directCount: number;
+    ownNode: { nodeId: number; nodeTier: string; usdtAmount: number } | null;
+    referrer: string | null;
+  }>({
+    queryKey: ["supabase-team", viewingAddr],
+    queryFn: async () => { const r = await fetch(`/api/supabase/team/${viewingAddr}`); return r.json(); },
     enabled: isConnected,
   });
 
+  // Commission history still from Neon DB
   const { data: commission, isLoading: commissionLoading } = useQuery({
     queryKey: ["commission", walletAddr],
     queryFn: () => getCommissionRecords(walletAddr) as Promise<CommissionSummary>,
@@ -91,28 +104,23 @@ export default function ProfileReferralPage() {
   const sameRankTotal = Number(commission?.sameRankTotal || 0);
   const overrideTotal = Number(commission?.overrideTotal || 0);
 
-  // Rank status + team stats from RPC
-  const { data: rankStatus } = useQuery({
-    queryKey: ["rank-status", walletAddr],
-    queryFn: () => getRankStatus(walletAddr),
-    enabled: isConnected,
-  });
-
-  const { data: teamStats } = useQuery({
-    queryKey: ["team-stats", walletAddr],
-    queryFn: () => getUserTeamStats(walletAddr),
-    enabled: isConnected,
-  });
-
   const refCode = profile?.refCode;
-  const currentRank = profile?.rank || "V0";
   const referralLink = refCode ? `${window.location.origin}/r/${refCode}/${refCode}` : "--";
-  const parentWallet = (profile as any)?.parentWallet || null;
 
-  // Use RPC team performance instead of 2-level client sum
-  const totalTeamDeposits = Number(teamStats?.teamPerformance || 0);
-  const directSponsorCount = Number(teamStats?.directSponsorCount || 0);
-  const teamSize = Number(teamStats?.teamSize || teamData?.teamSize || 0);
+  // Use Supabase data for team stats
+  const teamData = sbTeam;
+  const ownNode   = sbTeam?.ownNode || null;
+  const referrer  = sbTeam?.referrer || (profile as any)?.parentWallet || null;
+  const directCount = sbTeam?.directCount ?? 0;
+  const teamSize    = sbTeam?.teamSize ?? 0;
+
+  // Node tier derived values
+  const isSuper = ownNode?.nodeId === 401;
+  const isStd   = ownNode?.nodeId === 501;
+  const nodeTierLabel = isSuper ? "超级节点" : isStd ? "标准节点" : "注册会员";
+  const nodeTierColor = isSuper ? "#f59e0b" : isStd ? "#60a5fa" : "rgba(255,255,255,0.35)";
+  const nodeTierBg    = isSuper ? "rgba(245,158,11,0.12)" : isStd ? "rgba(96,165,250,0.1)" : "rgba(255,255,255,0.04)";
+  const nodeTierBorder= isSuper ? "rgba(245,158,11,0.4)"  : isStd ? "rgba(96,165,250,0.3)" : "rgba(255,255,255,0.1)";
 
   const copyToClipboard = async (text: string) => {
     await copyText(text);
@@ -146,158 +154,114 @@ export default function ProfileReferralPage() {
             <h1 className="text-[17px] font-bold tracking-wide text-white">{t("profile.promotionCenter")}</h1>
           </div>
 
-          {/* Current Level Section */}
+          {/* ── Node Tier Card ── */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="w-1 h-4 rounded-full" style={{ background: "linear-gradient(180deg, hsl(43,74%,58%), hsl(43,74%,52%))" }} />
-              <span className="text-[13px] font-bold text-white">{t("profile.currentLevel")}</span>
+              <span className="text-[13px] font-bold text-white">我的节点等级</span>
             </div>
-            <span
-              className="text-[13px] font-black px-3 py-1 rounded-lg"
-              style={{
-                background: "linear-gradient(135deg, rgba(212,168,50,0.15), rgba(212,168,50,0.1))",
-                border: "1px solid rgba(212,168,50,0.3)",
-                color: "hsl(43,74%,58%)",
-                textShadow: "0 0 8px rgba(212,168,50,0.4)",
-              }}
-            >
-              {currentRank}
+            <span className="text-[12px] font-black px-3 py-1 rounded-lg"
+              style={{ background: nodeTierBg, border: `1px solid ${nodeTierBorder}`, color: nodeTierColor }}>
+              {nodeTierLabel}
             </span>
           </div>
 
-          {(() => {
-            const rankNum = parseInt(currentRank.replace("V", "")) || 0;
-            const levels = ["V1", "V2", "V3", "V4", "V5", "V6", "V7"];
-            return (
-              <div
-                className="relative mb-4 rounded-2xl overflow-hidden p-4 sm:p-5"
-                style={{
-                  background: "linear-gradient(145deg, rgba(30,24,10,0.9), rgba(20,16,8,0.95))",
-                  border: "1px solid rgba(212,168,50,0.15)",
-                }}
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 opacity-20" style={{ background: "radial-gradient(circle, rgba(212,168,50,0.5), transparent 70%)", filter: "blur(25px)" }} />
-
-                {/* Level track */}
-                <div className="relative flex items-center justify-between">
-                  {/* Background track line */}
-                  <div className="absolute left-[16px] right-[16px] sm:left-[20px] sm:right-[20px] top-1/2 -translate-y-1/2 h-[2px]" style={{ background: "rgba(255,255,255,0.06)" }} />
-                  {/* Active track line */}
-                  <div
-                    className="absolute left-[16px] sm:left-[20px] top-1/2 -translate-y-1/2 h-[2px] transition-all duration-700"
-                    style={{
-                      width: rankNum > 0 ? `calc(${((Math.min(rankNum, 7) - 1) / 6) * 100}% - ${rankNum >= 7 ? 0 : 0}px)` : "0%",
-                      maxWidth: "calc(100% - 32px)",
-                      background: "linear-gradient(90deg, hsl(43,74%,52%), hsl(43,74%,58%))",
-                      boxShadow: "0 0 6px rgba(212,168,50,0.3)",
-                    }}
-                  />
-
-                  {levels.map((label) => {
-                    const levelNum = parseInt(label.replace("V", ""));
-                    const isActive = levelNum <= rankNum;
-                    const isCurrent = label === currentRank;
-                    return (
-                      <div key={label} className="relative z-10 flex flex-col items-center">
-                        {isCurrent && (
-                          <div
-                            className="absolute w-10 h-10 sm:w-12 sm:h-12 rounded-full"
-                            style={{
-                              background: "rgba(212,168,50,0.15)",
-                              animation: "pulse 2.5s ease-in-out infinite",
-                              top: "50%",
-                              left: "50%",
-                              transform: "translate(-50%, -50%)",
-                            }}
-                          />
-                        )}
-                        <div
-                          className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center"
-                          style={{
-                            background: isCurrent
-                              ? "linear-gradient(135deg, hsl(43,74%,52%), hsl(43,74%,58%))"
-                              : isActive
-                              ? "rgba(212,168,50,0.2)"
-                              : "rgba(255,255,255,0.04)",
-                            border: isCurrent
-                              ? "2px solid rgba(212,168,50,0.8)"
-                              : isActive
-                              ? "1.5px solid rgba(212,168,50,0.3)"
-                              : "1.5px solid rgba(255,255,255,0.08)",
-                            boxShadow: isCurrent
-                              ? "0 0 16px rgba(212,168,50,0.4)"
-                              : "none",
-                          }}
-                        >
-                          <span
-                            className="text-[10px] sm:text-xs font-black"
-                            style={{
-                              color: isCurrent ? "#fff" : isActive ? "hsl(43,74%,58%)" : "rgba(255,255,255,0.2)",
-                            }}
-                          >
-                            {label}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Progress text */}
-                <div className="flex items-center justify-between mt-4">
-                  <span className="text-[10px] text-white/30">{t("profile.currentLevel")}</span>
-                  <span className="text-[11px] font-bold text-primary">{rankNum} / 7</span>
-                </div>
-                <div className="w-full h-1 rounded-full overflow-hidden mt-1.5" style={{ background: "rgba(255,255,255,0.05)" }}>
-                  <div
-                    className="h-full rounded-full transition-all duration-700 relative overflow-hidden"
-                    style={{
-                      width: `${Math.max((rankNum / 7) * 100, 2)}%`,
-                      background: "linear-gradient(90deg, hsl(43,74%,52%), hsl(43,74%,58%))",
-                    }}
-                  >
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)",
-                        animation: "shimmer 2s ease-in-out infinite",
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-1 h-4 rounded-full" style={{ background: "linear-gradient(180deg, hsl(43,74%,58%), hsl(43,74%,52%))" }} />
-            <span className="text-[13px] font-bold text-white">{t("profile.rewardSummary", "奖励汇总")}</span>
-          </div>
-
-          <div className="rounded-2xl p-4" style={{ background: "#181818", border: "1px solid rgba(255,255,255,0.4)" }}>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[12px] text-white/50">{t("profile.totalRewards", "总奖励")}</span>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #facc15, #eab308)" }}>
-                <DollarSign className="h-3.5 w-3.5 text-black" />
-              </div>
-            </div>
-            <div className="text-[24px] font-black text-white mb-3">
-              {formatCompact(totalCommission)} <span className="text-[14px] text-primary">MA</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
+          {/* Three-tier progress track */}
+          <div className="relative mb-4 rounded-2xl overflow-hidden p-4"
+            style={{ background: "linear-gradient(145deg, rgba(20,16,8,0.95), rgba(14,12,6,0.98))", border: "1px solid rgba(212,168,50,0.12)" }}>
+            <div className="absolute top-0 right-0 w-28 h-28 opacity-15" style={{ background: "radial-gradient(circle, rgba(212,168,50,0.5), transparent 70%)", filter: "blur(24px)" }} />
+            {/* Tier track */}
+            <div className="relative flex items-center justify-between px-2">
+              {/* Track line background */}
+              <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-[2px]" style={{ background: "rgba(255,255,255,0.06)" }} />
+              {/* Active segment */}
+              <div className="absolute left-8 top-1/2 -translate-y-1/2 h-[2px] transition-all duration-700"
+                style={{ width: isSuper ? "calc(100% - 64px)" : isStd ? "50%" : "0%", background: "linear-gradient(90deg, #60a5fa, #f59e0b)", boxShadow: "0 0 6px rgba(212,168,50,0.3)" }} />
               {[
-                { label: t("profile.directReferralReward", "直推奖励"), value: directTotal, opacity: 1.0 },
-                { label: t("profile.teamDiffReward", "团队级差"), value: diffTotal, opacity: 0.75 },
-                { label: t("profile.sameRankReward", "同级奖励"), value: sameRankTotal, opacity: 0.55 },
-                { label: t("profile.overrideReward", "越级奖励"), value: overrideTotal, opacity: 0.4 },
-              ].map((item, i) => (
-                <div key={i} className="rounded-lg p-2.5"
-                  style={{ background: `rgba(10,186,181,${item.opacity * 0.06})`, border: `1px solid rgba(10,186,181,${item.opacity * 0.15})` }}>
-                  <div className="text-[10px] mb-0.5" style={{ color: `rgba(10,186,181,${item.opacity * 0.6})` }}>{item.label}</div>
-                  <div className="text-[15px] font-bold" style={{ color: `rgba(10,186,181,${0.4 + item.opacity * 0.6})` }}>{formatCompact(item.value)} MA</div>
+                { label: "注册会员", color: "rgba(255,255,255,0.4)",  bg: "rgba(255,255,255,0.05)", active: true,    border: "rgba(255,255,255,0.15)" },
+                { label: "标准节点", color: isStd||isSuper ? "#60a5fa" : "rgba(255,255,255,0.2)", bg: isStd||isSuper ? "rgba(96,165,250,0.15)" : "rgba(255,255,255,0.03)", active: isStd||isSuper, border: isStd||isSuper ? "rgba(96,165,250,0.5)" : "rgba(255,255,255,0.08)" },
+                { label: "超级节点", color: isSuper ? "#f59e0b" : "rgba(255,255,255,0.2)", bg: isSuper ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.03)", active: isSuper, border: isSuper ? "rgba(245,158,11,0.5)" : "rgba(255,255,255,0.08)" },
+              ].map((tier, i) => (
+                <div key={i} className="relative z-10 flex flex-col items-center gap-1.5">
+                  {tier.active && (
+                    <div className="absolute w-12 h-12 rounded-full" style={{ background: `${tier.color}22`, animation: "pulse 2.5s ease-in-out infinite", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }} />
+                  )}
+                  <div className="relative w-10 h-10 rounded-full flex items-center justify-center"
+                    style={{ background: tier.bg, border: `2px solid ${tier.border}`, boxShadow: tier.active ? `0 0 12px ${tier.color}44` : "none" }}>
+                    <span className="text-[9px] font-black text-center leading-tight" style={{ color: tier.color }}>{i === 0 ? "会员" : i === 1 ? "标准" : "超级"}</span>
+                  </div>
+                  <span className="text-[8px] text-center whitespace-nowrap" style={{ color: tier.color }}>{tier.label}</span>
                 </div>
               ))}
             </div>
+
+            {/* My node info row */}
+            <div className="mt-4 flex items-center justify-between">
+              <div>
+                <div className="text-[10px] text-white/30 mb-0.5">节点投入</div>
+                <div className="text-[15px] font-black" style={{ color: nodeTierColor }}>
+                  {ownNode ? `$${Number(ownNode.usdtAmount).toLocaleString()} USDT` : "--"}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] text-white/30 mb-0.5">直推佣金</div>
+                <div className="text-[15px] font-black" style={{ color: nodeTierColor }}>
+                  {isSuper ? "15%" : isStd ? "10%" : "0%"}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] text-white/30 mb-0.5">团队级差</div>
+                <div className="text-[15px] font-black" style={{ color: nodeTierColor }}>
+                  {isSuper ? "5-10%" : isStd ? "5%" : "0%"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Official Tier Requirements Table ── */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1 h-4 rounded-full" style={{ background: "linear-gradient(180deg, hsl(43,74%,58%), hsl(43,74%,52%))" }} />
+            <span className="text-[13px] font-bold text-white">等级要求 & 奖励</span>
+          </div>
+
+          <div className="rounded-2xl overflow-hidden mb-1" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
+            {/* Header */}
+            <div className="grid grid-cols-4 gap-0 px-3 py-2" style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              {["等级", "节点费用", "直推奖励", "团队奖励"].map(h => (
+                <div key={h} className="text-[9px] font-bold text-white/30 text-center">{h}</div>
+              ))}
+            </div>
+            {/* Rows */}
+            {[
+              { label: "注册会员", price: "免费",     direct: "—",   team: "—",      active: !isStd && !isSuper, color: "rgba(255,255,255,0.5)" },
+              { label: "标准节点", price: "$1,000",   direct: "10%", team: "5%",     active: isStd,   color: "#60a5fa" },
+              { label: "超级节点", price: "$2,500",   direct: "15%", team: "5-10%",  active: isSuper, color: "#f59e0b" },
+            ].map((row, i) => (
+              <div key={i} className="grid grid-cols-4 gap-0 px-3 py-2.5 items-center"
+                style={{ background: row.active ? `${row.color}0d` : i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                <div className="flex items-center gap-1.5">
+                  {row.active && <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: row.color }} />}
+                  <span className="text-[10px] font-bold" style={{ color: row.active ? row.color : "rgba(255,255,255,0.4)" }}>{row.label}</span>
+                </div>
+                <div className="text-[10px] text-center" style={{ color: row.active ? row.color : "rgba(255,255,255,0.3)" }}>{row.price}</div>
+                <div className="text-[11px] font-bold text-center" style={{ color: row.active ? row.color : "rgba(255,255,255,0.25)" }}>{row.direct}</div>
+                <div className="text-[11px] font-bold text-center" style={{ color: row.active ? row.color : "rgba(255,255,255,0.25)" }}>{row.team}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Global Stats Strip ── */}
+          <div className="grid grid-cols-3 gap-2 mb-1">
+            {[
+              { label: "全球会员", value: globalStats ? `${globalStats.totalMembers}` : "--" },
+              { label: "超级节点", value: globalStats ? `${globalStats.superNodes}` : "--" },
+              { label: "标准节点", value: globalStats ? `${globalStats.stdNodes}` : "--" },
+            ].map((s, i) => (
+              <div key={i} className="rounded-xl p-2.5 text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="text-[9px] text-white/30 mb-1">{s.label}</div>
+                <div className="text-[16px] font-black text-white">{s.value}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -305,9 +269,9 @@ export default function ProfileReferralPage() {
       <div className="px-4 -mt-1 space-y-3">
         <div className="rounded-2xl p-4 space-y-4" style={{ background: "#181818", border: "1px solid rgba(255,255,255,0.4)" }}>
           <div>
-            <div className="text-[13px] font-bold text-white mb-1">{t("profile.myParent")}</div>
+            <div className="text-[13px] font-bold text-white mb-1">上级推荐人</div>
             <div className="text-[12px] text-white/45 font-mono">
-              {parentWallet ? shortenAddress(parentWallet) : "--"}
+              {referrer ? shortenAddress(referrer) : "--"}
             </div>
           </div>
 
@@ -343,59 +307,23 @@ export default function ProfileReferralPage() {
 
         <div className="grid grid-cols-3 gap-2.5">
           <div className="rounded-xl p-3.5 text-center" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.4)" }}>
-            <div className="text-[11px] text-white/50 font-medium mb-2">{t("profile.directInvites")}</div>
+            <div className="text-[11px] text-white/50 font-medium mb-2">直推人数</div>
             <UserPlus className="h-5 w-5 mx-auto text-white/50 mb-1.5" />
-            <div className="text-[18px] font-black text-white">{isConnected ? (teamData?.directCount || 0) : "--"}</div>
+            <div className="text-[18px] font-black text-white">{isConnected ? directCount : "--"}</div>
           </div>
-          <div className="rounded-xl p-3.5 text-center" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.4)" }}>
-            <div className="text-[11px] text-white/50 font-medium mb-2">{t("profile.teamSize")}</div>
+          <div className="rounded-xl p-3.5 text-center" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="text-[11px] text-white/50 font-medium mb-2">团队总人数</div>
             <Users className="h-5 w-5 mx-auto text-white/50 mb-1.5" />
-            <div className="text-[18px] font-black text-white">{isConnected ? (teamData?.teamSize || 0) : "--"}</div>
+            <div className="text-[18px] font-black text-white">{isConnected ? teamSize : "--"}</div>
           </div>
-          <div className="rounded-xl p-3.5 text-center" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.4)" }}>
-            <div className="text-[11px] text-white/50 font-medium mb-2">{t("profile.teamPerformance")}</div>
+          <div className="rounded-xl p-3.5 text-center" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="text-[11px] text-white/50 font-medium mb-2">团队节点数</div>
             <DollarSign className="h-5 w-5 mx-auto text-white/50 mb-1.5" />
-            <div className="text-[18px] font-black text-white">{isConnected ? formatCompact(totalTeamDeposits) : "--"}</div>
+            <div className="text-[18px] font-black text-white">
+              {isConnected ? (sbTeam?.referrals.filter(r => r.nodeType !== "--").length ?? 0) : "--"}
+            </div>
           </div>
         </div>
-
-
-        {/* Rank upgrade conditions */}
-        {isConnected && rankStatus?.nextRankConditions && (
-          <div className="rounded-xl p-3.5" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.4)" }}>
-            <div className="text-[12px] font-bold text-white mb-2">
-              {t("profile.upgradeCondition", "升级到 {{rank}} 条件", { rank: rankStatus.nextRankConditions.rank })}
-            </div>
-            <div className="space-y-1.5 text-[11px]">
-              <div className="flex justify-between">
-                <span className="text-white/40">{t("profile.personalHolding", "个人持仓")}</span>
-                <span className={Number(rankStatus.personalHolding) >= Number(rankStatus.nextRankConditions.personalHolding) ? "text-primary" : "text-red-400"}>
-                  {formatCompact(Number(rankStatus.personalHolding))} / {formatCompact(Number(rankStatus.nextRankConditions.personalHolding))}
-                </span>
-              </div>
-              {rankStatus.nextRankConditions.requiredReferrals > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-white/40">{t("profile.directReferralCount", "直推人数")}</span>
-                  <span className={directSponsorCount >= Number(rankStatus.nextRankConditions.requiredReferrals) ? "text-primary" : "text-red-400"}>
-                    {directSponsorCount} / {rankStatus.nextRankConditions.requiredReferrals}
-                  </span>
-                </div>
-              )}
-              {rankStatus.nextRankConditions.requiredSubRanks > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-white/40">{t("profile.subRankLevel", "下级 {{level}}+", { level: rankStatus.nextRankConditions.subRankLevel })}</span>
-                  <span className="text-white/50">{t("profile.requiredCount", "需 {{count}} 人", { count: rankStatus.nextRankConditions.requiredSubRanks })}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-white/40">{t("profile.teamPerformanceLabel", "团队业绩")}</span>
-                <span className={totalTeamDeposits >= Number(rankStatus.nextRankConditions.teamPerformance) ? "text-primary" : "text-red-400"}>
-                  {formatCompact(totalTeamDeposits)} / {formatCompact(Number(rankStatus.nextRankConditions.teamPerformance))}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="grid grid-cols-2 gap-2.5 mt-1">
           {([

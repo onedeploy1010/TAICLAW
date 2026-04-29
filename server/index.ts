@@ -1185,6 +1185,86 @@ app.get("/api/vault/node-purchases", handle(async (req, res) => {
   });
 }));
 
+// ── Supabase global member stats ─────────────────────────────────────────────
+app.get("/api/supabase/global-stats", handle(async (req, res) => {
+  if (!supabasePool) return res.json({ totalMembers: 0, totalPurchases: 0, totalUsdt: 0, superNodes: 0, stdNodes: 0 });
+  const [membersRes, purchasesRes] = await Promise.all([
+    supabasePool.query("SELECT COUNT(*) as total FROM rune_members"),
+    supabasePool.query(`SELECT COUNT(*) as total_purchases, COALESCE(SUM(amount/1e18),0) as total_usdt,
+       COUNT(CASE WHEN node_id=401 THEN 1 END) as super_nodes, COUNT(CASE WHEN node_id=501 THEN 1 END) as std_nodes
+       FROM rune_purchases WHERE chain_id=56`),
+  ]);
+  const p = purchasesRes.rows[0];
+  res.json({
+    totalMembers:   Number(membersRes.rows[0].total),
+    totalPurchases: Number(p.total_purchases),
+    totalUsdt:      Number(p.total_usdt),
+    superNodes:     Number(p.super_nodes),
+    stdNodes:       Number(p.std_nodes),
+  });
+}));
+
+// ── Supabase referral tree for a wallet ──────────────────────────────────────
+app.get("/api/supabase/team/:wallet", handle(async (req, res) => {
+  if (!supabasePool) return res.json({ referrals: [], teamSize: 0, directCount: 0, ownNode: null, referrer: null });
+  const wallet = req.params.wallet.toLowerCase();
+  const NODE_TIER: Record<number, string> = { 401: "超级节点", 501: "标准节点" };
+
+  // Own node info + referrer
+  const [ownPurchase, ownRef] = await Promise.all([
+    supabasePool.query(`SELECT node_id, amount/1e18 as usdt_amount FROM rune_purchases WHERE "user"=$1 AND chain_id=56 LIMIT 1`, [wallet]),
+    supabasePool.query(`SELECT referrer FROM rune_referrers WHERE "user"=$1 AND chain_id=56 LIMIT 1`, [wallet]),
+  ]);
+
+  // Direct referrals (level 1)
+  const { rows: directRows } = await supabasePool.query(`
+    SELECT r."user" as wallet, p.node_id, p.amount/1e18 as usdt_amount,
+      (SELECT COUNT(*) FROM rune_referrers r2 WHERE r2.referrer=r."user" AND r2.chain_id=56) as sub_count
+    FROM rune_referrers r
+    LEFT JOIN rune_purchases p ON p."user"=r."user" AND p.chain_id=56
+    WHERE r.referrer=$1 AND r.chain_id=56 ORDER BY r.bound_at DESC`, [wallet]);
+
+  // Level-2 sub-referrals for each direct ref
+  const subMap: Record<string, any[]> = {};
+  if (directRows.length > 0) {
+    const wallets = directRows.map((r: any) => r.wallet);
+    const { rows: subRows } = await supabasePool.query(`
+      SELECT r."user" as wallet, r.referrer, p.node_id, p.amount/1e18 as usdt_amount,
+        (SELECT COUNT(*) FROM rune_referrers r2 WHERE r2.referrer=r."user" AND r2.chain_id=56) as sub_count
+      FROM rune_referrers r
+      LEFT JOIN rune_purchases p ON p."user"=r."user" AND p.chain_id=56
+      WHERE r.referrer=ANY($1) AND r.chain_id=56 ORDER BY r.bound_at DESC`, [wallets]);
+    for (const s of subRows) {
+      if (!subMap[s.referrer]) subMap[s.referrer] = [];
+      subMap[s.referrer].push(s);
+    }
+  }
+
+  const mapMember = (row: any, level = 1): any => ({
+    id:             row.wallet,
+    walletAddress:  row.wallet,
+    rank:           NODE_TIER[row.node_id] || "注册会员",
+    nodeType:       NODE_TIER[row.node_id] || "--",
+    totalDeposited: String(Number(row.usdt_amount || 0)),
+    level,
+    subCount:       Number(row.sub_count || 0),
+    subReferrals:   (subMap[row.wallet] || []).map((s: any) => mapMember(s, level + 1)),
+  });
+
+  const referrals = directRows.map((r: any) => mapMember(r));
+  const teamSize  = referrals.reduce((s, r) => s + 1 + (r.subReferrals?.length || 0), 0);
+
+  res.json({
+    referrals,
+    teamSize,
+    directCount: directRows.length,
+    ownNode: ownPurchase.rows[0]
+      ? { nodeId: ownPurchase.rows[0].node_id, nodeTier: NODE_TIER[ownPurchase.rows[0].node_id] || "注册会员", usdtAmount: Number(ownPurchase.rows[0].usdt_amount) }
+      : null,
+    referrer: ownRef.rows[0]?.referrer || null,
+  });
+}));
+
 const PORT = parseInt(process.env.PORT || "5001");
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`API server running on port ${PORT}`);
