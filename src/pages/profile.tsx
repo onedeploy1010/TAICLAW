@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveAccount } from "thirdweb/react";
 import { useMaPrice } from "@/hooks/use-ma-price";
-import { Copy, WalletCards, ChevronRight, Bell, Settings, History, GitBranch, Server, Share2, User, Coins, Vault, Flame, Lock, TrendingUp } from "lucide-react";
+import { Copy, WalletCards, ChevronRight, Bell, Settings, History, GitBranch, Server, Share2, ArrowLeftRight, User, Vault, Flame, Lock, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { copyText } from "@/lib/copy";
 import { useMemo } from "react";
@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next";
 const MENU_ITEMS = [
   { labelKey: "profile.myNodesLabel", icon: Server, path: "/profile/nodes", descKey: "profile.nodeManagementDesc" },
   { labelKey: "profile.myVaultPositions", icon: Vault, path: "/profile/vault", descKey: "profile.myVaultPositionsDesc" },
-  { labelKey: "profile.runeToken", icon: Coins, path: "/profile/ma", descKey: "profile.runeTokenDesc" },
+  { labelKey: "profile.swap", icon: ArrowLeftRight, path: "/profile/swap", descKey: "profile.swapDesc" },
   { labelKey: "profile.transactionHistory", icon: History, path: "/profile/transactions", descKey: "profile.transactionHistoryDesc" },
   { labelKey: "profile.notifications", icon: Bell, path: "/profile/notifications", descKey: "profile.notificationsDesc" },
   { labelKey: "profile.settings", icon: Settings, path: "/profile/settings", descKey: "profile.settingsDesc" },
@@ -194,8 +194,8 @@ export default function ProfilePage() {
         <div className="surface-3d rounded-2xl overflow-hidden border border-amber-500/55 bg-gradient-to-br from-slate-700/90 via-slate-700/80 to-slate-800/85">
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/45 to-transparent pointer-events-none" />
 
-          {/* 累计收益 — top highlight */}
-          <div className="px-5 pt-5 pb-4 border-b border-amber-500/25">
+          {/* 累计收益 — sunken data well */}
+          <div className="surface-inset mx-4 mt-4 mb-4 rounded-2xl border border-black/30 bg-black/25 px-5 pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-1.5 mb-1">
@@ -203,7 +203,7 @@ export default function ProfilePage() {
                   <span className="text-[11px] text-white/70 font-medium uppercase tracking-wider">累计收益</span>
                 </div>
                 {!isConnected ? (
-                  <div className="text-[30px] font-black text-white/15">--</div>
+                  <div className="text-[30px] font-black text-white/20">--</div>
                 ) : profileLoading ? (
                   <Skeleton className="h-9 w-28" />
                 ) : (
@@ -223,7 +223,7 @@ export default function ProfilePage() {
                   { label: "锁仓收益", value: formatCompactMA(vaultYield) },
                   { label: "推广佣金", value: formatCompactMA(referralEarnings) },
                 ].map((item, i) => (
-                  <div key={i} className="flex-1 rounded-xl px-2.5 py-2 text-center border border-amber-500/30 bg-white/[0.06]">
+                  <div key={i} className="surface-inset flex-1 rounded-xl px-2.5 py-2 text-center border border-black/25 bg-black/20">
                     <div className="text-[9px] text-white/60 mb-0.5">{item.label}</div>
                     <div className="text-[12px] font-bold text-white/90">{item.value}</div>
                   </div>
@@ -232,25 +232,23 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* 锁仓RUNE + 锁仓EMBER */}
-          <div className="grid grid-cols-2">
+          {/* 锁仓RUNE + 锁仓EMBER — sunken data cells */}
+          <div className="grid grid-cols-2 border-t border-amber-500/20">
             {/* 锁仓RUNE */}
-            <div className="px-4 py-4 border-r border-amber-500/25">
+            <div className="surface-inset bg-black/20 px-4 py-4 border-r border-amber-500/20">
               <div className="flex items-center gap-1.5 mb-2">
                 <Lock className="h-3.5 w-3.5" style={{ color: "rgba(212,168,50,0.6)" }} />
                 <span className="text-[10px] text-white/65 font-medium">锁仓 RUNE</span>
               </div>
               {!isConnected ? (
-                <div className="text-[20px] font-black text-white/15">--</div>
+                <div className="text-[20px] font-black text-white/20">--</div>
               ) : (
                 <>
                   <div className="text-[20px] font-black text-white" data-testid="text-rune-locked">
                     {runeLocked > 0 ? formatCompactMA(runeLocked) : "0"}
                   </div>
                   {veRune > 0 && (
-                    <div className="text-[10px] text-white/60 mt-0.5">
-                      veRUNE: {formatCompactMA(veRune)}
-                    </div>
+                    <div className="text-[10px] text-white/60 mt-0.5">veRUNE: {formatCompactMA(veRune)}</div>
                   )}
                   {runeLocked === 0 && (
                     <div className="text-[10px] text-white/50 mt-0.5">暂未锁仓</div>
@@ -260,22 +258,20 @@ export default function ProfilePage() {
             </div>
 
             {/* 锁仓EMBER */}
-            <div className="px-4 py-4">
+            <div className="surface-inset bg-black/20 px-4 py-4">
               <div className="flex items-center gap-1.5 mb-2">
                 <Flame className="h-3.5 w-3.5 text-orange-400/60" />
                 <span className="text-[10px] text-white/65 font-medium">锁仓 EMBER</span>
               </div>
               {!isConnected ? (
-                <div className="text-[20px] font-black text-white/15">--</div>
+                <div className="text-[20px] font-black text-white/20">--</div>
               ) : (
                 <>
                   <div className="text-[20px] font-black text-white" data-testid="text-ember-locked">
                     {emberBurned > 0 ? formatCompactMA(emberBurned) : "0"}
                   </div>
                   {dailyEmber > 0 && (
-                    <div className="text-[10px] text-white/60 mt-0.5">
-                      日产: +{formatCompactMA(dailyEmber)} /天
-                    </div>
+                    <div className="text-[10px] text-white/60 mt-0.5">日产: +{formatCompactMA(dailyEmber)} /天</div>
                   )}
                   {emberBurned === 0 && (
                     <div className="text-[10px] text-white/50 mt-0.5">暂未销毁</div>
@@ -301,7 +297,7 @@ export default function ProfilePage() {
             <div>
               <div className="text-[12px] font-bold text-white/70 mb-2">{t("profile.inviteFriends", "邀请链接")}</div>
               <div className="flex items-center gap-2">
-                <div className="flex-1 min-w-0 rounded-xl px-3 py-2.5 font-mono text-[11px] text-white/55 truncate border border-amber-500/30 bg-white/[0.06]">
+                <div className="surface-inset flex-1 min-w-0 rounded-xl px-3 py-2.5 font-mono text-[11px] text-white/65 truncate border border-black/25 bg-black/20">
                   {referralLink}
                 </div>
                 <button onClick={() => copyToClipboard(referralLink)} className="shrink-0 px-3 py-2.5 rounded-xl transition-all active:scale-95 border border-amber-500/30 bg-white/[0.06] hover:border-amber-500/55" data-testid="button-copy-referral">
