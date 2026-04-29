@@ -89,12 +89,11 @@ export default function ProfilePage() {
   });
   const availableEarnings = Math.max(0, totalEarnings - claimedYield);
 
-  const refCode = profile?.refCode;
-  // Self-referral link: both sponsor and placement = self
+  // Invite link = base URL + connected wallet address
   const referralLink = useMemo(() => {
-    if (!refCode || typeof window === "undefined") return "";
-    return `${window.location.origin}/r/${refCode}/${refCode}`;
-  }, [refCode]);
+    if (!walletAddr || typeof window === "undefined") return "";
+    return `${window.location.origin}/r/${walletAddr}`;
+  }, [walletAddr]);
 
   const copyToClipboard = async (text: string) => {
     await copyText(text);

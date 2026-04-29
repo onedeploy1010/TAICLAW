@@ -117,7 +117,7 @@ export default function ProfileReferralPage() {
 
   const refCode = profile?.refCode;
   const currentRank = profile?.rank || "V0";
-  const referralLink = refCode ? `${window.location.origin}/r/${refCode}/${refCode}` : "--";
+  const referralLink = walletAddr ? `${window.location.origin}/r/${walletAddr}` : "--";
 
   // Use Supabase data for team stats
   const teamData = sbTeam;
@@ -211,41 +211,33 @@ export default function ProfileReferralPage() {
       </div>
 
       <div className="px-4 -mt-1 space-y-3">
-        <div className="rounded-2xl p-4 space-y-4" style={{ background: "#181818", border: "1px solid rgba(255,255,255,0.4)" }}>
+        <div className="rounded-2xl p-4 space-y-4" style={{ background: "#181818", border: "1px solid rgba(255,255,255,0.08)" }}>
+          {/* Invite link = base URL + my wallet */}
           <div>
-            <div className="text-[13px] font-bold text-white mb-1">上级推荐人</div>
-            <div className="text-[12px] text-white/45 font-mono">
-              {referrer ? shortenAddress(referrer) : "--"}
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[13px] font-bold text-white">{t("profile.inviteLink")}</span>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[13px] font-bold text-white">{t("profile.inviteLink", "邀请链接")}</span>
               <button
                 className="text-[11px] font-bold px-3 py-1 rounded-lg transition-all active:scale-95"
                 style={{ background: "rgba(212,168,50,0.12)", border: "1px solid rgba(212,168,50,0.3)", color: "hsl(43,74%,58%)" }}
                 onClick={() => copyToClipboard(referralLink)}
+                disabled={!isConnected}
               >
-                {refCode ? t("common.copy") : t("profile.generateInvite")}
+                {t("common.copy", "复制")}
               </button>
             </div>
-            <div className="text-[11px] text-white/40 font-mono truncate">{referralLink}</div>
-            <div className="h-px mt-2" style={{ background: "linear-gradient(90deg, transparent, rgba(212,168,50,0.3), transparent)" }} />
+            <div className="text-[11px] text-white/40 font-mono truncate">
+              {isConnected ? referralLink : "--"}
+            </div>
           </div>
 
+          <div className="h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+
+          {/* Referrer wallet address */}
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[13px] font-bold text-white">{t("profile.inviteCode")}</span>
-              <button
-                className="text-[11px] font-bold px-3 py-1 rounded-lg transition-all active:scale-95"
-                style={{ background: "rgba(212,168,50,0.12)", border: "1px solid rgba(212,168,50,0.3)", color: "hsl(43,74%,58%)" }}
-                onClick={() => copyToClipboard(refCode || "")}
-              >
-                {refCode ? t("common.copy") : t("profile.generateInvite")}
-              </button>
+            <div className="text-[13px] font-bold text-white mb-1.5">推荐地址</div>
+            <div className="text-[12px] text-white/45 font-mono break-all">
+              {referrer || "--"}
             </div>
-            <div className="text-[11px] text-white/40 font-mono">{refCode || "--"}</div>
           </div>
         </div>
 
