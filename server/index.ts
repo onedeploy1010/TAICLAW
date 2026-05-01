@@ -94,11 +94,9 @@ app.post("/api/auth-wallet", handle(async (req, res) => {
   let placementId: string | null = null;
 
   async function resolveProfile(code: string): Promise<string | null> {
-    const isWallet = String(code).startsWith("0x");
+    // ref_code is now the wallet address — always do case-insensitive lookup
     const { rows } = await primaryPool.query(
-      isWallet
-        ? "SELECT id FROM profiles WHERE LOWER(wallet_address) = LOWER($1)"
-        : "SELECT id FROM profiles WHERE ref_code = $1",
+      "SELECT id FROM profiles WHERE LOWER(wallet_address) = LOWER($1) OR LOWER(ref_code) = LOWER($1)",
       [code]
     );
     return rows.length > 0 ? rows[0].id : null;
@@ -119,16 +117,16 @@ app.post("/api/auth-wallet", handle(async (req, res) => {
   }
 
   // ── UPSERT profile — bind referrer/placement only once (never overwrite) ──
-  // ref_code = wallet address (lowercase) for easy referral link sharing
+  // ref_code = original wallet address (preserving case) for referral link sharing
   const { rows } = await primaryPool.query(
     `INSERT INTO profiles (wallet_address, ref_code, referrer_id, placement_id)
-     VALUES ($1, $1, $2, $3)
+     VALUES ($1, $2, $3, $4)
      ON CONFLICT (wallet_address) DO UPDATE SET
        ref_code     = COALESCE(NULLIF(profiles.ref_code, ''), EXCLUDED.ref_code),
        referrer_id  = COALESCE(profiles.referrer_id,  EXCLUDED.referrer_id),
        placement_id = COALESCE(profiles.placement_id, EXCLUDED.placement_id)
      RETURNING *`,
-    [addr, referrerId, placementId]
+    [addr, walletAddress, referrerId, placementId]
   );
   const profile = rows[0];
 
