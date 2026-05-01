@@ -37,7 +37,7 @@ export function NodePurchaseDialog({ open, onOpenChange, nodeType, walletAddr, a
         // V1 fallback: direct USDT → Node contract
         txHash = await payment.payNodePurchase(nodeType, "FULL");
       }
-      const result = await purchaseNode(walletAddr, nodeType, txHash, "FULL", isMAX ? authCode : undefined);
+      const result = await purchaseNode(walletAddr, nodeType, txHash, "FULL", undefined);
       payment.markSuccess();
       return result;
     },
