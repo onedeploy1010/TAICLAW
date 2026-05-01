@@ -36,11 +36,34 @@ export default function AdminLoginPage({ onLogin }: AdminLoginPageProps) {
     >
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
-        <div className="text-center space-y-3">
-          <img src="/logo-glass-pure.png" alt="QA Protocol" className="mx-auto h-16 object-contain" />
+        <div className="text-center space-y-4">
+          {/* Text logo mark */}
+          <div className="inline-flex flex-col items-center gap-1">
+            <div
+              className="flex items-center justify-center w-16 h-16 rounded-2xl font-black text-2xl tracking-tight select-none"
+              style={{
+                background: "linear-gradient(135deg, #1e3a5f 0%, #0f2240 100%)",
+                border: "1px solid rgba(59,130,246,0.35)",
+                boxShadow: "0 0 24px rgba(59,130,246,0.2), inset 0 1px 0 rgba(255,255,255,0.08)",
+                color: "#fff",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              <span style={{ background: "linear-gradient(135deg, #60a5fa, #3b82f6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                QA
+              </span>
+            </div>
+            <span
+              className="text-[10px] font-bold tracking-[0.25em] uppercase"
+              style={{ color: "rgba(148,163,184,0.7)" }}
+            >
+              PROTOCOL
+            </span>
+          </div>
+
           <div>
             <h1 className="text-xl font-bold text-white tracking-tight">
-              QA Protocol <span className="text-primary">Admin</span>
+              管理后台 <span style={{ color: "#3b82f6" }}>Admin</span>
             </h1>
             <p className="text-sm text-white/35 mt-1">
               {t("admin.loginSubtitle", "Sign in to the admin dashboard")}
