@@ -54,7 +54,7 @@ interface StrategyDef {
 }
 
 const AI_STRATEGIES: StrategyDef[] = [
-  { key: "rune_ai", nameKey: "aiLab.runeAi", descKey: "aiLab.runeAiDesc", icon: Crown, color: "#d4a832", assets: ["BTC", "ETH", "SOL", "BNB"], timeframe: "Multi", risk: "medium", hot: true },
+  { key: "rune_ai", nameKey: "aiLab.runeAi", descKey: "aiLab.runeAiDesc", icon: Crown, color: "#3b82f6", assets: ["BTC", "ETH", "SOL", "BNB"], timeframe: "Multi", risk: "medium", hot: true },
   { key: "GPT-4o", nameKey: "strategy.gpt4o", descKey: "strategy.gpt4oDesc", icon: Brain, color: "#4ade80", assets: ["BTC", "ETH", "SOL"], timeframe: "4H", risk: "medium" },
   { key: "Claude", nameKey: "strategy.claude", descKey: "strategy.claudeDesc", icon: Shield, color: "#a78bfa", assets: ["ETH", "BNB", "SOL"], timeframe: "1H", risk: "low" },
   { key: "Gemini", nameKey: "strategy.gemini", descKey: "strategy.geminiDesc", icon: Sparkles, color: "#60a5fa", assets: ["BTC", "SOL", "DOGE"], timeframe: "15m", risk: "high" },
