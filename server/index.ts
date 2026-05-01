@@ -40,7 +40,7 @@ function handle(fn: (req: express.Request, res: express.Response) => Promise<voi
     } catch (err: any) {
       // 42P01 = table does not exist, 42883 = function does not exist — return graceful empty
       if (err?.code === "42P01" || err?.code === "42883") {
-        if (!res.headersSent) res.json(Array.isArray(err) ? [] : null);
+        if (!res.headersSent) res.json(null);
         return;
       }
       console.error(err);
@@ -524,9 +524,9 @@ app.get("/api/commissions/:wallet", handle(async (req, res) => {
 
 // ── Prediction Bets ───────────────────────────────────────────────────────────
 app.get("/api/prediction-bets/:wallet", handle(async (req, res) => {
-  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await pool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet.toLowerCase()]);
   if (!p.length) return res.json([]);
-  const { rows } = await primaryPool.query(
+  const { rows } = await pool.query(
     "SELECT * FROM prediction_bets WHERE user_id = $1 ORDER BY created_at DESC",
     [p[0].id]
   );

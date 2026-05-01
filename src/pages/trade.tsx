@@ -687,7 +687,7 @@ export default function Trade() {
     staleTime: 30_000,
   });
 
-  const betIds = useMemo(() => new Set(myBets.map((b: PredictionBet) => b.marketId)), [myBets]);
+  const betIds = useMemo(() => new Set((myBets ?? []).map((b: PredictionBet) => b.marketId)), [myBets]);
 
   const { toast } = useToast();
 
@@ -698,9 +698,9 @@ export default function Trade() {
   const isLoading = polyLoading && aiLoading && newsLoading;
 
   // Use seed data as fallback when APIs return empty
-  const polyData = polymarkets.length > 0 ? polymarkets : SEED_POLYMARKETS;
-  const aiData = aiPredictions.length > 0 ? aiPredictions : SEED_AI_PREDICTIONS;
-  const newsData = (newsPredictions as NewsPred[]).length > 0 ? (newsPredictions as NewsPred[]) : SEED_NEWS;
+  const polyData = (polymarkets ?? []).length > 0 ? polymarkets : SEED_POLYMARKETS;
+  const aiData = (aiPredictions ?? []).length > 0 ? aiPredictions : SEED_AI_PREDICTIONS;
+  const newsData = ((newsPredictions ?? []) as NewsPred[]).length > 0 ? (newsPredictions as NewsPred[]) : SEED_NEWS;
 
   // Build unified filtered list
   const filtered = useMemo(() => {
