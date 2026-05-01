@@ -322,7 +322,11 @@ async function seedHistoricalTrades(pool: Pool, openaiKey: string) {
       for (let i = 0; i < NUM_PER_MODEL; i++) {
         const asset = pick(ASSETS);
         const timeframe = pick(TIMEFRAMES);
-        const hoursAgo = (i + 1) * (2 + Math.random() * 4);
+        const isClosed = i < NUM_PER_MODEL - 2;
+        // OPEN trades get recent timestamps (2-8 min ago) so they won't be auto-resolved
+        const hoursAgo = isClosed
+          ? (i + 1) * (2 + Math.random() * 4)
+          : (2 + Math.random() * 6) / 60;
         const openedAt = new Date(Date.now() - hoursAgo * 3600_000);
 
         const fallbackPrices: Record<string, number> = {
@@ -346,8 +350,6 @@ async function seedHistoricalTrades(pool: Pool, openaiKey: string) {
         const tp = side === "LONG" ? entryPrice * (1 + targetPct / 100) : entryPrice * (1 - targetPct / 100);
         const sl = side === "LONG" ? entryPrice * (1 - stopPct / 100) : entryPrice * (1 + stopPct / 100);
 
-        // Most historical trades are closed
-        const isClosed = i < NUM_PER_MODEL - 2;
         const win = Math.random() > 0.38;
         const exitPct = win ? rng(0.3, targetPct * 0.9) : -rng(0.2, stopPct * 0.9);
         const exitPrice = isClosed
@@ -411,6 +413,70 @@ async function seedHistoricalTrades(pool: Pool, openaiKey: string) {
   }
 }
 
+// Ensure each model always has at least 1-2 OPEN positions
+async function ensureOpenPositions(pool: Pool) {
+  try {
+    const fallbackPrices: Record<string, number> = {
+      BTC: 95000 + Math.random() * 8000,
+      ETH: 3600 + Math.random() * 400,
+      SOL: 160 + Math.random() * 30,
+      BNB: 590 + Math.random() * 40,
+      XRP: 2.2 + Math.random() * 0.5,
+      DOGE: 0.14 + Math.random() * 0.04,
+      ADA: 0.44 + Math.random() * 0.08,
+      AVAX: 35 + Math.random() * 6,
+      LINK: 16 + Math.random() * 4,
+      DOT: 6.5 + Math.random() * 1.5,
+    };
+
+    for (const model of MODELS) {
+      const { rows } = await pool.query(
+        `SELECT COUNT(*) FROM paper_trades WHERE primary_model = $1 AND status = 'OPEN'`,
+        [model.key]
+      );
+      const openCount = parseInt(rows[0].count);
+      const needed = Math.max(0, 2 - openCount);
+
+      for (let n = 0; n < needed; n++) {
+        const asset = pick(ASSETS);
+        const timeframe = pick(TIMEFRAMES);
+        const entryPrice = fallbackPrices[asset] || 100;
+        const side = Math.random() > 0.45 ? "LONG" : "SHORT";
+        const leverage = [3, 5, 8, 10, 15, 20][Math.floor(Math.random() * 6)];
+        const strategy = pick(STRATEGIES);
+        const targetPct = rng(1, 5);
+        const stopPct = rng(0.5, 2.5);
+        const tp = side === "LONG" ? entryPrice * (1 + targetPct / 100) : entryPrice * (1 - targetPct / 100);
+        const sl = side === "LONG" ? entryPrice * (1 - stopPct / 100) : entryPrice * (1 + stopPct / 100);
+        const size = rng(500, 2000);
+        // Random open time between 1 and 12 minutes ago — won't be auto-resolved (threshold=15min)
+        const minsAgo = 1 + Math.random() * 11;
+        const openedAt = new Date(Date.now() - minsAgo * 60_000);
+
+        await pool.query(
+          `INSERT INTO paper_trades
+             (asset, side, entry_price, exit_price, size, leverage, stop_loss, take_profit,
+              pnl, pnl_pct, strategy_type, close_reason, status, primary_model, timeframe,
+              opened_at, closed_at)
+           VALUES ($1,$2,$3,NULL,$4,$5,$6,$7,NULL,NULL,$8,NULL,'OPEN',$9,$10,$11,NULL)`,
+          [
+            asset, side,
+            entryPrice.toFixed(4),
+            size.toFixed(2), leverage,
+            sl.toFixed(4), tp.toFixed(4),
+            strategy, model.key, timeframe,
+            openedAt.toISOString(),
+          ]
+        );
+
+        console.log(`[AI Engine] Opened position: ${model.key} ${side} ${asset} ${leverage}x`);
+      }
+    }
+  } catch (e) {
+    console.error("[AI Engine] ensureOpenPositions error:", e);
+  }
+}
+
 // Main engine start function
 export function startAiTradingEngine(pool: Pool) {
   const openaiKey = process.env.OPENAI_API_KEY;
@@ -421,12 +487,19 @@ export function startAiTradingEngine(pool: Pool) {
 
   console.log("[AI Engine] Starting...");
 
-  // Seed historical data on startup
-  setTimeout(() => seedHistoricalTrades(pool, openaiKey), 5000);
+  // Seed historical data, then ensure open positions exist
+  setTimeout(async () => {
+    await seedHistoricalTrades(pool, openaiKey);
+    await ensureOpenPositions(pool);
+  }, 5000);
 
-  // Resolve pending trades every 10 minutes
-  setInterval(() => resolvePendingTrades(pool), 10 * 60_000);
-  setTimeout(() => resolvePendingTrades(pool), 30_000);
+  // Resolve pending trades every 10 minutes, then refill open positions
+  const resolveAndRefill = async () => {
+    await resolvePendingTrades(pool);
+    await ensureOpenPositions(pool);
+  };
+  setInterval(resolveAndRefill, 10 * 60_000);
+  setTimeout(resolveAndRefill, 60_000);
 
   // Run one model's trade cycle every 4 minutes (staggered across 6 models)
   const CYCLE_MS = 4 * 60_000;
