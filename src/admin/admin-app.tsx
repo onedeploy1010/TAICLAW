@@ -10,9 +10,6 @@ import AdminMembers from "./pages/admin-members";
 import AdminReferrals from "./pages/admin-referrals";
 import AdminVaults from "./pages/admin-vaults";
 import AdminNodes from "./pages/admin-nodes";
-import AdminNodeFunds from "./pages/admin-node-funds";
-import AdminAuthCodes from "./pages/admin-auth-codes";
-import AdminPerformance from "./pages/admin-performance";
 import AdminLogs from "./pages/admin-logs";
 import AdminContracts from "./pages/admin-contracts";
 import AdminAdmins from "./pages/admin-admins";
@@ -21,7 +18,6 @@ import AdminAIProgress from "./pages/admin-ai-progress";
 import AdminAITrades from "./pages/admin-ai-trades";
 import AdminHealth from "./pages/admin-health";
 import AdminCopyTrading from "./pages/admin-copy-trading";
-import AdminTreasury from "./pages/admin-treasury";
 
 function NoPermission() {
   return (
@@ -114,15 +110,6 @@ function AdminLayout() {
               <Route path="/admin/nodes">
                 <ProtectedRoute permission="nodes"><AdminNodes /></ProtectedRoute>
               </Route>
-              <Route path="/admin/node-funds">
-                <ProtectedRoute permission="node-funds"><AdminNodeFunds /></ProtectedRoute>
-              </Route>
-              <Route path="/admin/auth-codes">
-                <ProtectedRoute permission="auth-codes"><AdminAuthCodes /></ProtectedRoute>
-              </Route>
-              <Route path="/admin/performance">
-                <ProtectedRoute permission="performance"><AdminPerformance /></ProtectedRoute>
-              </Route>
               <Route path="/admin/contracts">
                 <ProtectedRoute permission="contracts"><AdminContracts /></ProtectedRoute>
               </Route>
@@ -146,9 +133,6 @@ function AdminLayout() {
               </Route>
               <Route path="/admin/copy-trading">
                 <ProtectedRoute permission="ai-accuracy"><AdminCopyTrading /></ProtectedRoute>
-              </Route>
-              <Route path="/admin/treasury">
-                <ProtectedRoute permission="ai-accuracy"><AdminTreasury /></ProtectedRoute>
               </Route>
             </Switch>
           </main>

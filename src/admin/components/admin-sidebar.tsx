@@ -1,5 +1,5 @@
 import { useLocation, Link } from "wouter";
-import { LayoutDashboard, Users, GitBranch, Wallet, Server, TrendingUp, KeyRound, LogOut, Menu, X, ScrollText, FileCode2, ShieldCheck, Banknote, Brain, Radio, Activity, HeartPulse, Link2, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Users, GitBranch, Wallet, Server, TrendingUp, LogOut, X, ScrollText, FileCode2, ShieldCheck, Brain, Activity, HeartPulse, Link2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useState, createContext, useContext } from "react";
 import { useAdminAuth } from "@/admin/admin-auth";
@@ -15,22 +15,16 @@ interface NavItem {
 export const navItems: NavItem[] = [
   { path: "/admin", icon: LayoutDashboard, label: "概览", exact: true, permission: "dashboard" },
   { path: "/admin/members", icon: Users, label: "会员", permission: "members" },
-  { path: "/admin/referrals", icon: GitBranch, label: "推荐", permission: "referrals" },
+  { path: "/admin/referrals", icon: GitBranch, label: "推荐奖励管理", permission: "referrals" },
   { path: "/admin/vaults", icon: Wallet, label: "金库", permission: "vaults" },
   { path: "/admin/nodes", icon: Server, label: "节点", permission: "nodes" },
-  { path: "/admin/node-funds", icon: Banknote, label: "节点资金", permission: "node-funds" },
-  { path: "/admin/auth-codes", icon: KeyRound, label: "授权码", permission: "auth-codes" },
-  { path: "/admin/performance", icon: TrendingUp, label: "业绩", permission: "performance" },
   { path: "/admin/contracts", icon: FileCode2, label: "合约", permission: "contracts" },
-  { path: "/admin/funds", icon: BarChart3, label: "资金详情", permission: "contracts" },
   { path: "/admin/logs", icon: ScrollText, label: "日志", permission: "logs" },
   { path: "/admin/ai-accuracy", icon: Brain, label: "AI准确率", permission: "ai-accuracy" },
   { path: "/admin/ai-progress", icon: TrendingUp, label: "AI训练进步", permission: "ai-accuracy" },
   { path: "/admin/ai-trades", icon: Activity, label: "AI模拟开单", permission: "ai-accuracy" },
   { path: "/admin/health", icon: HeartPulse, label: "环境健康", permission: "ai-accuracy" },
   { path: "/admin/copy-trading", icon: Link2, label: "跟单管理", permission: "ai-accuracy" },
-  { path: "/admin/treasury", icon: Server, label: "资金/跨链", permission: "ai-accuracy" },
-  { path: "/admin/providers", icon: Radio, label: "策略商", permission: "providers" },
   { path: "/admin/admins", icon: ShieldCheck, label: "管理员", permission: "admins" },
 ];
 
@@ -70,12 +64,24 @@ export function AdminSidebar() {
 
   return (
     <aside className="hidden lg:flex fixed left-0 top-0 z-50 flex-col w-[240px] h-screen border-r border-white/[0.06] bg-background/95 backdrop-blur-xl">
-      <div className="flex items-center gap-2 px-5 py-4 border-b border-white/[0.06]">
-        <img src="/logo-glass-pure.png" alt="Logo" className="h-8" />
-        <span className="font-display text-sm font-bold tracking-widest text-foreground">
-          Coin<span className="text-primary">Max</span>
-        </span>
-        <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md border ${roleInfo.color}`}>
+      <div className="flex items-center gap-2.5 px-4 py-4 border-b border-white/[0.06]">
+        <div
+          className="flex items-center justify-center w-8 h-8 rounded-lg font-black text-sm shrink-0 select-none"
+          style={{
+            background: "linear-gradient(135deg, #1e3a5f 0%, #0f2240 100%)",
+            border: "1px solid rgba(59,130,246,0.3)",
+            boxShadow: "0 0 12px rgba(59,130,246,0.15)",
+          }}
+        >
+          <span style={{ background: "linear-gradient(135deg, #60a5fa, #3b82f6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            QA
+          </span>
+        </div>
+        <div className="flex flex-col leading-none">
+          <span className="text-xs font-bold tracking-wider text-foreground">QA <span className="text-primary">Protocol</span></span>
+          <span className="text-[9px] tracking-widest text-foreground/30 uppercase">Admin</span>
+        </div>
+        <span className={`ml-auto text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md border ${roleInfo.color}`}>
           {roleInfo.label}
         </span>
       </div>
@@ -139,10 +145,18 @@ export function MobileDrawer() {
       <div className="lg:hidden fixed left-0 top-0 bottom-0 z-[70] w-[260px] bg-background border-r border-border/30 flex flex-col animate-in slide-in-from-left duration-200">
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/[0.06]">
           <div className="flex items-center gap-2">
-            <img src="/logo-glass-pure.png" alt="Logo" className="h-7" />
-            <span className="font-display text-sm font-bold tracking-widest text-foreground">
-              Coin<span className="text-primary">Max</span>
-            </span>
+            <div
+              className="flex items-center justify-center w-7 h-7 rounded-lg font-black text-xs shrink-0 select-none"
+              style={{
+                background: "linear-gradient(135deg, #1e3a5f 0%, #0f2240 100%)",
+                border: "1px solid rgba(59,130,246,0.3)",
+              }}
+            >
+              <span style={{ background: "linear-gradient(135deg, #60a5fa, #3b82f6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                QA
+              </span>
+            </div>
+            <span className="text-xs font-bold tracking-wider text-foreground">QA <span className="text-primary">Protocol</span></span>
             <span className={`text-[8px] font-bold px-1 py-0.5 rounded border ${roleInfo.color}`}>
               {roleInfo.label}
             </span>
