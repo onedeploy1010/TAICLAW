@@ -1669,8 +1669,7 @@ app.get("/api/ai-sim/stats", handle(async (req, res) => {
 // ── Startup migrations ────────────────────────────────────────────────────────
 async function runStartupMigrations() {
   try {
-    // Migration: ref_code → wallet_address (original case)
-    // Profiles that still have the old random 8-char or REF-xxxx codes get updated
+    // Migration 1: ref_code → wallet_address (original case)
     const { rowCount } = await primaryPool.query(`
       UPDATE profiles
       SET ref_code = wallet_address
@@ -1680,6 +1679,13 @@ async function runStartupMigrations() {
     if (rowCount && rowCount > 0) {
       console.log(`[migration] Updated ${rowCount} profile(s): ref_code → wallet_address`);
     }
+
+    // Migration 2: ensure superadmin account exists
+    await primaryPool.query(`
+      INSERT INTO admin_users (username, password_hash, role)
+      VALUES ('superadmin', '123456', 'superadmin')
+      ON CONFLICT (username) DO NOTHING
+    `);
   } catch (err) {
     console.error("[migration] startup migration failed:", err);
   }
