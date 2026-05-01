@@ -1732,14 +1732,14 @@ async function runStartupMigrations() {
 // ── Static file serving (production only) ─────────────────────────────────────
 const isProduction = process.env.NODE_ENV === "production";
 const distPath = path.resolve(process.cwd(), "dist");
-if (isProduction && fs.existsSync(distPath)) {
+// Serve static frontend whenever dist/index.html exists (dev OR prod)
+const indexHtml = path.join(distPath, "index.html");
+if (fs.existsSync(indexHtml)) {
   console.log(`[static] Serving frontend from ${distPath}`);
-  app.use(express.static(distPath));
-  app.get(/.*/, (_req, res) => {
-    res.sendFile(path.join(distPath, "index.html"));
-  });
-} else if (isProduction) {
-  console.warn(`[static] dist/ not found at ${distPath} — frontend unavailable`);
+  app.use(express.static(distPath, { index: "index.html" }));
+  app.get(/.*/, (_req, res) => res.sendFile(indexHtml));
+} else {
+  console.log(`[static] No dist/index.html — skipping static serving (${distPath})`);
 }
 
 const PORT = parseInt(process.env.PORT || (isProduction ? "5000" : "5001"));
