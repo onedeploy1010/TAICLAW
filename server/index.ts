@@ -541,11 +541,11 @@ app.post("/api/ai-prediction", handle(async (req, res) => {
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!openaiKey) { res.status(503).json({ error: "AI service not configured" }); return; }
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${openaiKey}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${openaiKey}`, "HTTP-Referer": "https://qaprotocol.io", "X-Title": "QA Protocol" },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "openai/gpt-4o-mini",
       messages: [
         { role: "system", content: "You are a crypto market analyst. Analyze the market and provide a prediction in JSON format only. Response must be valid JSON with these fields: prediction (BULLISH/BEARISH/NEUTRAL), confidence (0-100), targetPrice (number very close to current price within allowed range), reasoning (1 sentence)." },
         { role: "user", content: `Analyze ${assetUp} at $${currentPrice}. Fear & Greed Index: ${fearGreed.value} (${fearGreed.classification}). Predict the ${tfLabel} price movement. IMPORTANT: targetPrice must be between $${priceFloor.toFixed(2)} and $${priceCeil.toFixed(2)} (max ${(maxMovePct * 100).toFixed(1)}% move for ${tfLabel} timeframe).` },
@@ -596,11 +596,11 @@ app.post("/api/ai-forecast", handle(async (req, res) => {
 
   const forecasts = await Promise.all(models.map(async (m) => {
     try {
-      const r = await fetch("https://api.openai.com/v1/chat/completions", {
+      const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${openaiKey}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${openaiKey}`, "HTTP-Referer": "https://qaprotocol.io", "X-Title": "QA Protocol" },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "openai/gpt-4o-mini",
           messages: [
             { role: "system", content: `${m.prompt} Respond with JSON only: {prediction, confidence (0-100), targetPrice, reasoning}` },
             { role: "user", content: `Analyze ${assetUp} at $${currentPrice}. FGI: ${fearGreed.value}. Predict ${tfLabel} direction.` },
@@ -640,11 +640,11 @@ app.post("/api/ai-forecast-multi", handle(async (req, res) => {
 
   const forecasts = await Promise.all(models.map(async (m) => {
     try {
-      const r = await fetch("https://api.openai.com/v1/chat/completions", {
+      const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${openaiKey}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${openaiKey}`, "HTTP-Referer": "https://qaprotocol.io", "X-Title": "QA Protocol" },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "openai/gpt-4o-mini",
           messages: [
             { role: "system", content: `${m.prompt} Respond with JSON only: {prediction, confidence (0-100), targetPrice, reasoning}` },
             { role: "user", content: `Analyze ${assetUp} at $${currentPrice}. FGI: ${fearGreed.value}. Predict ${tfLabel} direction.` },
