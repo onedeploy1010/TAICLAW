@@ -8,9 +8,9 @@ import {
 import { adminLogin } from "./admin-api";
 import AdminLoginPage from "./pages/admin-login";
 
-const STORAGE_KEY_TOKEN = "coinmax_admin_token";
-const STORAGE_KEY_USER = "coinmax_admin_user";
-const STORAGE_KEY_ROLE = "coinmax_admin_role";
+const STORAGE_KEY_TOKEN = "qa_admin_token";
+const STORAGE_KEY_USER = "qa_admin_user";
+const STORAGE_KEY_ROLE = "qa_admin_role";
 
 export type AdminRole = "superadmin" | "admin" | "support";
 

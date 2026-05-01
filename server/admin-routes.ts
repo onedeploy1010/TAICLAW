@@ -6,6 +6,7 @@ const router = Router();
 function toCamel(obj: any): any {
   if (obj === null || obj === undefined) return obj;
   if (Array.isArray(obj)) return obj.map(toCamel);
+  if (obj instanceof Date) return obj.toISOString();
   if (typeof obj !== "object") return obj;
   const out: any = {};
   for (const key of Object.keys(obj)) {
@@ -58,12 +59,26 @@ router.get("/contract-configs", async (_, res) => {
   res.json(toCamel(rows));
 });
 
+router.post("/contract-configs", async (req, res) => {
+  const { key, value, description, createdBy } = req.body;
+  if (!key || !value) return res.status(400).json({ error: "key and value required" });
+  const { rows } = await pool.query(
+    `INSERT INTO contract_configs (key, value, description, updated_by)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (key) DO UPDATE SET value = $2, description = $3, updated_by = $4, updated_at = NOW()
+     RETURNING *`,
+    [key, value, description || null, createdBy || "admin"]
+  );
+  res.json(toCamel(rows[0]));
+});
+
 router.patch("/contract-configs/:key", async (req, res) => {
   const { value, updatedBy } = req.body;
   const { rows } = await pool.query(
     "UPDATE contract_configs SET value = $1, updated_by = $2, updated_at = NOW() WHERE key = $3 RETURNING *",
     [value, updatedBy, req.params.key]
   );
+  if (!rows.length) return res.status(404).json({ error: "Config not found" });
   res.json(toCamel(rows[0]));
 });
 
