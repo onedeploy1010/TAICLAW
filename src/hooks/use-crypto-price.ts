@@ -135,36 +135,21 @@ function parseBybitKlines(raw: any[], tf: ChartTimeframe): OhlcDataPoint[] {
 }
 
 async function fetchBinanceKlines(symbol: string, timeframe: ChartTimeframe): Promise<OhlcDataPoint[]> {
-  const pair = symbol === "DOGE" ? "DOGEUSDT" : `${symbol}USDT`;
   const cfg = BINANCE_INTERVALS[timeframe];
-  const url = `https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${cfg.interval}&limit=${cfg.limit}`;
-  const bybitInterval = BYBIT_INTERVALS[timeframe];
-  const bybitUrl = `https://api.bybit.com/v5/market/kline?category=spot&symbol=${pair}&interval=${bybitInterval}&limit=${cfg.limit}`;
-
-  // Race all sources concurrently — proxy included so blocked networks get data fast
-  const result = await Promise.any([
-    // Direct Binance
-    fetchWithTimeout(url, 3500).then(async (res) => {
-      if (!res.ok) throw new Error("not ok");
-      return parseKlines(await res.json(), timeframe);
-    }),
-    // Direct Bybit
-    fetchWithTimeout(bybitUrl, 3500).then(async (res) => {
-      if (!res.ok) throw new Error("not ok");
-      const json = await res.json();
-      if (!json.result?.list?.length) throw new Error("no data");
-      return parseBybitKlines(json.result.list, timeframe);
-    }),
-    // Proxy (Supabase edge function) — works even when direct APIs are blocked
-    proxyFetch(url).then((data) => {
-      if (!Array.isArray(data)) throw new Error("bad proxy data");
-      return parseKlines(data, timeframe);
-    }),
-  ]).catch(() => null);
-
-  if (result) return result;
-
-  throw new Error("Failed to fetch klines from all sources");
+  // Use our backend proxy endpoint — avoids CORS and geo-restrictions
+  const res = await fetch(`/api/klines/${symbol}/${timeframe}?limit=${cfg.limit}`);
+  if (!res.ok) throw new Error(`klines ${res.status}`);
+  const data: Array<{ timestamp: number; open: number; high: number; low: number; close: number; volume: number }> = await res.json();
+  if (!Array.isArray(data) || data.length === 0) throw new Error("no kline data");
+  return data.map(c => ({
+    timestamp: c.timestamp,
+    open: c.open,
+    high: c.high,
+    low: c.low,
+    close: c.close,
+    volume: c.volume,
+    time: formatTimeLabel(c.timestamp, timeframe),
+  }));
 }
 
 export function useBinanceChart(symbol: string, timeframe: ChartTimeframe) {

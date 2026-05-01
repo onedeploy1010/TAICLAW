@@ -761,7 +761,103 @@ const ALLOWED_HOSTS = [
   "api.alternative.me",
   "api.kraken.com",
   "api.coinbase.com",
+  "api.exchange.coinbase.com",
 ];
+
+// ── Klines proxy endpoint ──────────────────────────────────────────────────────
+const CB_GRANULARITY: Record<string, string> = {
+  "1m": "ONE_MINUTE", "5m": "FIVE_MINUTE", "15m": "FIFTEEN_MINUTE",
+  "30m": "THIRTY_MINUTE", "1H": "ONE_HOUR", "4H": "TWO_HOUR",
+  "1D": "ONE_DAY", "1W": "ONE_DAY",
+};
+const KRAKEN_INTERVALS: Record<string, number> = {
+  "1m": 1, "5m": 5, "15m": 15, "30m": 30,
+  "1H": 60, "4H": 240, "1D": 1440, "1W": 10080,
+};
+const KRAKEN_PAIRS: Record<string, string> = {
+  BTC: "XBTUSD", ETH: "ETHUSD", BNB: "BNBUSD", SOL: "SOLUSD",
+  DOGE: "DOGEUSD", ADA: "ADAUSD", DOT: "DOTUSD", AVAX: "AVAXUSD",
+};
+
+app.get("/api/klines/:symbol/:timeframe", handle(async (req, res) => {
+  const { symbol, timeframe } = req.params;
+  const limit = parseInt(req.query.limit as string || "200");
+  const headers = { Accept: "application/json", "User-Agent": "QAProtocol/1.0" };
+
+  // Try Coinbase first
+  try {
+    const gran = CB_GRANULARITY[timeframe] || "ONE_HOUR";
+    const cbSymbol = symbol === "BNB" ? "BNB-USD" : `${symbol}-USD`;
+    const url = `https://api.coinbase.com/api/v3/brokerage/market/products/${cbSymbol}/candles?granularity=${gran}&limit=${limit}`;
+    const r = await fetch(url, { headers });
+    if (r.ok) {
+      const json = await r.json();
+      if (json.candles?.length) {
+        const candles = json.candles
+          .map((c: any) => ({
+            timestamp: parseInt(c.start) * 1000,
+            open: parseFloat(c.open),
+            high: parseFloat(c.high),
+            low: parseFloat(c.low),
+            close: parseFloat(c.close),
+            volume: parseFloat(c.volume),
+          }))
+          .sort((a: any, b: any) => a.timestamp - b.timestamp);
+        return res.json(candles);
+      }
+    }
+  } catch { /* fall through */ }
+
+  // Fallback: Kraken
+  try {
+    const krakenPair = KRAKEN_PAIRS[symbol.toUpperCase()] || `${symbol}USD`;
+    const interval = KRAKEN_INTERVALS[timeframe] || 60;
+    const url = `https://api.kraken.com/0/public/OHLC?pair=${krakenPair}&interval=${interval}`;
+    const r = await fetch(url, { headers });
+    if (r.ok) {
+      const json = await r.json();
+      const pairKey = Object.keys(json.result || {}).find(k => k !== "last");
+      if (pairKey && json.result[pairKey]?.length) {
+        const candles = json.result[pairKey]
+          .slice(-limit)
+          .map((k: any) => ({
+            timestamp: k[0] * 1000,
+            open: parseFloat(k[1]),
+            high: parseFloat(k[2]),
+            low: parseFloat(k[3]),
+            close: parseFloat(k[4]),
+            volume: parseFloat(k[6]),
+          }));
+        return res.json(candles);
+      }
+    }
+  } catch { /* fall through */ }
+
+  // Final fallback: CoinGecko (limited timeframes)
+  try {
+    const cgId: Record<string, string> = { BTC: "bitcoin", ETH: "ethereum", BNB: "binancecoin", SOL: "solana", DOGE: "dogecoin" };
+    const id = cgId[symbol.toUpperCase()] || symbol.toLowerCase();
+    const days = timeframe === "1m" || timeframe === "5m" ? "1" : timeframe === "15m" || timeframe === "30m" || timeframe === "1H" ? "1" : timeframe === "4H" ? "7" : "30";
+    const url = `https://api.coingecko.com/api/v3/coins/${id}/ohlc?vs_currency=usd&days=${days}`;
+    const r = await fetch(url, { headers });
+    if (r.ok) {
+      const raw = await r.json();
+      if (Array.isArray(raw) && raw.length) {
+        const candles = raw.slice(-limit).map((k: number[]) => ({
+          timestamp: k[0],
+          open: k[1],
+          high: k[2],
+          low: k[3],
+          close: k[4],
+          volume: 0,
+        }));
+        return res.json(candles);
+      }
+    }
+  } catch { /* fall through */ }
+
+  res.json([]);
+}));
 
 app.post("/api/proxy", handle(async (req, res) => {
   const { url } = req.body;
