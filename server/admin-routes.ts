@@ -200,17 +200,53 @@ router.get("/node-memberships", async (req, res) => {
 
 // ── Performance Stats ─────────────────────────────────────────────────────────
 router.get("/performance-stats", async (_, res) => {
-  const [profilesRes, vaultsRes, nodesRes, commissionsRes] = await Promise.all([
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const [
+    profilesRes, activeVaultsRes, allVaultsRes, nodesRes, allNodesRes,
+    commissionsRes, newTodayRes, referralCountRes, paperTradesRes,
+    nodeTypeRes, vaultStatusRes, recentMembersRes, recentVaultsRes, recentRewardsRes,
+  ] = await Promise.all([
     pool.query("SELECT COUNT(*) FROM profiles"),
     pool.query("SELECT principal FROM vault_positions WHERE status = 'ACTIVE'"),
-    pool.query("SELECT COUNT(*) FROM node_memberships WHERE status = 'ACTIVE'"),
-    pool.query("SELECT amount FROM node_rewards WHERE reward_type = 'TEAM_COMMISSION'"),
+    pool.query("SELECT COUNT(*) FROM vault_positions"),
+    pool.query("SELECT COUNT(*) FROM node_memberships WHERE status = 'active'"),
+    pool.query("SELECT COUNT(*) FROM node_memberships"),
+    pool.query("SELECT COALESCE(SUM(amount),0) as total FROM node_rewards WHERE reward_type = 'TEAM_COMMISSION'"),
+    pool.query("SELECT COUNT(*) FROM profiles WHERE created_at >= $1", [today]),
+    pool.query("SELECT COUNT(*) FROM profiles WHERE referrer_id IS NOT NULL"),
+    pool.query("SELECT COUNT(*) FROM paper_trades"),
+    pool.query("SELECT node_type, COUNT(*) as cnt FROM node_memberships GROUP BY node_type ORDER BY cnt DESC"),
+    pool.query("SELECT status, COUNT(*) as cnt FROM vault_positions GROUP BY status"),
+    pool.query(`SELECT p.wallet_address, p.created_at, p.rank FROM profiles p ORDER BY p.created_at DESC LIMIT 5`),
+    pool.query(`SELECT vp.principal, vp.plan_type, vp.status, vp.created_at, p.wallet_address
+      FROM vault_positions vp LEFT JOIN profiles p ON p.id = vp.user_id ORDER BY vp.created_at DESC LIMIT 5`),
+    pool.query(`SELECT nr.amount, nr.reward_type, nr.created_at, p.wallet_address
+      FROM node_rewards nr LEFT JOIN profiles p ON p.id = nr.user_id ORDER BY nr.created_at DESC LIMIT 5`),
   ]);
+
   const totalUsers = parseInt(profilesRes.rows[0].count);
-  const totalDeposited = vaultsRes.rows.reduce((s: number, r: any) => s + Number(r.principal || 0), 0);
+  const tvl = activeVaultsRes.rows.reduce((s: number, r: any) => s + Number(r.principal || 0), 0);
+  const totalVaultPositions = parseInt(allVaultsRes.rows[0].count);
   const activeNodes = parseInt(nodesRes.rows[0].count);
-  const totalCommissions = commissionsRes.rows.reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
-  res.json({ totalUsers, totalDeposited, activeNodes, totalCommissions });
+  const totalNodes = parseInt(allNodesRes.rows[0].count);
+  const totalCommissions = Number(commissionsRes.rows[0].total);
+  const newUsersToday = parseInt(newTodayRes.rows[0].count);
+  const totalReferrals = parseInt(referralCountRes.rows[0].count);
+  const totalPaperTrades = parseInt(paperTradesRes.rows[0].count);
+
+  res.json({
+    totalUsers, tvl, totalVaultPositions,
+    activeNodes, totalNodes,
+    totalCommissions, newUsersToday,
+    totalReferrals, totalPaperTrades,
+    nodeTypeDistribution: nodeTypeRes.rows,
+    vaultStatusDistribution: vaultStatusRes.rows,
+    recentMembers: toCamel(recentMembersRes.rows),
+    recentVaults: toCamel(recentVaultsRes.rows),
+    recentRewards: toCamel(recentRewardsRes.rows),
+  });
 });
 
 // ── Commissions ───────────────────────────────────────────────────────────────
