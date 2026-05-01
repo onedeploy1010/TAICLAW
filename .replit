@@ -46,8 +46,8 @@ externalPort = 3002
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["bash", "-c", "npm run build && node_modules/.bin/esbuild server/index.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/server.mjs"]
-run = ["bash", "-c", "NODE_ENV=production node dist/server.mjs"]
+build = ["npm", "run", "build"]
+run = ["node", "dist/index.js"]
 
 [userenv]
 

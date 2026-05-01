@@ -1666,6 +1666,25 @@ app.get("/api/ai-sim/stats", handle(async (req, res) => {
   res.json(stats);
 }));
 
+// ── Startup migrations ────────────────────────────────────────────────────────
+async function runStartupMigrations() {
+  try {
+    // Migration: ref_code → wallet_address (original case)
+    // Profiles that still have the old random 8-char or REF-xxxx codes get updated
+    const { rowCount } = await primaryPool.query(`
+      UPDATE profiles
+      SET ref_code = wallet_address
+      WHERE ref_code IS NULL
+         OR (LENGTH(ref_code) < 20)
+    `);
+    if (rowCount && rowCount > 0) {
+      console.log(`[migration] Updated ${rowCount} profile(s): ref_code → wallet_address`);
+    }
+  } catch (err) {
+    console.error("[migration] startup migration failed:", err);
+  }
+}
+
 // ── Static file serving (production only) ─────────────────────────────────────
 if (process.env.NODE_ENV === "production") {
   const distPath = path.join(__dirname, "../dist");
@@ -1676,8 +1695,9 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const PORT = parseInt(process.env.PORT || (process.env.NODE_ENV === "production" ? "5000" : "5001"));
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, "0.0.0.0", async () => {
   console.log(`API server running on port ${PORT}`);
+  await runStartupMigrations();
   startAiTradingEngine(pool);
 });
 
