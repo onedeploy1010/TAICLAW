@@ -1,12 +1,12 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveAccount } from "thirdweb/react";
 import { useMaPrice } from "@/hooks/use-ma-price";
-import { Copy, WalletCards, ChevronRight, Bell, Settings, History, GitBranch, Server, Share2, ArrowLeftRight, User, Vault, Flame, Lock, TrendingUp } from "lucide-react";
+import { Copy, WalletCards, ChevronRight, Bell, Settings, History, GitBranch, Server, Share2, ArrowLeftRight, User, Flame, Lock, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { copyText } from "@/lib/copy";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getProfile, getNodeOverview, getVaultPositions } from "@/lib/api";
+import { getProfile, getNodeOverview } from "@/lib/api";
 import type { NodeOverview } from "@shared/types";
 import type { Profile } from "@shared/types";
 import { useLocation } from "wouter";
@@ -14,7 +14,6 @@ import { useTranslation } from "react-i18next";
 
 const MENU_ITEMS = [
   { labelKey: "profile.myNodesLabel", icon: Server, path: "/profile/nodes", descKey: "profile.nodeManagementDesc" },
-  { labelKey: "profile.myVaultPositions", icon: Vault, path: "/profile/vault", descKey: "profile.myVaultPositionsDesc" },
   { labelKey: "profile.swap", icon: ArrowLeftRight, path: "/profile/swap", descKey: "profile.swapDesc" },
   { labelKey: "profile.transactionHistory", icon: History, path: "/profile/transactions", descKey: "profile.transactionHistoryDesc" },
   { labelKey: "profile.notifications", icon: Bell, path: "/profile/notifications", descKey: "profile.notificationsDesc" },
@@ -39,12 +38,6 @@ export default function ProfilePage() {
   const { data: nodeOverview } = useQuery<NodeOverview>({
     queryKey: ["node-overview", walletAddr],
     queryFn: () => getNodeOverview(walletAddr),
-    enabled: isConnected,
-  });
-
-  const { data: vaultPositions } = useQuery({
-    queryKey: ["vault-positions", walletAddr],
-    queryFn: () => getVaultPositions(walletAddr),
     enabled: isConnected,
   });
 
@@ -78,24 +71,9 @@ export default function ProfilePage() {
     enabled: isConnected,
   });
 
-  const vaultYield = useMemo(() => {
-    if (!vaultPositions) return 0;
-    const now = new Date();
-    let yieldSum = 0;
-    for (const p of vaultPositions) {
-      if (p.status !== "ACTIVE") continue;
-      if (p.bonusYieldLocked) continue;
-      const amt = Number(p.principal || 0);
-      const start = new Date(p.startDate!);
-      const days = Math.max(0, Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
-      yieldSum += amt * Number(p.dailyRate || 0) * days;
-    }
-    return yieldSum;
-  }, [vaultPositions]);
-
   const referralEarnings = Number(profile?.referralEarnings || 0);
   const nodeEarnings = Number(nodeOverview?.rewards?.totalEarnings || 0);
-  const totalEarnings = nodeEarnings + vaultYield + referralEarnings;
+  const totalEarnings = nodeEarnings + referralEarnings;
 
   const runeLocked = Number(runeLockStats?.totalRuneLocked || 0);
   const veRune = Number(runeLockStats?.totalVeRune || 0);
@@ -237,7 +215,6 @@ export default function ProfilePage() {
               <div className="flex gap-2 mt-3">
                 {[
                   { label: "节点收益", value: formatCompactMA(nodeEarnings) },
-                  { label: "锁仓收益", value: formatCompactMA(vaultYield) },
                   { label: "推广佣金", value: formatCompactMA(referralEarnings) },
                 ].map((item, i) => (
                   <div key={i} className="surface-inset flex-1 rounded-xl px-2.5 py-2 text-center border border-black/25 bg-black/20">
