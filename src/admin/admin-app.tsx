@@ -17,12 +17,10 @@ import AdminLogs from "./pages/admin-logs";
 import AdminContracts from "./pages/admin-contracts";
 import AdminAdmins from "./pages/admin-admins";
 import AdminAIAccuracy from "./pages/admin-ai-accuracy";
-import AdminProviders from "./pages/admin-providers";
 import AdminAIProgress from "./pages/admin-ai-progress";
 import AdminAITrades from "./pages/admin-ai-trades";
 import AdminHealth from "./pages/admin-health";
 import AdminCopyTrading from "./pages/admin-copy-trading";
-import AdminFunds from "./pages/admin-funds";
 import AdminTreasury from "./pages/admin-treasury";
 
 function NoPermission() {

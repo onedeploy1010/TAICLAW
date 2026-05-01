@@ -49,9 +49,9 @@ export function ReferralCard() {
     toast({ title: t("common.copied"), description: t("common.copiedDesc") });
   };
 
-  // Referral link uses wallet address as the ref param
+  // Referral link uses /r/<walletAddress> path format
   const referralLink = walletAddr
-    ? `${window.location.origin}?ref=${walletAddr}`
+    ? `${window.location.origin}/r/${walletAddr}`
     : "--";
 
   const totalTeamDeposits = teamData?.referrals.reduce((sum, ref) => {
