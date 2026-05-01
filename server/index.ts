@@ -112,8 +112,15 @@ app.post("/api/auth-wallet", handle(async (req, res) => {
   }
 
   // ── New users MUST have a valid referrer ──────────────────────────────────
+  // Exception: bootstrap mode — when DB is empty, first users can register without referral
   if (isNewUser && !referrerId) {
-    return res.json({ error: "REFERRAL_REQUIRED" });
+    const { rows: countRows } = await primaryPool.query("SELECT COUNT(*) FROM profiles");
+    const totalUsers = parseInt(countRows[0].count);
+    if (totalUsers > 0) {
+      return res.json({ error: "REFERRAL_REQUIRED" });
+    }
+    // Bootstrap mode: allow first user(s) to register as root accounts
+    console.log(`[bootstrap] No profiles in DB — allowing root registration for ${addr}`);
   }
 
   // ── UPSERT profile — bind referrer/placement only once (never overwrite) ──
