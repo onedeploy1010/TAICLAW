@@ -34,8 +34,13 @@ function handle(fn: (req: express.Request, res: express.Response) => Promise<voi
     try {
       await fn(req, res);
     } catch (err: any) {
+      // 42P01 = table does not exist, 42883 = function does not exist — return graceful empty
+      if (err?.code === "42P01" || err?.code === "42883") {
+        if (!res.headersSent) res.json(Array.isArray(err) ? [] : null);
+        return;
+      }
       console.error(err);
-      res.status(500).json({ error: err.message || "Internal server error" });
+      if (!res.headersSent) res.status(500).json({ error: err.message || "Internal server error" });
     }
   };
 }
@@ -465,12 +470,16 @@ app.post("/api/place-prediction-bet", handle(async (req, res) => {
 
 // ── AI Predictions ────────────────────────────────────────────────────────────
 app.get("/api/ai-predictions", handle(async (_, res) => {
-  const { rows } = await primaryPool.query(
-    `SELECT id, asset, timeframe, model, prediction, confidence, target_price, current_price,
-            reasoning, fear_greed_index, NULL::TEXT AS fear_greed_label, expires_at, created_at
-     FROM ai_prediction_records WHERE status = 'pending' ORDER BY created_at DESC`
-  );
-  res.json(toCamel(rows));
+  try {
+    const { rows } = await primaryPool.query(
+      `SELECT id, asset, timeframe, model, prediction, confidence, target_price, current_price,
+              reasoning, fear_greed_index, NULL::TEXT AS fear_greed_label, expires_at, created_at
+       FROM ai_prediction_records WHERE status = 'pending' ORDER BY created_at DESC`
+    );
+    res.json(toCamel(rows));
+  } catch {
+    res.json([]);
+  }
 }));
 
 // AI prediction via OpenAI (ported from edge function)
@@ -530,7 +539,7 @@ app.post("/api/ai-prediction", handle(async (req, res) => {
   const tfLabel = TIMEFRAME_LABELS[tf] || tf;
 
   const openaiKey = process.env.OPENAI_API_KEY;
-  if (!openaiKey) throw new Error("OPENAI_API_KEY not configured");
+  if (!openaiKey) { res.status(503).json({ error: "AI service not configured" }); return; }
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -575,7 +584,7 @@ app.post("/api/ai-forecast", handle(async (req, res) => {
   const tfLabel = TIMEFRAME_LABELS[tf] || tf;
 
   const openaiKey = process.env.OPENAI_API_KEY;
-  if (!openaiKey) throw new Error("OPENAI_API_KEY not configured");
+  if (!openaiKey) { res.status(503).json({ error: "AI service not configured" }); return; }
 
   const models = [
     { name: "GPT-4o", prompt: "You are GPT-4o, a sophisticated AI analyst." },
@@ -619,7 +628,7 @@ app.post("/api/ai-forecast-multi", handle(async (req, res) => {
   const tfLabel = TIMEFRAME_LABELS[tf] || tf;
 
   const openaiKey = process.env.OPENAI_API_KEY;
-  if (!openaiKey) throw new Error("OPENAI_API_KEY not configured");
+  if (!openaiKey) { res.status(503).json({ error: "AI service not configured" }); return; }
 
   const models = [
     { name: "GPT-4o", prompt: "You are GPT-4o, a sophisticated AI analyst." },
@@ -679,12 +688,16 @@ app.post("/api/proxy", handle(async (req, res) => {
 
 // ── News Predictions ──────────────────────────────────────────────────────────
 app.get("/api/news-predictions", handle(async (_, res) => {
-  const { rows } = await primaryPool.query(
-    `SELECT id, asset, timeframe, model, prediction, confidence, target_price, current_price,
-            reasoning, fear_greed_index, expires_at, created_at
-     FROM ai_prediction_records WHERE status = 'pending' ORDER BY created_at DESC LIMIT 20`
-  );
-  res.json(toCamel(rows));
+  try {
+    const { rows } = await primaryPool.query(
+      `SELECT id, asset, timeframe, model, prediction, confidence, target_price, current_price,
+              reasoning, fear_greed_index, expires_at, created_at
+       FROM ai_prediction_records WHERE status = 'pending' ORDER BY created_at DESC LIMIT 20`
+    );
+    res.json(toCamel(rows));
+  } catch {
+    res.json([]);
+  }
 }));
 
 // ── System Config / MA Price ──────────────────────────────────────────────────
@@ -735,8 +748,12 @@ app.post("/api/purchase-hedge", handle(async (req, res) => {
 }));
 
 app.get("/api/insurance-pool", handle(async (_, res) => {
-  const { rows } = await primaryPool.query("SELECT get_insurance_pool() AS result");
-  res.json(toCamel(rows[0].result));
+  try {
+    const { rows } = await primaryPool.query("SELECT get_insurance_pool() AS result");
+    res.json(toCamel(rows[0]?.result ?? {}));
+  } catch {
+    res.json({});
+  }
 }));
 
 // ── VIP ───────────────────────────────────────────────────────────────────────
@@ -773,22 +790,30 @@ app.get("/api/earnings-releases/:wallet", handle(async (req, res) => {
 
 // ── Trade Signals & Paper Trades ──────────────────────────────────────────────
 app.get("/api/trade-signals", handle(async (req, res) => {
-  const { limit = 20, status = "active" } = req.query;
-  const { rows } = await primaryPool.query(
-    "SELECT * FROM trade_signals WHERE status = $1 ORDER BY created_at DESC LIMIT $2",
-    [status, Number(limit)]
-  );
-  res.json(toCamel(rows));
+  try {
+    const { limit = 20, status = "active" } = req.query;
+    const { rows } = await primaryPool.query(
+      "SELECT * FROM trade_signals WHERE status = $1 ORDER BY created_at DESC LIMIT $2",
+      [status, Number(limit)]
+    );
+    res.json(toCamel(rows));
+  } catch {
+    res.json([]);
+  }
 }));
 
 app.get("/api/paper-trades", handle(async (req, res) => {
-  const { limit = 50, status } = req.query;
-  const qText = status
-    ? "SELECT * FROM paper_trades WHERE status = $1 ORDER BY opened_at DESC LIMIT $2"
-    : "SELECT * FROM paper_trades ORDER BY opened_at DESC LIMIT $1";
-  const qArgs = status ? [status, Number(limit)] : [Number(limit)];
-  const { rows } = await primaryPool.query(qText, qArgs);
-  res.json(toCamel(rows));
+  try {
+    const { limit = 50, status } = req.query;
+    const qText = status
+      ? "SELECT * FROM paper_trades WHERE status = $1 ORDER BY opened_at DESC LIMIT $2"
+      : "SELECT * FROM paper_trades ORDER BY opened_at DESC LIMIT $1";
+    const qArgs = status ? [status, Number(limit)] : [Number(limit)];
+    const { rows } = await primaryPool.query(qText, qArgs);
+    res.json(toCamel(rows));
+  } catch {
+    res.json([]);
+  }
 }));
 
 // ── AI Model Accuracy ─────────────────────────────────────────────────────────
@@ -826,13 +851,17 @@ app.get("/api/provider/dashboard", handle(async (req, res) => {
 }));
 
 app.get("/api/provider/signals", handle(async (req, res) => {
-  const apiKey = req.headers.authorization?.replace("Bearer ", "");
-  const limit = parseInt(req.query.limit as string) || 100;
-  if (!apiKey) return res.status(401).json({ error: "Unauthorized" });
-  const { rows: p } = await primaryPool.query("SELECT id FROM strategy_providers WHERE api_key = $1", [apiKey]);
-  if (!p.length) return res.status(404).json({ error: "Provider not found" });
-  const { rows } = await primaryPool.query("SELECT * FROM trade_signals WHERE provider_id = $1 ORDER BY created_at DESC LIMIT $2", [p[0].id, limit]);
-  res.json({ signals: toCamel(rows) });
+  try {
+    const apiKey = req.headers.authorization?.replace("Bearer ", "");
+    const limit = parseInt(req.query.limit as string) || 100;
+    if (!apiKey) return res.status(401).json({ error: "Unauthorized" });
+    const { rows: p } = await primaryPool.query("SELECT id FROM strategy_providers WHERE api_key = $1", [apiKey]);
+    if (!p.length) return res.status(404).json({ error: "Provider not found" });
+    const { rows } = await primaryPool.query("SELECT * FROM trade_signals WHERE provider_id = $1 ORDER BY created_at DESC LIMIT $2", [p[0].id, limit]);
+    res.json({ signals: toCamel(rows) });
+  } catch {
+    res.json({ signals: [] });
+  }
 }));
 
 // ── Copy Trading ──────────────────────────────────────────────────────────────
@@ -909,33 +938,41 @@ app.get("/api/profile", handle(async (req, res) => {
 
 // ── Trade Signals ─────────────────────────────────────────────────────────────
 app.get("/api/trade-signals", handle(async (req, res) => {
-  const limit = parseInt(req.query.limit as string) || 50;
-  const asset = req.query.asset as string;
-  let q = "SELECT * FROM trade_signals", args: any[] = [];
-  if (asset) { q += " WHERE asset = $1"; args.push(asset); }
-  q += ` ORDER BY created_at DESC LIMIT $${args.length + 1}`;
-  args.push(limit);
-  const { rows } = await primaryPool.query(q, args);
-  res.json(toCamel(rows));
+  try {
+    const limit = parseInt(req.query.limit as string) || 50;
+    const asset = req.query.asset as string;
+    let q = "SELECT * FROM trade_signals", args: any[] = [];
+    if (asset) { q += " WHERE asset = $1"; args.push(asset); }
+    q += ` ORDER BY created_at DESC LIMIT $${args.length + 1}`;
+    args.push(limit);
+    const { rows } = await primaryPool.query(q, args);
+    res.json(toCamel(rows));
+  } catch {
+    res.json([]);
+  }
 }));
 
 // ── Paper Trades ──────────────────────────────────────────────────────────────
 app.get("/api/paper-trades", handle(async (req, res) => {
-  const status = req.query.status as string;
-  const page = parseInt(req.query.page as string) || 1;
-  const pageSize = parseInt(req.query.pageSize as string) || 50;
-  const asset = req.query.asset as string;
-  const offset = (page - 1) * pageSize;
-  const args: any[] = [status || "OPEN"];
-  let where = "WHERE status = $1";
-  if (asset) { args.push(asset); where += ` AND asset = $${args.length}`; }
-  args.push(pageSize); args.push(offset);
-  const [{ rows }, { rows: cnt }] = await Promise.all([
-    primaryPool.query(`SELECT * FROM paper_trades ${where} ORDER BY COALESCE(opened_at, created_at) DESC LIMIT $${args.length - 1} OFFSET $${args.length}`, args),
-    primaryPool.query(`SELECT COUNT(*) FROM paper_trades ${where}`, args.slice(0, -2)),
-  ]);
-  if (status === "CLOSED") return res.json({ data: toCamel(rows), count: parseInt(cnt[0].count) });
-  res.json(toCamel(rows));
+  try {
+    const status = req.query.status as string;
+    const page = parseInt(req.query.page as string) || 1;
+    const pageSize = parseInt(req.query.pageSize as string) || 50;
+    const asset = req.query.asset as string;
+    const offset = (page - 1) * pageSize;
+    const args: any[] = [status || "OPEN"];
+    let where = "WHERE status = $1";
+    if (asset) { args.push(asset); where += ` AND asset = $${args.length}`; }
+    args.push(pageSize); args.push(offset);
+    const [{ rows }, { rows: cnt }] = await Promise.all([
+      primaryPool.query(`SELECT * FROM paper_trades ${where} ORDER BY COALESCE(opened_at, created_at) DESC LIMIT $${args.length - 1} OFFSET $${args.length}`, args),
+      primaryPool.query(`SELECT COUNT(*) FROM paper_trades ${where}`, args.slice(0, -2)),
+    ]);
+    if (status === "CLOSED") return res.json({ data: toCamel(rows), count: parseInt(cnt[0].count) });
+    res.json(toCamel(rows));
+  } catch {
+    res.json([]);
+  }
 }));
 
 // ── User Risk Config ──────────────────────────────────────────────────────────
