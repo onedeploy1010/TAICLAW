@@ -76,32 +76,43 @@ app.post("/api/auth-wallet", handle(async (req, res) => {
   const addr = (walletAddress || "").toLowerCase();
   if (!addr) return res.status(400).json({ error: "walletAddress required" });
 
-  // Resolve referrer: accept either wallet address (0x…) or legacy ref_code
+  // ── Check if user already exists ──────────────────────────────────────────
+  const { rows: existing } = await primaryPool.query(
+    "SELECT * FROM profiles WHERE LOWER(wallet_address) = LOWER($1)",
+    [addr]
+  );
+  const isNewUser = existing.length === 0;
+
+  // ── Resolve referrer & placement from code/wallet ─────────────────────────
   let referrerId: string | null = null;
   let placementId: string | null = null;
 
-  if (refCode) {
-    const isWallet = String(refCode).startsWith("0x");
-    const { rows: refRows } = await primaryPool.query(
+  async function resolveProfile(code: string): Promise<string | null> {
+    const isWallet = String(code).startsWith("0x");
+    const { rows } = await primaryPool.query(
       isWallet
         ? "SELECT id FROM profiles WHERE LOWER(wallet_address) = LOWER($1)"
         : "SELECT id FROM profiles WHERE ref_code = $1",
-      [refCode]
+      [code]
     );
-    if (refRows.length > 0) { referrerId = refRows[0].id; placementId = refRows[0].id; }
-  }
-  if (placementCode && placementCode !== refCode) {
-    const isWallet = String(placementCode).startsWith("0x");
-    const { rows: plRows } = await primaryPool.query(
-      isWallet
-        ? "SELECT id FROM profiles WHERE LOWER(wallet_address) = LOWER($1)"
-        : "SELECT id FROM profiles WHERE ref_code = $1",
-      [placementCode]
-    );
-    if (plRows.length > 0) placementId = plRows[0].id;
+    return rows.length > 0 ? rows[0].id : null;
   }
 
-  // UPSERT profile — bind referrer/placement only if not already set
+  if (refCode) {
+    referrerId = await resolveProfile(refCode);
+    placementId = referrerId;
+  }
+  if (placementCode && placementCode !== refCode) {
+    const pid = await resolveProfile(placementCode);
+    if (pid) placementId = pid;
+  }
+
+  // ── New users MUST have a valid referrer ──────────────────────────────────
+  if (isNewUser && !referrerId) {
+    return res.json({ error: "REFERRAL_REQUIRED" });
+  }
+
+  // ── UPSERT profile — bind referrer/placement only once (never overwrite) ──
   const { rows } = await primaryPool.query(
     `INSERT INTO profiles (wallet_address, referrer_id, placement_id)
      VALUES ($1, $2, $3)
@@ -111,7 +122,66 @@ app.post("/api/auth-wallet", handle(async (req, res) => {
      RETURNING *`,
     [addr, referrerId, placementId]
   );
-  res.json(toCamel(rows[0]));
+  const profile = rows[0];
+
+  // ── Log referral binding event for new users ──────────────────────────────
+  if (isNewUser && referrerId) {
+    try {
+      // Record on the new user's own profile
+      await primaryPool.query(
+        `INSERT INTO node_rewards (user_id, reward_type, amount, details, created_at)
+         VALUES ($1, 'REFERRAL_BIND', 0, $2, NOW())`,
+        [
+          profile.id,
+          JSON.stringify({
+            type: "new_member_bind",
+            wallet: addr,
+            referrer_id: referrerId,
+            placement_id: placementId,
+            ref_code: refCode || null,
+            placement_code: placementCode || null,
+          }),
+        ]
+      );
+      // Record on the referrer's side
+      await primaryPool.query(
+        `INSERT INTO node_rewards (user_id, reward_type, amount, details, created_at)
+         VALUES ($1, 'NEW_REFERRAL', 0, $2, NOW())`,
+        [
+          referrerId,
+          JSON.stringify({
+            type: "new_member",
+            new_member_id: profile.id,
+            new_member_wallet: addr,
+          }),
+        ]
+      );
+    } catch (e) {
+      console.error("Failed to log referral bind event:", e);
+    }
+  }
+
+  res.json(toCamel(profile));
+}));
+
+// ── Referral Logs ─────────────────────────────────────────────────────────────
+// Returns REFERRAL_BIND + NEW_REFERRAL events for a wallet (binding history)
+app.get("/api/referral-logs/:wallet", handle(async (req, res) => {
+  const { rows: p } = await primaryPool.query(
+    "SELECT id FROM profiles WHERE LOWER(wallet_address) = LOWER($1)",
+    [req.params.wallet]
+  );
+  if (!p.length) return res.json([]);
+  const { rows } = await primaryPool.query(
+    `SELECT nr.*, p.wallet_address AS member_wallet, p.ref_code AS member_ref_code
+     FROM node_rewards nr
+     LEFT JOIN profiles p ON p.id = (nr.details->>'new_member_id')::uuid
+     WHERE nr.user_id = $1
+       AND nr.reward_type IN ('REFERRAL_BIND', 'NEW_REFERRAL')
+     ORDER BY nr.created_at DESC`,
+    [p[0].id]
+  );
+  res.json(toCamel(rows));
 }));
 
 // ── Vault ─────────────────────────────────────────────────────────────────────

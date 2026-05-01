@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Switch, Route, Link, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { authWallet, getProfile, getProfileByRefCode } from "./lib/api";
@@ -189,66 +190,94 @@ function WalletSync() {
     }
   };
 
+  const DIALOG_STYLE: CSSProperties = {
+    background: "linear-gradient(160deg, #0f172a 0%, #0c1628 100%)",
+    border: "1px solid rgba(59,130,246,0.25)",
+    borderRadius: 20,
+    boxShadow: "0 25px 60px rgba(0,0,0,0.8), 0 0 40px rgba(59,130,246,0.08)",
+  };
+  const ICON_STYLE: CSSProperties = {
+    background: "linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)",
+    boxShadow: "0 4px 15px rgba(59,130,246,0.4)",
+  };
+  const BTN_STYLE: CSSProperties = {
+    background: "linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)",
+    boxShadow: "0 4px 15px rgba(59,130,246,0.35)",
+  };
+  const INPUT_NORMAL: CSSProperties = {
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(59,130,246,0.2)",
+  };
+  const INPUT_ERROR: CSSProperties = {
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid #ef4444",
+  };
+
   return (
     <>
-    {/* Manual referral code input dialog (no URL ref code) */}
+    {/* ── 强制推荐码弹窗（新用户无推荐链接）─────────────────── */}
     <Dialog open={showRefDialog} onOpenChange={() => {}}>
       <DialogContent
-        className="w-[calc(100vw-24px)] max-w-[420px] p-0 overflow-hidden [&>button:last-child]:hidden"
-        style={{
-          background: "#1a1a1a",
-          border: "1px solid rgba(212,168,50,0.3)",
-          borderRadius: 20,
-          boxShadow: "0 25px 60px rgba(0,0,0,0.7), 0 0 40px rgba(212,168,50,0.1)",
-        }}
+        className="w-[calc(100vw-24px)] max-w-[400px] p-0 overflow-hidden [&>button:last-child]:hidden"
+        style={DIALOG_STYLE}
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogTitle className="sr-only">{t("profile.enterRefCode")}</DialogTitle>
         <DialogDescription className="sr-only">{t("profile.refCodeRequired")}</DialogDescription>
-        <div className="px-5 sm:px-6 pt-5 pb-2">
-          <div className="text-center mb-3">
-            <div className="w-11 h-11 rounded-2xl mx-auto mb-2.5 flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, hsl(43,74%,58%), hsl(38,70%,46%))", boxShadow: "0 4px 15px rgba(212,168,50,0.35)" }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
-              </svg>
-            </div>
-            <h3 className="text-base font-bold text-white">{t("profile.enterRefCode")}</h3>
-            <p className="text-xs text-white/40 mt-1">{t("profile.refCodeRequired")}</p>
+
+        {/* 顶部蓝色渐变条 */}
+        <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #1d4ed8, #3b82f6, #60a5fa)" }} />
+
+        <div className="px-6 pt-6 pb-2 text-center">
+          <div className="w-12 h-12 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={ICON_STYLE}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <line x1="19" y1="8" x2="19" y2="14"/>
+              <line x1="22" y1="11" x2="16" y2="11"/>
+            </svg>
+          </div>
+          <h3 className="text-base font-bold text-white">{t("profile.enterRefCode")}</h3>
+          <p className="text-xs text-white/40 mt-1 leading-relaxed">{t("profile.refCodeRequired")}</p>
+          {/* 必填提示 */}
+          <div className="mt-3 rounded-lg px-3 py-2 text-xs font-medium" style={{ background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.2)", color: "#93c5fd" }}>
+            ⚠ {t("profile.refCodeMandatory", "注册必须填写推荐码，无推荐码无法使用本平台")}
           </div>
         </div>
-        <div className="px-5 sm:px-6 pb-5 space-y-3">
+
+        <div className="px-6 pb-6 pt-3 space-y-3">
           <div>
-            <p className="text-[11px] text-white/50 mb-1.5 font-medium">{t("profile.sponsorCode", "Sponsor Code")}</p>
+            <p className="text-[11px] text-white/50 mb-1.5 font-medium uppercase tracking-wide">{t("profile.sponsorCode", "推荐人码")}</p>
             <input
               type="text"
               value={refInput}
               onChange={(e) => { setRefInput(e.target.value); setRefError(""); }}
               placeholder={t("profile.refCodePlaceholder")}
-              className="w-full h-11 rounded-xl px-4 text-sm text-white placeholder:text-white/25 outline-none font-mono"
-              style={{ background: "rgba(255,255,255,0.06)", border: refError ? "1px solid #ef4444" : "1px solid rgba(212,168,50,0.15)" }}
+              className="w-full h-11 rounded-xl px-4 text-sm text-white placeholder:text-white/25 outline-none font-mono tracking-widest"
+              style={refError ? INPUT_ERROR : INPUT_NORMAL}
               autoFocus
+              onKeyDown={(e) => e.key === "Enter" && handleRefSubmit()}
             />
           </div>
           <div>
-            <p className="text-[11px] text-white/50 mb-1.5 font-medium">{t("profile.placementCode", "Placement Code")}</p>
+            <p className="text-[11px] text-white/50 mb-1.5 font-medium uppercase tracking-wide">{t("profile.placementCode", "安置码")}<span className="text-white/25 ml-1 normal-case">({t("common.optional","可选")})</span></p>
             <input
               type="text"
               value={placementInput}
               onChange={(e) => { setPlacementInput(e.target.value); setRefError(""); }}
-              placeholder={t("profile.placementCodePlaceholder", "Placement code (optional, defaults to sponsor)")}
+              placeholder={t("profile.placementCodePlaceholder", "默认与推荐码相同")}
               className="w-full h-11 rounded-xl px-4 text-sm text-white placeholder:text-white/25 outline-none font-mono"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+              style={INPUT_NORMAL}
               onKeyDown={(e) => e.key === "Enter" && handleRefSubmit()}
             />
           </div>
-          {refError && <p className="text-xs text-red-400">{refError}</p>}
+          {refError && <p className="text-xs text-red-400 flex items-center gap-1"><span>✕</span>{refError}</p>}
           <button
             onClick={handleRefSubmit}
             disabled={refLoading || !refInput.trim()}
             className="w-full h-11 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.97] disabled:opacity-40"
-            style={{ background: "linear-gradient(135deg, #D4AF37, #FF3B3B)", boxShadow: "0 4px 15px rgba(212,168,50,0.25)" }}
+            style={BTN_STYLE}
           >
             {refLoading ? t("common.processing") : t("common.confirm")}
           </button>
@@ -256,76 +285,75 @@ function WalletSync() {
       </DialogContent>
     </Dialog>
 
-    {/* Confirmation dialog for users from referral link */}
+    {/* ── 推荐链接确认弹窗（已有推荐码，新用户确认）────────── */}
     <Dialog open={showRefConfirm} onOpenChange={() => {}}>
       <DialogContent
-        className="w-[calc(100vw-24px)] max-w-[420px] p-0 overflow-hidden [&>button:last-child]:hidden"
-        style={{
-          background: "#1a1a1a",
-          border: "1px solid rgba(212,168,50,0.3)",
-          borderRadius: 20,
-          boxShadow: "0 25px 60px rgba(0,0,0,0.7), 0 0 40px rgba(212,168,50,0.1)",
-        }}
+        className="w-[calc(100vw-24px)] max-w-[400px] p-0 overflow-hidden [&>button:last-child]:hidden"
+        style={DIALOG_STYLE}
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogTitle className="sr-only">{t("profile.confirmRefCode")}</DialogTitle>
         <DialogDescription className="sr-only">{t("profile.confirmRefCodeDesc")}</DialogDescription>
-        <div className="px-5 sm:px-6 pt-5 pb-2">
-          <div className="text-center mb-3">
-            <div className="w-11 h-11 rounded-2xl mx-auto mb-2.5 flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, hsl(43,74%,58%), hsl(38,70%,46%))", boxShadow: "0 4px 15px rgba(212,168,50,0.35)" }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-            </div>
-            <h3 className="text-base font-bold text-white">{t("profile.confirmRefCode")}</h3>
-            <p className="text-xs text-white/40 mt-1">{t("profile.confirmRefCodeDesc")}</p>
+
+        <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #1d4ed8, #3b82f6, #60a5fa)" }} />
+
+        <div className="px-6 pt-6 pb-2 text-center">
+          <div className="w-12 h-12 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={ICON_STYLE}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
           </div>
+          <h3 className="text-base font-bold text-white">{t("profile.confirmRefCode")}</h3>
+          <p className="text-xs text-white/40 mt-1">{t("profile.confirmRefCodeDesc")}</p>
         </div>
-        <div className="px-5 sm:px-6 pb-5 space-y-2.5">
+
+        <div className="px-6 pb-6 pt-3 space-y-2.5">
           {referrerWallet && (
-            <div className="rounded-xl px-4 py-2.5" style={{ background: "rgba(212,168,50,0.08)", border: "1px solid rgba(212,168,50,0.15)" }}>
-              <p className="text-[10px] text-white/40 mb-0.5">{t("profile.sponsorLabel", "Sponsor (Referrer)")}</p>
-              <p className="text-xs text-primary font-mono truncate">{referrerWallet}</p>
+            <div className="rounded-xl px-4 py-2.5" style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)" }}>
+              <p className="text-[10px] text-white/40 mb-0.5 uppercase tracking-wide">{t("profile.sponsorLabel", "推荐人")}</p>
+              <p className="text-xs text-blue-400 font-mono truncate">{referrerWallet}</p>
             </div>
           )}
           {placementWallet && placementWallet !== referrerWallet && (
-            <div className="rounded-xl px-4 py-2.5" style={{ background: "rgba(234,179,8,0.06)", border: "1px solid rgba(234,179,8,0.12)" }}>
-              <p className="text-[10px] text-white/40 mb-0.5">{t("profile.placementLabel", "Placement (Team)")}</p>
-              <p className="text-xs text-yellow-400 font-mono truncate">{placementWallet}</p>
+            <div className="rounded-xl px-4 py-2.5" style={{ background: "rgba(59,130,246,0.05)", border: "1px solid rgba(59,130,246,0.12)" }}>
+              <p className="text-[10px] text-white/40 mb-0.5 uppercase tracking-wide">{t("profile.placementLabel", "安置人")}</p>
+              <p className="text-xs text-blue-300 font-mono truncate">{placementWallet}</p>
             </div>
           )}
           <div>
-            <p className="text-[11px] text-white/50 mb-1.5 font-medium">{t("profile.sponsorCode", "Sponsor Code")}</p>
+            <p className="text-[11px] text-white/50 mb-1.5 font-medium uppercase tracking-wide">{t("profile.sponsorCode", "推荐码")}</p>
             <input
               type="text"
               value={refInput}
               onChange={(e) => { setRefInput(e.target.value); setRefError(""); setReferrerWallet(null); }}
               placeholder={t("profile.refCodePlaceholder")}
               className="w-full h-11 rounded-xl px-4 text-sm text-white placeholder:text-white/25 outline-none text-center font-mono tracking-widest"
-              style={{ background: "rgba(255,255,255,0.06)", border: refError ? "1px solid #ef4444" : "1px solid rgba(212,168,50,0.15)" }}
+              style={refError ? INPUT_ERROR : INPUT_NORMAL}
               autoFocus
             />
           </div>
           <div>
-            <p className="text-[11px] text-white/50 mb-1.5 font-medium">{t("profile.placementCode", "Placement Code")}</p>
+            <p className="text-[11px] text-white/50 mb-1.5 font-medium uppercase tracking-wide">{t("profile.placementCode", "安置码")}<span className="text-white/25 ml-1 normal-case">({t("common.optional","可选")})</span></p>
             <input
               type="text"
               value={placementInput}
               onChange={(e) => { setPlacementInput(e.target.value); setRefError(""); setPlacementWallet(null); }}
-              placeholder={t("profile.placementCodePlaceholder", "Placement code (optional, defaults to sponsor)")}
-              className="w-full h-11 rounded-xl px-4 text-sm text-white placeholder:text-white/25 outline-none text-center font-mono tracking-widest"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+              placeholder={t("profile.placementCodePlaceholder", "默认与推荐码相同")}
+              className="w-full h-11 rounded-xl px-4 text-sm text-white placeholder:text-white/25 outline-none text-center font-mono"
+              style={INPUT_NORMAL}
               onKeyDown={(e) => e.key === "Enter" && handleRefConfirm()}
             />
           </div>
-          {refError && <p className="text-xs text-red-400">{refError}</p>}
+          {refError && <p className="text-xs text-red-400 flex items-center gap-1"><span>✕</span>{refError}</p>}
           <button
             onClick={handleRefConfirm}
             disabled={refLoading || !refInput.trim()}
             className="w-full h-11 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.97] disabled:opacity-40 mt-1"
-            style={{ background: "linear-gradient(135deg, #D4AF37, #FF3B3B)", boxShadow: "0 4px 15px rgba(212,168,50,0.25)" }}
+            style={BTN_STYLE}
           >
             {refLoading ? t("common.processing") : t("profile.confirmAndRegister")}
           </button>

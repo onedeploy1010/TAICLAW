@@ -83,8 +83,9 @@ function StrategyListTab({ walletAddr, onFollowStrategy }: { walletAddr: string;
     queryKey: ["strategy-trades"],
     queryFn: async () => {
       const res = await fetch("/api/paper-trades?limit=200");
-      if (!res.ok) throw new Error("Failed");
-      return res.json() as Promise<PaperTrade[]>;
+      if (!res.ok) return [];
+      const d = await res.json();
+      return Array.isArray(d) ? d : [];
     },
     staleTime: 30_000, retry: false,
   });
@@ -93,8 +94,9 @@ function StrategyListTab({ walletAddr, onFollowStrategy }: { walletAddr: string;
     queryKey: ["strategy-signals"],
     queryFn: async () => {
       const res = await fetch("/api/trade-signals?limit=50");
-      if (!res.ok) throw new Error("Failed");
-      return res.json() as Promise<TradeSignal[]>;
+      if (!res.ok) return [];
+      const d = await res.json();
+      return Array.isArray(d) ? d : [];
     },
     staleTime: 30_000, retry: false,
   });
@@ -260,11 +262,12 @@ export default function StrategyPage() {
     enabled: !!walletAddr,
   });
 
-  const { data: hedgePositions = [] } = useQuery<HedgePosition[]>({
+  const { data: hedgePositionsRaw } = useQuery<HedgePosition[]>({
     queryKey: ["hedge-positions", walletAddr],
     queryFn: () => getHedgePositions(walletAddr),
     enabled: !!walletAddr,
   });
+  const hedgePositions: HedgePosition[] = Array.isArray(hedgePositionsRaw) ? hedgePositionsRaw : [];
 
   const { data: insurancePool } = useQuery<{ poolSize: string; totalPolicies: number; totalPaid: string; payoutRate: string }>({
     queryKey: ["insurance-pool"],
