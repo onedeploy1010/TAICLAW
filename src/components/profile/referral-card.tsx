@@ -2,14 +2,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link2, Copy, Users, UserPlus, ArrowDownToLine } from "lucide-react";
+import { Link2, Users, UserPlus, ArrowDownToLine } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { copyText } from "@/lib/copy";
 import { useActiveAccount } from "thirdweb/react";
 import { useQuery } from "@tanstack/react-query";
 import { getReferralTree } from "@/lib/api";
 import { shortenAddress, formatCompact } from "@/lib/constants";
-import type { Profile } from "@shared/types";
 import { useTranslation } from "react-i18next";
 
 interface ReferralData {
@@ -33,11 +32,7 @@ interface ReferralData {
   directCount: number;
 }
 
-interface ReferralCardProps {
-  refCode: string | undefined;
-}
-
-export function ReferralCard({ refCode }: ReferralCardProps) {
+export function ReferralCard() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const account = useActiveAccount();
@@ -54,7 +49,10 @@ export function ReferralCard({ refCode }: ReferralCardProps) {
     toast({ title: t("common.copied"), description: t("common.copiedDesc") });
   };
 
-  const referralLink = refCode ? `${window.location.origin}/r/${refCode}/${refCode}` : "--";
+  // Referral link uses wallet address as the ref param
+  const referralLink = walletAddr
+    ? `${window.location.origin}?ref=${walletAddr}`
+    : "--";
 
   const totalTeamDeposits = teamData?.referrals.reduce((sum, ref) => {
     const direct = Number(ref.totalDeposited || 0);
@@ -77,21 +75,8 @@ export function ReferralCard({ refCode }: ReferralCardProps) {
                 <Link2 className="mr-1 h-3 w-3" /> {t("common.copyLink")}
               </Button>
             </div>
-            <div className="text-xs font-mono text-muted-foreground truncate" data-testid="text-referral-link">{referralLink}</div>
-          </div>
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-              <span className="text-xs text-muted-foreground">{t("profile.referralCode")}</span>
-              <Button
-                size="sm"
-                onClick={() => copyToClipboard(refCode || "")}
-                data-testid="button-copy-code"
-              >
-                <Copy className="mr-1 h-3 w-3" /> {t("common.copy")}
-              </Button>
-            </div>
-            <div className="text-xs font-mono text-muted-foreground" data-testid="text-ref-code">
-              {refCode || "--"}
+            <div className="text-xs font-mono text-muted-foreground truncate" data-testid="text-referral-link">
+              {referralLink}
             </div>
           </div>
         </CardContent>

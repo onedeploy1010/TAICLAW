@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { Switch, Route, Link, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
-import { authWallet, getProfile, getProfileByRefCode } from "./lib/api";
+import { authWallet, getProfile } from "./lib/api";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -47,24 +47,11 @@ const wallets = [
 ];
 
 /**
- * Parse referral codes from URL.
- * Supports two formats:
- *   - New: /r/{refCode}/{placementCode}  (dual referral)
- *   - Legacy: ?ref={refCode}              (single referral, placement = referrer)
+ * Parse referrer wallet address from URL.
+ * Format: ?ref={walletAddress}  e.g. ?ref=0xAbCd...
  */
 function getRefCodesFromUrl(): { refCode: string | null; placementCode: string | null } {
-  // New format: /r/{refCode}/{placementCode}
-  const pathMatch = window.location.pathname.match(/^\/r\/([^/]+)(?:\/([^/]+))?/);
-  if (pathMatch) {
-    const ref = pathMatch[1];
-    const placement = pathMatch[2] || ref; // default placement = referrer
-    localStorage.setItem("taiclaw_ref_code", ref);
-    localStorage.setItem("taiclaw_placement_code", placement);
-    window.history.replaceState({}, "", "/");
-    return { refCode: ref, placementCode: placement };
-  }
-
-  // Legacy format: ?ref={refCode}
+  // Read ?ref=<walletAddress> from URL
   const urlParams = new URLSearchParams(window.location.search);
   const urlRef = urlParams.get("ref");
   if (urlRef) {
@@ -92,11 +79,9 @@ function WalletSync() {
   const [showRefDialog, setShowRefDialog] = useState(false);
   const [showRefConfirm, setShowRefConfirm] = useState(false);
   const [refInput, setRefInput] = useState("");
-  const [placementInput, setPlacementInput] = useState("");
   const [refError, setRefError] = useState("");
   const [refLoading, setRefLoading] = useState(false);
   const [referrerWallet, setReferrerWallet] = useState<string | null>(null);
-  const [placementWallet, setPlacementWallet] = useState<string | null>(null);
 
   useEffect(() => {
     refCodesRef.current = getRefCodesFromUrl();
@@ -125,19 +110,13 @@ function WalletSync() {
       try {
         const profile = await getProfile(account.address);
         if (!profile && refCode) {
-          // New user with referral code — look up referrer/placement and show confirmation
+          // New user with referral link — look up referrer profile by wallet address
           try {
-            const referrer = await getProfileByRefCode(refCode);
+            const referrer = await getProfile(refCode);
             if (referrer?.walletAddress) setReferrerWallet(referrer.walletAddress);
           } catch {}
-          if (placementCode && placementCode !== refCode) {
-            try {
-              const placement = await getProfileByRefCode(placementCode);
-              if (placement?.walletAddress) setPlacementWallet(placement.walletAddress);
-            } catch {}
-          }
           setRefInput(refCode);
-          setPlacementInput(placementCode || refCode);
+          setPlacementInput(refCode);
           setShowRefConfirm(true);
         } else {
           await doAuth(account.address, refCode || undefined, placementCode || undefined);
@@ -248,27 +227,15 @@ function WalletSync() {
 
         <div className="px-6 pb-6 pt-3 space-y-3">
           <div>
-            <p className="text-[11px] text-white/50 mb-1.5 font-medium uppercase tracking-wide">{t("profile.sponsorCode", "推荐人码")}</p>
+            <p className="text-[11px] text-white/50 mb-1.5 font-medium uppercase tracking-wide">{t("profile.sponsorWallet", "推荐人钱包地址")}</p>
             <input
               type="text"
               value={refInput}
               onChange={(e) => { setRefInput(e.target.value); setRefError(""); }}
-              placeholder={t("profile.refCodePlaceholder")}
-              className="w-full h-11 rounded-xl px-4 text-sm text-white placeholder:text-white/25 outline-none font-mono tracking-widest"
+              placeholder="0x..."
+              className="w-full h-11 rounded-xl px-4 text-sm text-white placeholder:text-white/25 outline-none font-mono"
               style={refError ? INPUT_ERROR : INPUT_NORMAL}
               autoFocus
-              onKeyDown={(e) => e.key === "Enter" && handleRefSubmit()}
-            />
-          </div>
-          <div>
-            <p className="text-[11px] text-white/50 mb-1.5 font-medium uppercase tracking-wide">{t("profile.placementCode", "安置码")}<span className="text-white/25 ml-1 normal-case">({t("common.optional","可选")})</span></p>
-            <input
-              type="text"
-              value={placementInput}
-              onChange={(e) => { setPlacementInput(e.target.value); setRefError(""); }}
-              placeholder={t("profile.placementCodePlaceholder", "默认与推荐码相同")}
-              className="w-full h-11 rounded-xl px-4 text-sm text-white placeholder:text-white/25 outline-none font-mono"
-              style={INPUT_NORMAL}
               onKeyDown={(e) => e.key === "Enter" && handleRefSubmit()}
             />
           </div>
@@ -318,33 +285,16 @@ function WalletSync() {
               <p className="text-xs text-blue-400 font-mono truncate">{referrerWallet}</p>
             </div>
           )}
-          {placementWallet && placementWallet !== referrerWallet && (
-            <div className="rounded-xl px-4 py-2.5" style={{ background: "rgba(59,130,246,0.05)", border: "1px solid rgba(59,130,246,0.12)" }}>
-              <p className="text-[10px] text-white/40 mb-0.5 uppercase tracking-wide">{t("profile.placementLabel", "安置人")}</p>
-              <p className="text-xs text-blue-300 font-mono truncate">{placementWallet}</p>
-            </div>
-          )}
           <div>
-            <p className="text-[11px] text-white/50 mb-1.5 font-medium uppercase tracking-wide">{t("profile.sponsorCode", "推荐码")}</p>
+            <p className="text-[11px] text-white/50 mb-1.5 font-medium uppercase tracking-wide">{t("profile.sponsorWallet", "推荐人钱包地址")}</p>
             <input
               type="text"
               value={refInput}
               onChange={(e) => { setRefInput(e.target.value); setRefError(""); setReferrerWallet(null); }}
-              placeholder={t("profile.refCodePlaceholder")}
-              className="w-full h-11 rounded-xl px-4 text-sm text-white placeholder:text-white/25 outline-none text-center font-mono tracking-widest"
+              placeholder="0x..."
+              className="w-full h-11 rounded-xl px-4 text-sm text-white placeholder:text-white/25 outline-none font-mono"
               style={refError ? INPUT_ERROR : INPUT_NORMAL}
               autoFocus
-            />
-          </div>
-          <div>
-            <p className="text-[11px] text-white/50 mb-1.5 font-medium uppercase tracking-wide">{t("profile.placementCode", "安置码")}<span className="text-white/25 ml-1 normal-case">({t("common.optional","可选")})</span></p>
-            <input
-              type="text"
-              value={placementInput}
-              onChange={(e) => { setPlacementInput(e.target.value); setRefError(""); setPlacementWallet(null); }}
-              placeholder={t("profile.placementCodePlaceholder", "默认与推荐码相同")}
-              className="w-full h-11 rounded-xl px-4 text-sm text-white placeholder:text-white/25 outline-none text-center font-mono"
-              style={INPUT_NORMAL}
               onKeyDown={(e) => e.key === "Enter" && handleRefConfirm()}
             />
           </div>
