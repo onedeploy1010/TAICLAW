@@ -432,7 +432,7 @@ app.get("/api/node-earnings/:wallet", handle(async (req, res) => {
 
 // ── 统一节点奖励端点（新体系）—— 按奖励类型分组返回 ─────────────────────────
 app.get("/api/node-rewards/:wallet", handle(async (req, res) => {
-  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE LOWER(wallet_address) = LOWER($1)", [req.params.wallet]);
   if (!p.length) return res.json({ rewards: [], byType: {}, totals: {} });
 
   const { rows } = await primaryPool.query(
@@ -502,7 +502,7 @@ app.post("/api/check-rank-promotion", handle(async (req, res) => {
 
 // ── Commissions ───────────────────────────────────────────────────────────────
 app.get("/api/commissions/:wallet", handle(async (req, res) => {
-  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE wallet_address = $1", [req.params.wallet]);
+  const { rows: p } = await primaryPool.query("SELECT id FROM profiles WHERE LOWER(wallet_address) = LOWER($1)", [req.params.wallet]);
   if (!p.length) return res.json({ totalCommission: "0", directReferralTotal: "0", differentialTotal: "0", records: [] });
 
   const { rows } = await primaryPool.query(
@@ -1524,92 +1524,122 @@ app.get("/api/vault/node-purchases", handle(async (req, res) => {
 
 // ── Supabase global member stats ─────────────────────────────────────────────
 app.get("/api/supabase/global-stats", handle(async (req, res) => {
-  if (!supabasePool) return res.json({ totalMembers: 0, activeMembers: 0, totalNodes: 0, superNodes: 0, stdNodes: 0 });
-  const [membersRes, purchasesRes, activeRes] = await Promise.all([
-    supabasePool.query("SELECT COUNT(*) as total FROM rune_members"),
-    supabasePool.query(`SELECT COUNT(*) as total_purchases,
-       COUNT(CASE WHEN node_id=401 THEN 1 END) as super_nodes,
-       COUNT(CASE WHEN node_id=501 THEN 1 END) as std_nodes
-       FROM rune_purchases WHERE chain_id=56`),
-    supabasePool.query(`SELECT COUNT(DISTINCT "user") as active FROM rune_purchases WHERE chain_id=56`),
+  const [membersRes, nodesRes] = await Promise.all([
+    primaryPool.query(`SELECT COUNT(*) as total FROM profiles`),
+    primaryPool.query(`
+      SELECT
+        COUNT(*) as total_nodes,
+        COUNT(CASE WHEN node_type = 'SUPER' THEN 1 END) as super_nodes,
+        COUNT(CASE WHEN node_type = 'STANDARD' THEN 1 END) as std_nodes,
+        COUNT(CASE WHEN status = 'active' THEN 1 END) as active_nodes
+      FROM node_memberships
+    `),
   ]);
-  const p = purchasesRes.rows[0];
+  const n = nodesRes.rows[0];
   res.json({
-    totalMembers:   Number(membersRes.rows[0].total),
-    activeMembers:  Number(activeRes.rows[0].active),
-    totalNodes:     Number(p.total_purchases),
-    superNodes:     Number(p.super_nodes),
-    stdNodes:       Number(p.std_nodes),
+    totalMembers:  Number(membersRes.rows[0].total),
+    activeMembers: Number(n.active_nodes),
+    totalNodes:    Number(n.total_nodes),
+    superNodes:    Number(n.super_nodes),
+    stdNodes:      Number(n.std_nodes),
   });
 }));
 
-// ── Supabase referral tree for a wallet ──────────────────────────────────────
+// ── Local referral tree for a wallet ─────────────────────────────────────────
 app.get("/api/supabase/team/:wallet", handle(async (req, res) => {
-  if (!supabasePool) return res.json({ referrals: [], teamSize: 0, directCount: 0, ownNode: null, referrer: null });
   const wallet = req.params.wallet.toLowerCase();
-  const NODE_TIER: Record<number, string> = { 401: "超级节点", 501: "标准节点" };
 
-  // Own node info + referrer (exclude self-referral rows)
-  const [ownPurchase, ownRef] = await Promise.all([
-    supabasePool.query(`SELECT node_id, amount/1e18 as usdt_amount FROM rune_purchases WHERE "user"=$1 AND chain_id=56 LIMIT 1`, [wallet]),
-    supabasePool.query(`SELECT referrer FROM rune_referrers WHERE "user"=$1 AND chain_id=56 AND LOWER(referrer) != $1 LIMIT 1`, [wallet]),
-  ]);
+  // Node type → display label + legacy nodeId for frontend compat
+  const NODE_LABEL: Record<string, string> = {
+    SUPER: "超级节点", STANDARD: "标准节点", STD: "标准节点", LITE: "轻节点",
+  };
+  const NODE_ID: Record<string, number> = { SUPER: 401, STANDARD: 501, STD: 501, LITE: 502 };
+
+  // Find self
+  const { rows: selfRows } = await primaryPool.query(
+    `SELECT p.id, p.node_type, p.total_deposited, p.referrer_id,
+            r.wallet_address as referrer_wallet
+     FROM profiles p
+     LEFT JOIN profiles r ON r.id = p.referrer_id
+     WHERE LOWER(p.wallet_address) = $1`, [wallet]);
+  if (!selfRows.length) {
+    return res.json({ referrals: [], teamSize: 0, directCount: 0, ownUsdt: 0, directUsdt: 0, teamUsdt: 0, ownNode: null, referrer: null });
+  }
+  const self = selfRows[0];
+
+  // Own node membership
+  const { rows: ownNodeRows } = await primaryPool.query(
+    `SELECT node_type, deposit_amount FROM node_memberships WHERE user_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT 1`,
+    [self.id]);
+  const ownNodeRow = ownNodeRows[0] || null;
 
   // Direct referrals (level 1)
-  const { rows: directRows } = await supabasePool.query(`
-    SELECT r."user" as wallet, p.node_id, p.amount/1e18 as usdt_amount,
-      (SELECT COUNT(*) FROM rune_referrers r2 WHERE r2.referrer=r."user" AND r2.chain_id=56) as sub_count
-    FROM rune_referrers r
-    LEFT JOIN rune_purchases p ON p."user"=r."user" AND p.chain_id=56
-    WHERE r.referrer=$1 AND r.chain_id=56 ORDER BY r.bound_at DESC`, [wallet]);
+  const { rows: directRows } = await primaryPool.query(`
+    SELECT p.id, p.wallet_address as wallet, p.rank, p.node_type, p.total_deposited,
+           nm.node_type as active_node_type, nm.deposit_amount,
+           (SELECT COUNT(*) FROM profiles sub WHERE sub.referrer_id = p.id) as sub_count
+    FROM profiles p
+    LEFT JOIN node_memberships nm ON nm.user_id = p.id AND nm.status = 'active'
+    WHERE p.referrer_id = $1
+    ORDER BY p.created_at DESC`, [self.id]);
 
-  // Level-2 sub-referrals for each direct ref
+  // Level-2 sub-referrals
   const subMap: Record<string, any[]> = {};
   if (directRows.length > 0) {
-    const wallets = directRows.map((r: any) => r.wallet);
-    const { rows: subRows } = await supabasePool.query(`
-      SELECT r."user" as wallet, r.referrer, p.node_id, p.amount/1e18 as usdt_amount,
-        (SELECT COUNT(*) FROM rune_referrers r2 WHERE r2.referrer=r."user" AND r2.chain_id=56) as sub_count
-      FROM rune_referrers r
-      LEFT JOIN rune_purchases p ON p."user"=r."user" AND p.chain_id=56
-      WHERE r.referrer=ANY($1) AND r.chain_id=56 ORDER BY r.bound_at DESC`, [wallets]);
+    const ids = directRows.map((r: any) => r.id);
+    const { rows: subRows } = await primaryPool.query(`
+      SELECT p.id, p.wallet_address as wallet, p.referrer_id::text as referrer_id,
+             p.rank, p.node_type, p.total_deposited,
+             nm.node_type as active_node_type,
+             (SELECT COUNT(*) FROM profiles sub WHERE sub.referrer_id = p.id) as sub_count
+      FROM profiles p
+      LEFT JOIN node_memberships nm ON nm.user_id = p.id AND nm.status = 'active'
+      WHERE p.referrer_id = ANY($1)
+      ORDER BY p.created_at DESC`, [ids]);
     for (const s of subRows) {
-      if (!subMap[s.referrer]) subMap[s.referrer] = [];
-      subMap[s.referrer].push(s);
+      const key = s.referrer_id;
+      if (!subMap[key]) subMap[key] = [];
+      subMap[key].push(s);
     }
   }
 
+  const resolveLabel = (row: any) => {
+    const nt = row.active_node_type || row.node_type || "NONE";
+    return NODE_LABEL[nt] || (nt !== "NONE" ? nt : "注册会员");
+  };
+
   const mapMember = (row: any, level = 1): any => ({
-    id:             row.wallet,
+    id:             row.id,
     walletAddress:  row.wallet,
-    rank:           NODE_TIER[row.node_id] || "注册会员",
-    nodeType:       NODE_TIER[row.node_id] || "--",
-    totalDeposited: String(Number(row.usdt_amount || 0)),
+    rank:           row.rank || resolveLabel(row),
+    nodeType:       resolveLabel(row),
+    totalDeposited: String(Number(row.total_deposited || row.deposit_amount || 0)),
     level,
     subCount:       Number(row.sub_count || 0),
-    subReferrals:   (subMap[row.wallet] || []).map((s: any) => mapMember(s, level + 1)),
+    subReferrals:   (subMap[row.id] || []).map((s: any) => mapMember(s, level + 1)),
   });
 
   const referrals = directRows.map((r: any) => mapMember(r));
-  const teamSize  = referrals.reduce((s, r) => s + 1 + (r.subReferrals?.length || 0), 0);
+  const teamSize  = referrals.reduce((s: number, r: any) => s + 1 + (r.subReferrals?.length || 0), 0);
 
-  // Performance totals (USDT invested by direct/team members)
-  const directUsdt = directRows.reduce((s: number, r: any) => s + Number(r.usdt_amount || 0), 0);
-  const subUsdt = Object.values(subMap).flat().reduce((s: number, r: any) => s + Number((r as any).usdt_amount || 0), 0);
-  const teamUsdt = directUsdt + subUsdt;
-  const ownUsdt  = Number(ownPurchase.rows[0]?.usdt_amount || 0);
+  const directUsdt = directRows.reduce((s: number, r: any) => s + Number(r.total_deposited || 0), 0);
+  const subUsdt = Object.values(subMap).flat().reduce((s: number, r: any) => s + Number(r.total_deposited || 0), 0);
 
   res.json({
     referrals,
     teamSize,
     directCount: directRows.length,
-    ownUsdt,
+    ownUsdt:     Number(self.total_deposited || 0),
     directUsdt,
-    teamUsdt,
-    ownNode: ownPurchase.rows[0]
-      ? { nodeId: ownPurchase.rows[0].node_id, nodeTier: NODE_TIER[ownPurchase.rows[0].node_id] || "注册会员", usdtAmount: Number(ownPurchase.rows[0].usdt_amount) }
+    teamUsdt:    directUsdt + subUsdt,
+    ownNode: ownNodeRow
+      ? {
+          nodeId:    NODE_ID[ownNodeRow.node_type] ?? 0,
+          nodeTier:  NODE_LABEL[ownNodeRow.node_type] || ownNodeRow.node_type,
+          usdtAmount: Number(ownNodeRow.deposit_amount || 0),
+        }
       : null,
-    referrer: ownRef.rows[0]?.referrer || null,
+    referrer: self.referrer_wallet || null,
   });
 }));
 
