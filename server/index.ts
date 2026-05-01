@@ -1082,48 +1082,29 @@ app.get("/api/vault/pool-stats", handle(async (_, res) => {
   const RESERVE_POOL_RATIO = 0.20;
   const MONTHLY_YIELD_RATE = 0.08;
 
-  // ── Queries run in parallel across both databases ──────────────────────────
-  const queries: Promise<any>[] = [
-    // local DB: rune lock positions
-    primaryPool.query(
+  const ZERO_LOCK = { rune_total: "0", usdt_total: "0", position_count: "0" };
+
+  // ── Queries run in parallel, each with its own fallback ────────────────────
+  const safeQuery = async (pool: typeof primaryPool, sql: string, fallback: any) => {
+    try { return (await pool.query(sql)).rows[0] ?? fallback; }
+    catch { return fallback; }
+  };
+
+  const [motherLock, emberBurn, revRow] = await Promise.all([
+    safeQuery(primaryPool,
       `SELECT COALESCE(SUM(rune_amount),0) AS rune_total,
               COALESCE(SUM(usdt_amount),0) AS usdt_total,
               COUNT(*) AS position_count
-       FROM rune_lock_positions WHERE status = 'ACTIVE'`
-    ),
-    // local DB: ember burn positions
-    primaryPool.query(
+       FROM rune_lock_positions WHERE status = 'ACTIVE'`, ZERO_LOCK),
+    safeQuery(primaryPool,
       `SELECT COALESCE(SUM(rune_amount),0) AS rune_total,
               COALESCE(SUM(usdt_amount),0) AS usdt_total,
               COUNT(*) AS position_count
-       FROM ember_burn_positions WHERE status = 'ACTIVE'`
-    ),
-    // local DB: revenue pools
-    primaryPool.query(`SELECT COALESCE(SUM(balance),0) AS total FROM revenue_pools`),
-  ];
-
-  // Supabase: real on-chain node purchases (USDT amounts in wei / 1e18)
-  if (supabasePool) {
-    queries.push(
-      supabasePool.query(
-        `SELECT
-           COALESCE(SUM(amount),0)                             AS total_wei,
-           COUNT(DISTINCT "user")                              AS buyer_count,
-           COUNT(*)                                            AS purchase_count,
-           COUNT(*) FILTER (WHERE node_id = 401)              AS super_node_count,
-           COALESCE(SUM(amount) FILTER (WHERE node_id = 401),0) AS super_wei,
-           COUNT(*) FILTER (WHERE node_id = 501)              AS std_node_count,
-           COALESCE(SUM(amount) FILTER (WHERE node_id = 501),0) AS std_wei
-         FROM rune_purchases`
-      ),
-      supabasePool.query(`SELECT COUNT(*) AS member_count FROM rune_members`),
-    );
-  }
-
-  const results = await Promise.all(queries);
-  const motherLock = results[0].rows[0];
-  const emberBurn  = results[1].rows[0];
-  const revTotal   = Number(results[2].rows[0].total);
+       FROM ember_burn_positions WHERE status = 'ACTIVE'`, ZERO_LOCK),
+    safeQuery(primaryPool,
+      `SELECT COALESCE(SUM(balance),0) AS total FROM revenue_pools`, { total: "0" }),
+  ]);
+  const revTotal = Number(revRow.total);
 
   // Real on-chain node deposit data (falls back to 0 when Supabase unavailable)
   let nodeDepositUsdt  = 0;
@@ -1135,9 +1116,22 @@ app.get("/api/vault/pool-stats", handle(async (_, res) => {
   let stdNodeUsdt      = 0;
   let memberCount      = 0;
 
-  if (supabasePool && results[3]) {
-    const sp = results[3].rows[0];
+  if (supabasePool) {
     const WEI = 1e18;
+    const ZERO_SB = { total_wei: "0", buyer_count: "0", purchase_count: "0", super_node_count: "0", super_wei: "0", std_node_count: "0", std_wei: "0" };
+    const [sp, mc] = await Promise.all([
+      safeQuery(supabasePool,
+        `SELECT COALESCE(SUM(amount),0) AS total_wei,
+                COUNT(DISTINCT "user") AS buyer_count,
+                COUNT(*) AS purchase_count,
+                COUNT(*) FILTER (WHERE node_id = 401) AS super_node_count,
+                COALESCE(SUM(amount) FILTER (WHERE node_id = 401),0) AS super_wei,
+                COUNT(*) FILTER (WHERE node_id = 501) AS std_node_count,
+                COALESCE(SUM(amount) FILTER (WHERE node_id = 501),0) AS std_wei
+         FROM rune_purchases`, ZERO_SB),
+      safeQuery(supabasePool,
+        `SELECT COUNT(*) AS member_count FROM rune_members`, { member_count: "0" }),
+    ]);
     nodeDepositUsdt = Number(sp.total_wei) / WEI;
     nodeBuyerCount  = Number(sp.buyer_count);
     purchaseCount   = Number(sp.purchase_count);
@@ -1145,7 +1139,7 @@ app.get("/api/vault/pool-stats", handle(async (_, res) => {
     stdNodeCount    = Number(sp.std_node_count);
     superNodeUsdt   = Number(sp.super_wei) / WEI;
     stdNodeUsdt     = Number(sp.std_wei) / WEI;
-    memberCount     = Number(results[4].rows[0].member_count);
+    memberCount     = Number(mc.member_count);
   }
 
   const lockUsdt  = Number(motherLock.usdt_total);

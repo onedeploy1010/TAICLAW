@@ -84,8 +84,8 @@ export function TradingVaultBanner() {
     refetchInterval: 60_000,
   });
 
-  const balance    = Number(data?.tradingPool.balance    ?? 0);
-  const totalDeposits = Number(data?.tradingPool.contributionTotal ?? 0);
+  const balance    = Number(data?.tradingPool?.balance    ?? 0);
+  const totalDeposits = Number(data?.tradingPool?.contributionTotal ?? 0);
 
   const fmtUsd = (v: number) => {
     if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;
