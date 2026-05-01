@@ -318,37 +318,46 @@ export function PriceChart({
     }
 
     const currentPrice = hasOhlc && ohlcData ? ohlcData[ohlcData.length - 1].close : (data && data.length > 0 ? data[data.length - 1].price : 0);
-    const maxDeviationPct = (() => {
-      switch (selectedTimeframe) {
-        case "1m": return 0.002;
-        case "5m": return 0.005;
-        case "15m": return 0.008;
-        case "30m": return 0.012;
-        case "1H": return 0.015;
-        case "4H": return 0.03;
-        case "1D": return 0.06;
-        case "1W": return 0.12;
-        default: return 0.03;
-      }
-    })();
-    const maxDeviation = currentPrice * maxDeviationPct;
-    const saneForecast = forecast?.forecastPoints?.length && currentPrice > 0
-      ? (() => {
-          const sanePoints = forecast.forecastPoints.filter(fp =>
-            Math.abs(fp.price - currentPrice) <= maxDeviation
-          );
-          if (sanePoints.length === 0) return null;
-          return { ...forecast, forecastPoints: sanePoints };
-        })()
-      : forecast;
-    const saneTargetPrice = targetPrice && currentPrice > 0 && Math.abs(targetPrice - currentPrice) <= maxDeviation
-      ? targetPrice
-      : null;
 
-    if (saneForecast?.forecastPoints?.length && hasOhlc && ohlcData) {
+    // Bar interval in ms for each timeframe
+    const tfIntervalMs: Record<string, number> = {
+      "1m": 60_000, "5m": 300_000, "15m": 900_000, "30m": 1_800_000,
+      "1H": 3_600_000, "4H": 14_400_000, "1D": 86_400_000, "1W": 604_800_000,
+    };
+    const barMs = tfIntervalMs[selectedTimeframe || "1H"] ?? 3_600_000;
+    // Number of forecast bars to project
+    const NUM_FORECAST_BARS = 5;
+
+    // If API returned no forecastPoints, generate them from targetPrice
+    const resolvedForecastPoints = (() => {
+      if (forecast?.forecastPoints?.length) return forecast.forecastPoints;
+      if (!forecast?.targetPrice || !currentPrice || !hasOhlc || !ohlcData) return [];
+      const lastTs = ohlcData[ohlcData.length - 1].timestamp;
+      const from = currentPrice;
+      const to = forecast.targetPrice;
+      return Array.from({ length: NUM_FORECAST_BARS }, (_, i) => {
+        const t = i + 1;
+        // Smooth curve interpolation (ease-in)
+        const ratio = t / NUM_FORECAST_BARS;
+        const eased = ratio * ratio * (3 - 2 * ratio); // smoothstep
+        // Add slight noise
+        const noise = (Math.sin(t * 7919) % 1) * (Math.abs(to - from) * 0.06);
+        return {
+          timestamp: lastTs + barMs * t,
+          time: new Date(lastTs + barMs * t).toISOString(),
+          price: from + (to - from) * eased + noise,
+          predicted: true,
+        };
+      });
+    })();
+
+    // Always show target price line if forecast exists (no deviation filter)
+    const saneTargetPrice = targetPrice && currentPrice > 0 ? targetPrice : null;
+
+    if (resolvedForecastPoints.length && hasOhlc && ohlcData) {
       const lastCandle = ohlcData[ohlcData.length - 1];
       const prevPrice = lastCandle.close;
-      const priceSeq = [prevPrice, ...saneForecast.forecastPoints.map(fp => fp.price)];
+      const priceSeq = [prevPrice, ...resolvedForecastPoints.map(fp => fp.price)];
       const isCandleMode = chartType === "candle" || chartType === "bar";
 
       if (isCandleMode) {
@@ -364,11 +373,11 @@ export function PriceChart({
           wickDownColor: fcBorder,
         });
 
-        const forecastCandles: CandlestickData[] = saneForecast.forecastPoints.map((fp, i) => {
+        const forecastCandles: CandlestickData[] = resolvedForecastPoints.map((fp, i) => {
           const openPrice = priceSeq[i];
           const closePrice = fp.price;
-          const diff = Math.abs(closePrice - openPrice);
-          const wickExt = diff * (0.2 + Math.random() * 0.3);
+          const diff = Math.abs(closePrice - openPrice) || currentPrice * 0.001;
+          const wickExt = diff * (0.2 + Math.abs(Math.sin(i * 17)) * 0.3);
           const high = Math.max(openPrice, closePrice) + wickExt;
           const low = Math.min(openPrice, closePrice) - wickExt;
           return {
@@ -384,7 +393,7 @@ export function PriceChart({
 
         forecastCandleSeries.setMarkers([
           {
-            time: toUTC(saneForecast.forecastPoints[0].timestamp) as UTCTimestamp,
+            time: toUTC(resolvedForecastPoints[0].timestamp) as UTCTimestamp,
             position: "aboveBar" as const,
             color: forecastLineColor,
             shape: "arrowDown" as const,
@@ -392,11 +401,11 @@ export function PriceChart({
             size: 1,
           },
           {
-            time: toUTC(saneForecast.forecastPoints[saneForecast.forecastPoints.length - 1].timestamp) as UTCTimestamp,
+            time: toUTC(resolvedForecastPoints[resolvedForecastPoints.length - 1].timestamp) as UTCTimestamp,
             position: "aboveBar" as const,
             color: forecastLineColor,
             shape: "circle" as const,
-            text: formatUSD(saneForecast.forecastPoints[saneForecast.forecastPoints.length - 1].price),
+            text: formatUSD(resolvedForecastPoints[resolvedForecastPoints.length - 1].price),
             size: 1.5,
           },
         ]);
@@ -414,7 +423,7 @@ export function PriceChart({
 
         const fPoints: LineData[] = [
           { time: toUTC(lastCandle.timestamp), value: lastCandle.close },
-          ...saneForecast.forecastPoints.map(fp => ({
+          ...resolvedForecastPoints.map(fp => ({
             time: toUTC(fp.timestamp),
             value: fp.price,
           })),
@@ -423,13 +432,13 @@ export function PriceChart({
         forecastSeriesRef.current = forecastLineSeries;
 
         forecastLineSeries.setMarkers(
-          saneForecast.forecastPoints.map((fp, i) => ({
+          resolvedForecastPoints.map((fp, i) => ({
             time: toUTC(fp.timestamp) as UTCTimestamp,
             position: "aboveBar" as const,
             color: forecastLineColor,
             shape: "circle" as const,
-            text: i === saneForecast.forecastPoints.length - 1 ? formatUSD(fp.price) : "",
-            size: i === saneForecast.forecastPoints.length - 1 ? 1.5 : 0.5,
+            text: i === resolvedForecastPoints.length - 1 ? formatUSD(fp.price) : "",
+            size: i === resolvedForecastPoints.length - 1 ? 1.5 : 0.5,
           })),
         );
       }
