@@ -107,9 +107,11 @@ function StrategyListTab({ walletAddr, onFollowStrategy }: { walletAddr: string;
   const globalOpen = allTrades.filter(tr => tr.status === "OPEN").length || AI_STRATEGIES.reduce((s, m) => s + seededStats(m.key).openCount, 0);
   const closedTrades = allTrades.filter(tr => tr.status === "CLOSED");
   const globalWinRate = closedTrades.length > 0
-    ? (closedTrades.filter(tr => (tr.pnl ?? 0) > 0).length / closedTrades.length) * 100
+    ? (closedTrades.filter(tr => (Number(tr.pnl) ?? 0) > 0).length / closedTrades.length) * 100
     : AI_STRATEGIES.reduce((s, m) => s + seededStats(m.key).winRate, 0) / AI_STRATEGIES.length;
-  const globalPnl = closedTrades.reduce((s, tr) => s + (tr.pnl ?? 0), 0) || AI_STRATEGIES.reduce((s, m) => s + seededStats(m.key).pnl, 0);
+  const globalPnl = closedTrades.length > 0
+    ? closedTrades.reduce((s, tr) => s + Number(tr.pnl ?? 0), 0)
+    : AI_STRATEGIES.reduce((s, m) => s + seededStats(m.key).pnl, 0);
 
   return (
     <div className="space-y-4" style={{ animation: "fadeSlideIn 0.4s ease-out 0.1s both" }}>
@@ -139,8 +141,8 @@ function StrategyListTab({ walletAddr, onFollowStrategy }: { walletAddr: string;
             const closed = tradesFor(strat.key, "CLOSED");
             const fb = seededStats(strat.key);
             const hasReal = openTrades.length > 0 || closed.length > 0;
-            const winRate = hasReal && closed.length > 0 ? (closed.filter(tr => (tr.pnl ?? 0) > 0).length / closed.length) * 100 : fb.winRate;
-            const totalPnl = hasReal ? closed.reduce((s, tr) => s + (tr.pnl ?? 0), 0) : fb.pnl;
+            const winRate = hasReal && closed.length > 0 ? (closed.filter(tr => Number(tr.pnl ?? 0) > 0).length / closed.length) * 100 : fb.winRate;
+            const totalPnl = hasReal ? closed.reduce((s, tr) => s + Number(tr.pnl ?? 0), 0) : fb.pnl;
             const openCount = hasReal ? openTrades.length : fb.openCount;
             const totalCount = hasReal ? closed.length : fb.totalTrades;
             const sig = latestSig(strat.key);

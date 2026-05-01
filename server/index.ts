@@ -1,6 +1,7 @@
 import express from "express";
 import { pool, supabasePool, primaryPool } from "./db.js";
 import adminRoutes from "./admin-routes.js";
+import { startAiTradingEngine } from "./ai-trading-engine.js";
 import { fileURLToPath } from "url";
 import path from "path";
 
@@ -24,6 +25,7 @@ app.use((req, res, next) => {
 function toCamel(obj: any): any {
   if (obj === null || obj === undefined) return obj;
   if (Array.isArray(obj)) return obj.map(toCamel);
+  if (obj instanceof Date) return obj.toISOString();
   if (typeof obj !== "object") return obj;
   const out: any = {};
   for (const key of Object.keys(obj)) {
@@ -1603,6 +1605,67 @@ app.get("/api/supabase/team/:wallet", handle(async (req, res) => {
   });
 }));
 
+// ── AI Simulation Endpoints ───────────────────────────────────────────────────
+
+app.get("/api/ai-sim/trades", handle(async (req, res) => {
+  const model = req.query.model as string | undefined;
+  const limit = Math.min(parseInt(req.query.limit as string || "15"), 500);
+  const where = model ? "WHERE primary_model = $1" : "";
+  const args = model ? [model, limit] : [limit];
+  const limitParam = model ? "$2" : "$1";
+  const { rows } = await primaryPool.query(
+    `SELECT id, asset, side, entry_price, exit_price, size, leverage, stop_loss, take_profit,
+            pnl, pnl_pct, strategy_type, close_reason, status, primary_model, timeframe,
+            opened_at, closed_at
+     FROM paper_trades ${where}
+     ORDER BY opened_at DESC LIMIT ${limitParam}`,
+    args
+  );
+  res.json(toCamel(rows));
+}));
+
+app.get("/api/ai-sim/logs", handle(async (req, res) => {
+  const model = req.query.model as string | undefined;
+  const limit = Math.min(parseInt(req.query.limit as string || "50"), 200);
+  const where = model ? "WHERE model = $1" : "";
+  const args = model ? [model, limit] : [limit];
+  const limitParam = model ? "$2" : "$1";
+  const { rows } = await primaryPool.query(
+    `SELECT id, model, asset, timeframe, log_type, content, trade_id, created_at
+     FROM ai_console_logs ${where}
+     ORDER BY created_at DESC LIMIT ${limitParam}`,
+    args
+  );
+  res.json(toCamel(rows));
+}));
+
+app.get("/api/ai-sim/stats", handle(async (req, res) => {
+  const { rows } = await primaryPool.query(`
+    SELECT
+      primary_model as model,
+      COUNT(*) FILTER (WHERE status = 'CLOSED') as total_trades,
+      COUNT(*) FILTER (WHERE status = 'CLOSED' AND pnl > 0) as winning_trades,
+      COUNT(*) FILTER (WHERE status = 'OPEN') as open_trades,
+      COALESCE(SUM(pnl) FILTER (WHERE status = 'CLOSED'), 0) as total_pnl,
+      COALESCE(AVG(pnl_pct) FILTER (WHERE status = 'CLOSED' AND pnl > 0), 0) as avg_win_pct,
+      COALESCE(AVG(pnl_pct) FILTER (WHERE status = 'CLOSED' AND pnl <= 0), 0) as avg_loss_pct
+    FROM paper_trades
+    WHERE primary_model IS NOT NULL
+    GROUP BY primary_model
+  `);
+  const stats = rows.map(r => ({
+    model: r.model,
+    totalTrades: parseInt(r.total_trades),
+    winningTrades: parseInt(r.winning_trades),
+    openTrades: parseInt(r.open_trades),
+    winRate: r.total_trades > 0 ? (parseInt(r.winning_trades) / parseInt(r.total_trades)) * 100 : 0,
+    totalPnl: parseFloat(r.total_pnl),
+    avgWinPct: parseFloat(r.avg_win_pct),
+    avgLossPct: parseFloat(r.avg_loss_pct),
+  }));
+  res.json(stats);
+}));
+
 // ── Static file serving (production only) ─────────────────────────────────────
 if (process.env.NODE_ENV === "production") {
   const distPath = path.join(__dirname, "../dist");
@@ -1615,6 +1678,7 @@ if (process.env.NODE_ENV === "production") {
 const PORT = parseInt(process.env.PORT || (process.env.NODE_ENV === "production" ? "5000" : "5001"));
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`API server running on port ${PORT}`);
+  startAiTradingEngine(pool);
 });
 
 export default app;
