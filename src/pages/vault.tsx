@@ -534,7 +534,7 @@ export default function Vault() {
                         const planConfig = VAULT_PLANS[pos.planType as keyof typeof VAULT_PLANS];
                         const isBonus = pos.isBonus || pos.planType === "BONUS_5D";
                         const yieldLocked = pos.bonusYieldLocked;
-                        const posRewards = vaultRewards.filter(r => r.positionId === pos.id);
+                        const posRewards = (vaultRewards ?? []).filter(r => r.positionId === pos.id);
 
                         return (
                           <div
@@ -741,7 +741,7 @@ export default function Vault() {
                 {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
               </div>
             ) : (() => {
-              const posRewards = vaultRewards.filter(r => r.positionId === yieldDetailPosId);
+              const posRewards = (vaultRewards ?? []).filter(r => r.positionId === yieldDetailPosId);
               if (posRewards.length === 0) {
                 return (
                   <div className="text-center py-8">

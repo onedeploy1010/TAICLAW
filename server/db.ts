@@ -13,7 +13,8 @@ if (!process.env.DATABASE_URL) {
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle(pool, { schema });
 
-// Supabase pool — official website database (primary target for migration)
+// Supabase pool kept for reference but not used as primary
+// All application data lives in the local PostgreSQL (DATABASE_URL)
 export const supabasePool = process.env.SUPABASE_DATABASE_URL
   ? new Pool({
       connectionString: process.env.SUPABASE_DATABASE_URL,
@@ -23,7 +24,5 @@ export const supabasePool = process.env.SUPABASE_DATABASE_URL
     })
   : null;
 
-// primaryPool: uses Supabase if available, falls back to Neon
-// Gradually replace `pool` with `primaryPool` across server endpoints
-// to complete the migration to the official website database.
-export const primaryPool = supabasePool ?? pool;
+// primaryPool: always use local PostgreSQL where all data lives
+export const primaryPool = pool;

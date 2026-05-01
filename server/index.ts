@@ -218,8 +218,21 @@ app.post("/api/vault-withdraw", handle(async (req, res) => {
 }));
 
 app.get("/api/vault-overview", handle(async (_, res) => {
-  const { rows } = await primaryPool.query("SELECT get_vault_overview() AS result");
-  res.json(toCamel(rows[0].result));
+  const { rows } = await pool.query(`
+    SELECT
+      COALESCE(SUM(CASE WHEN status = 'ACTIVE' THEN principal::numeric ELSE 0 END), 0) AS total_tvl,
+      COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END) AS active_positions,
+      COUNT(DISTINCT user_id) AS total_users,
+      COALESCE(AVG(CASE WHEN status = 'ACTIVE' THEN daily_rate::numeric ELSE NULL END), 0) AS avg_apy
+    FROM vault_positions
+  `);
+  const r = rows[0];
+  res.json({
+    totalTvl: Number(r.total_tvl),
+    activePositions: Number(r.active_positions),
+    totalUsers: Number(r.total_users),
+    avgApy: Number(r.avg_apy),
+  });
 }));
 
 app.get("/api/vault-rewards/:wallet", handle(async (req, res) => {
