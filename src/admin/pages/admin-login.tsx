@@ -37,10 +37,10 @@ export default function AdminLoginPage({ onLogin }: AdminLoginPageProps) {
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
         <div className="text-center space-y-3">
-          <img src="/og-image.svg" alt="TAICLAW" className="mx-auto h-16" />
+          <img src="/logo-glass-pure.png" alt="QA Protocol" className="mx-auto h-16 object-contain" />
           <div>
             <h1 className="text-xl font-bold text-white tracking-tight">
-              TAICLAW <span className="text-primary">Admin</span>
+              QA Protocol <span className="text-primary">Admin</span>
             </h1>
             <p className="text-sm text-white/35 mt-1">
               {t("admin.loginSubtitle", "Sign in to the admin dashboard")}
