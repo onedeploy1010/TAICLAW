@@ -4,6 +4,7 @@ import adminRoutes from "./admin-routes.js";
 import { startAiTradingEngine } from "./ai-trading-engine.js";
 import { fileURLToPath } from "url";
 import path from "path";
+import fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -61,7 +62,7 @@ app.get("/api/profile/:wallet", handle(async (req, res) => {
     `SELECT p.*, r.wallet_address AS parent_wallet
      FROM profiles p
      LEFT JOIN profiles r ON r.id = p.referrer_id
-     WHERE p.wallet_address = $1`,
+     WHERE LOWER(p.wallet_address) = LOWER($1)`,
     [wallet]
   );
   if (!rows.length) return res.json(null);
@@ -1699,15 +1700,19 @@ async function runStartupMigrations() {
 }
 
 // ── Static file serving (production only) ─────────────────────────────────────
-if (process.env.NODE_ENV === "production") {
-  const distPath = path.join(__dirname, "../dist");
+const isProduction = process.env.NODE_ENV === "production";
+const distPath = path.resolve(process.cwd(), "dist");
+if (isProduction && fs.existsSync(distPath)) {
+  console.log(`[static] Serving frontend from ${distPath}`);
   app.use(express.static(distPath));
   app.get(/.*/, (_req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
+} else if (isProduction) {
+  console.warn(`[static] dist/ not found at ${distPath} — frontend unavailable`);
 }
 
-const PORT = parseInt(process.env.PORT || (process.env.NODE_ENV === "production" ? "5000" : "5001"));
+const PORT = parseInt(process.env.PORT || (isProduction ? "5000" : "5001"));
 app.listen(PORT, "0.0.0.0", async () => {
   console.log(`API server running on port ${PORT}`);
   await runStartupMigrations();
