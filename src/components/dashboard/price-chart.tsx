@@ -456,7 +456,7 @@ export function PriceChart({
     }
 
     const baseBars = hasOhlc ? ohlcData!.length : (data?.length || 0);
-    const forecastBars = saneForecast?.forecastPoints?.length || 0;
+    const forecastBars = resolvedForecastPoints.length || 0;
     const totalBars = baseBars + forecastBars;
     const visibleBars = getVisibleBars(selectedTimeframe);
 
