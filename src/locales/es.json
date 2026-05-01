@@ -288,7 +288,8 @@
     "hyperliquidVault": "Bóveda HyperLiquid",
     "dydxVault": "Bóveda dYdX",
     "flexible": "Flexible · Sin Bloqueo",
-    "daily": "Diario"
+    "daily": "Diario",
+    "qaAiVault": "QA AI Vault"
   },
   "deposit": {
     "inputError": "Error de Entrada",

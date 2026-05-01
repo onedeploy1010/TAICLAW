@@ -187,11 +187,15 @@ app.get("/api/trade-bets/:wallet", handle(async (req, res) => {
 }));
 
 app.get("/api/trade-stats/:wallet", handle(async (req, res) => {
-  const { rows } = await primaryPool.query(
-    "SELECT get_trade_stats($1) AS result",
-    [req.params.wallet]
-  );
-  res.json(rows[0].result ?? { total: 0, wins: 0, losses: 0, totalStaked: "0" });
+  try {
+    const { rows } = await primaryPool.query(
+      "SELECT get_trade_stats($1::text) AS result",
+      [req.params.wallet]
+    );
+    res.json(rows[0]?.result ?? { total: 0, wins: 0, losses: 0, totalStaked: "0" });
+  } catch {
+    res.json({ total: 0, wins: 0, losses: 0, totalStaked: "0" });
+  }
 }));
 
 // ── Strategies ────────────────────────────────────────────────────────────────
@@ -252,11 +256,15 @@ app.get("/api/node-memberships/:wallet", handle(async (req, res) => {
 }));
 
 app.get("/api/node-overview/:wallet", handle(async (req, res) => {
-  const { rows } = await primaryPool.query(
-    "SELECT get_node_overview($1) AS result",
-    [req.params.wallet]
-  );
-  res.json(toCamel(rows[0].result));
+  try {
+    const { rows } = await primaryPool.query(
+      "SELECT get_node_overview($1::text) AS result",
+      [req.params.wallet]
+    );
+    res.json(toCamel(rows[0]?.result ?? {}));
+  } catch {
+    res.json({ nodes: [], rewards: {}, pool: {}, rank: "--", availableBalance: "0", lockedEarnings: "0", releasedEarnings: "0", destroyedEarnings: "0" });
+  }
 }));
 
 app.post("/api/purchase-node", handle(async (req, res) => {
@@ -290,11 +298,15 @@ app.get("/api/validate-auth-code/:code", handle(async (req, res) => {
 }));
 
 app.get("/api/node-milestone-requirements/:wallet", handle(async (req, res) => {
-  const { rows } = await primaryPool.query(
-    "SELECT get_node_milestone_requirements($1) AS result",
-    [req.params.wallet]
-  );
-  res.json(toCamel(rows[0].result ?? { vaultDeposited: 0, directNodeReferrals: 0, directMiniReferrals: 0, activatedRank: null, earningsPaused: false }));
+  try {
+    const { rows } = await primaryPool.query(
+      "SELECT get_node_milestone_requirements($1::text) AS result",
+      [req.params.wallet]
+    );
+    res.json(toCamel(rows[0]?.result ?? { vaultDeposited: 0, directNodeReferrals: 0, directMiniReferrals: 0, activatedRank: null, earningsPaused: false }));
+  } catch {
+    res.json({ vaultDeposited: 0, directNodeReferrals: 0, directMiniReferrals: 0, activatedRank: null, earningsPaused: false });
+  }
 }));
 
 app.post("/api/check-node-milestones", handle(async (req, res) => {
@@ -342,27 +354,39 @@ app.get("/api/node-rewards/:wallet", handle(async (req, res) => {
 
 // ── Referral & Rank ───────────────────────────────────────────────────────────
 app.get("/api/referral-tree/:wallet", handle(async (req, res) => {
-  const { rows } = await primaryPool.query(
-    "SELECT get_referral_tree($1) AS result",
-    [req.params.wallet]
-  );
-  res.json(rows[0].result ?? { referrals: [], teamSize: 0, directCount: 0 });
+  try {
+    const { rows } = await primaryPool.query(
+      "SELECT get_referral_tree($1::text) AS result",
+      [req.params.wallet]
+    );
+    res.json(rows[0]?.result ?? { referrals: [], teamSize: 0, directCount: 0 });
+  } catch {
+    res.json({ referrals: [], teamSize: 0, directCount: 0 });
+  }
 }));
 
 app.get("/api/rank-status/:wallet", handle(async (req, res) => {
-  const { rows } = await primaryPool.query(
-    "SELECT get_rank_status($1) AS result",
-    [req.params.wallet]
-  );
-  res.json(rows[0].result);
+  try {
+    const { rows } = await primaryPool.query(
+      "SELECT get_rank_status($1::text) AS result",
+      [req.params.wallet]
+    );
+    res.json(rows[0]?.result ?? {});
+  } catch {
+    res.json({});
+  }
 }));
 
 app.get("/api/team-stats/:wallet", handle(async (req, res) => {
-  const { rows } = await primaryPool.query(
-    "SELECT get_user_team_stats($1) AS result",
-    [req.params.wallet]
-  );
-  res.json(rows[0].result);
+  try {
+    const { rows } = await primaryPool.query(
+      "SELECT get_user_team_stats($1::text) AS result",
+      [req.params.wallet]
+    );
+    res.json(rows[0]?.result ?? {});
+  } catch {
+    res.json({});
+  }
 }));
 
 app.post("/api/check-rank-promotion", handle(async (req, res) => {
@@ -736,11 +760,15 @@ app.post("/api/request-earnings-release", handle(async (req, res) => {
 }));
 
 app.get("/api/earnings-releases/:wallet", handle(async (req, res) => {
-  const { rows } = await primaryPool.query(
-    "SELECT get_earnings_releases($1) AS result",
-    [req.params.wallet]
-  );
-  res.json(rows[0].result);
+  try {
+    const { rows } = await primaryPool.query(
+      "SELECT get_earnings_releases($1::text) AS result",
+      [req.params.wallet]
+    );
+    res.json(rows[0]?.result ?? []);
+  } catch {
+    res.json([]);
+  }
 }));
 
 // ── Trade Signals & Paper Trades ──────────────────────────────────────────────

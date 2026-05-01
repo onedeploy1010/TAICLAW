@@ -32,78 +32,77 @@ export const VAULT_PLANS = {
 
 /* ── 节点招募计划（新6档体系）──────────────────────────────────────────── */
 export const NODE_PLANS = {
-  /** 初级节点 — 1,000 U · 1000 席 */
-  BASIC: {
-    price: 1000, label: "初级节点", labelEn: "Basic Node",
+  /** 小节点 — 1,000 U */
+  SMALL: {
+    price: 1000, label: "小节点", labelEn: "Small Node",
     capacity: 1000, directRewardRate: 0.05, dividendWeight: 100,
-    airdropEmber: 1000,
-    features: ["basicStrategies", "communityAccess", "aiApiAccess"],
+    airdropEmber: 0,
+    features: [],
     frozenAmount: 1000, dailyRate: 0.009, durationDays: 90,
   },
-  /** 中级节点 — 2,500 U · 800 席 */
-  STANDARD: {
-    price: 2500, label: "中级节点", labelEn: "Standard Node",
-    capacity: 800, directRewardRate: 0.08, dividendWeight: 120,
-    airdropEmber: 3000,
-    features: ["basicStrategies", "communityAccess", "aiApiAccess", "copyTrading"],
-    frozenAmount: 2500, dailyRate: 0.009, durationDays: 90,
-  },
-  /** 高级节点 — 5,000 U · 400 席 */
-  ADVANCED: {
-    price: 5000, label: "高级节点", labelEn: "Advanced Node",
-    capacity: 400, directRewardRate: 0.10, dividendWeight: 140,
-    airdropEmber: 6250,
-    features: ["allStrategies", "aiApiAccess", "copyTrading", "prioritySupport"],
-    frozenAmount: 5000, dailyRate: 0.009, durationDays: 90,
-  },
-  /** 超级节点 — 10,000 U · 200 席 */
-  SUPER: {
-    price: 10000, label: "超级节点", labelEn: "Super Node",
-    capacity: 200, directRewardRate: 0.12, dividendWeight: 160,
-    airdropEmber: 13000,
-    features: ["allStrategies", "aiApiAccess", "copyTrading", "prioritySupport", "higherVaultYields"],
+  /** 大节点 — 10,000 U */
+  BIG: {
+    price: 10000, label: "大节点", labelEn: "Big Node",
+    capacity: 200, directRewardRate: 0.12, dividendWeight: 200,
+    airdropEmber: 0,
+    features: [],
     frozenAmount: 10000, dailyRate: 0.009, durationDays: 90,
   },
-  /** 联创节点 — 50,000 U · 20 席 */
+  /* 旧兼容 — 不在UI显示，仅保持后端数据兼容 */
+  BASIC: {
+    price: 1000, label: "小节点(旧)", labelEn: "Small Node (legacy)",
+    capacity: null, directRewardRate: 0.05, dividendWeight: 100, airdropEmber: 0,
+    features: [],
+    frozenAmount: 1000, dailyRate: 0.009, durationDays: 90,
+  },
+  STANDARD: {
+    price: 2500, label: "中级节点(旧)", labelEn: "Standard Node (legacy)",
+    capacity: null, directRewardRate: 0.08, dividendWeight: 120, airdropEmber: 0,
+    features: [],
+    frozenAmount: 2500, dailyRate: 0.009, durationDays: 90,
+  },
+  ADVANCED: {
+    price: 5000, label: "高级节点(旧)", labelEn: "Advanced Node (legacy)",
+    capacity: null, directRewardRate: 0.10, dividendWeight: 140, airdropEmber: 0,
+    features: [],
+    frozenAmount: 5000, dailyRate: 0.009, durationDays: 90,
+  },
+  SUPER: {
+    price: 10000, label: "大节点(旧)", labelEn: "Big Node (legacy)",
+    capacity: null, directRewardRate: 0.12, dividendWeight: 160, airdropEmber: 0,
+    features: [],
+    frozenAmount: 10000, dailyRate: 0.009, durationDays: 90,
+  },
   FOUNDER: {
-    price: 50000, label: "联创节点", labelEn: "Founder Node",
-    capacity: 20, directRewardRate: 0.15, dividendWeight: 200,
-    airdropEmber: 75000,
-    features: ["allStrategies", "aiApiAccess", "copyTrading", "prioritySupport", "higherVaultYields", "daoVoting"],
+    price: 50000, label: "联创节点(旧)", labelEn: "Founder Node (legacy)",
+    capacity: null, directRewardRate: 0.15, dividendWeight: 200, airdropEmber: 0,
+    features: [],
     frozenAmount: 50000, dailyRate: 0.009, durationDays: 90,
   },
-  /** 创世节点 — 条件达标 */
   GENESIS: {
-    price: 0, label: "创世节点", labelEn: "Genesis Node",
-    capacity: null, directRewardRate: 0.15, dividendWeight: 200,
-    airdropEmber: 0,
-    genesisConditions: [
-      "直推3个联创节点（50,000U）",
-      "团队内5个联创节点（50,000U）",
-      "团队内30个超级节点（10,000U）",
-    ],
-    features: ["allStrategies", "aiApiAccess", "copyTrading", "prioritySupport", "higherVaultYields", "daoVoting", "coreIncentivePool10%"],
+    price: 0, label: "创世节点(旧)", labelEn: "Genesis Node (legacy)",
+    capacity: null, directRewardRate: 0.15, dividendWeight: 200, airdropEmber: 0,
+    features: [],
     frozenAmount: 0, dailyRate: 0.009, durationDays: 90,
   },
-  /* 旧兼容 — 不在UI显示，仅保持后端数据兼容 */
   MINI: {
-    price: 100, label: "标准节点(旧)", labelEn: "Mini Node (legacy)",
+    price: 100, label: "小节点(旧2)", labelEn: "Mini Node (legacy)",
     capacity: null, directRewardRate: 0.05, dividendWeight: 100, airdropEmber: 0,
-    features: ["basicStrategies"],
+    features: [],
     frozenAmount: 1000, dailyRate: 0.009, durationDays: 90,
   },
   MAX: {
-    price: 600, label: "超级节点(旧)", labelEn: "Max Node (legacy)",
+    price: 600, label: "大节点(旧2)", labelEn: "Max Node (legacy)",
     capacity: null, directRewardRate: 0.12, dividendWeight: 160, airdropEmber: 0,
-    features: ["allStrategiesUnlocked", "prioritySupport"],
+    features: [],
     frozenAmount: 6000, dailyRate: 0.009, durationDays: 120,
   },
 } as const;
 
 export type NodePlanKey = keyof typeof NODE_PLANS;
 
-/** 6档节点显示顺序（不含旧版兼容） */
-export const NODE_PLAN_ORDER: NodePlanKey[] = ["BASIC", "STANDARD", "ADVANCED", "SUPER", "FOUNDER", "GENESIS"];
+/** 2档节点显示顺序 */
+export const NODE_PLAN_ORDER: NodePlanKey[] = ["SMALL", "BIG"];
 
 /* ── 节点分红来源说明 ───────────────────────────────────────────────────── */
 export const NODE_DIVIDEND_SOURCES = [

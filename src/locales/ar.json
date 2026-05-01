@@ -288,7 +288,8 @@
     "hyperliquidVault": "خزينة HyperLiquid",
     "dydxVault": "خزينة dYdX",
     "flexible": "مرن · بدون قفل",
-    "daily": "يومي"
+    "daily": "يومي",
+    "qaAiVault": "QA AI Vault"
   },
   "deposit": {
     "inputError": "خطأ في الإدخال",

@@ -343,10 +343,18 @@ function Header() {
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between px-4 lg:px-8 py-2.5 lg:py-3 border-b border-border/40 bg-background/90 backdrop-blur-xl">
       <Link href="/" className="flex items-center cursor-pointer shrink-0" data-testid="link-logo-home">
-        <img src="/rune-protocol-logo.jpeg" alt="RUNE PROTOCOL" className="h-8 lg:h-9 rounded-full object-cover" />
-        {/* Hide text on small screens so ConnectButton always has room */}
+        {/* QA Logo mark */}
+        <div className="h-8 w-8 lg:h-9 lg:w-9 rounded-xl flex items-center justify-center shrink-0 font-display font-black text-sm lg:text-base tracking-tight select-none"
+          style={{
+            background: "linear-gradient(135deg, #1d4ed8 0%, #3b82f6 50%, #60a5fa 100%)",
+            boxShadow: "0 0 16px rgba(59,130,246,0.45), inset 0 1px 0 rgba(255,255,255,0.2)",
+            color: "#fff",
+            letterSpacing: "-0.02em",
+          }}>
+          QA
+        </div>
         <span className="font-display font-bold ml-2 leading-tight flex-col hidden sm:flex">
-          <span className="text-foreground text-xs lg:text-sm tracking-[0.2em]">RUNE</span>
+          <span className="text-foreground text-xs lg:text-sm tracking-[0.2em]">QA</span>
           <span className="text-primary text-[0.55rem] lg:text-[0.6rem] tracking-[0.35em]">PROTOCOL</span>
         </span>
       </Link>

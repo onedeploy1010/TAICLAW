@@ -288,7 +288,8 @@
     "hyperliquidVault": "Cofre HyperLiquid",
     "dydxVault": "Cofre dYdX",
     "flexible": "Flexível · Sem Bloqueio",
-    "daily": "Diário"
+    "daily": "Diário",
+    "qaAiVault": "QA AI Vault"
   },
   "deposit": {
     "inputError": "Erro de Entrada",

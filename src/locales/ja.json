@@ -288,7 +288,8 @@
     "hyperliquidVault": "HyperLiquid ボールト",
     "dydxVault": "dYdX ボールト",
     "flexible": "フレキシブル · ロックなし",
-    "daily": "日次"
+    "daily": "日次",
+    "qaAiVault": "QA AI Vault"
   },
   "deposit": {
     "inputError": "入力エラー",

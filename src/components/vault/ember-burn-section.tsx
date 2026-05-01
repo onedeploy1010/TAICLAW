@@ -75,7 +75,7 @@ export function EmberBurnSection() {
       });
     },
     onSuccess: () => {
-      toast({ title: t("vault.burn.success", "Burned!"), description: t("vault.burn.successDesc", "Daily EMBER yield has started.") });
+      toast({ title: t("vault.burn.success", "Burned!"), description: t("vault.burn.successDesc", "Daily QI yield has started.") });
       queryClient.invalidateQueries({ queryKey: ["/api/ember-burn", wallet] });
       queryClient.invalidateQueries({ queryKey: ["/api/ember-burn/stats", wallet] });
       setOpen(false);
@@ -108,9 +108,9 @@ export function EmberBurnSection() {
   const payLabel = payment.status !== "idle" ? getPaymentStatusLabel(payment.status) : t("vault.burn.confirmBtn", "Confirm Burn");
 
   const benefits = [
-    { icon: Coins,    color: "rgb(251,191,36)",  lk: "vault.burn.benefitRevenue",  ld: "AI Revenue Share",     dk: "vault.burn.benefitRevenueDesc",  dd: "Monthly AI quant profits by EMBER weight" },
-    { icon: Trophy,   color: "rgb(167,243,208)", lk: "vault.burn.benefitIdo",      ld: "Exclusive IDO Access", dk: "vault.burn.benefitIdoDesc",      dd: "Monthly launches, avg 50x. EMBER holders only" },
-    { icon: Sparkles, color: "rgb(196,181,253)", lk: "vault.burn.benefitScarcity", ld: "Protocol Scarcity",    dk: "vault.burn.benefitScarcityDesc", dd: "Hard cap 1.31M EMBER. External projects compete" },
+    { icon: Coins,    color: "rgb(251,191,36)",  lk: "vault.burn.benefitRevenue",  ld: "AI Revenue Share",     dk: "vault.burn.benefitRevenueDesc",  dd: "Monthly AI quant profits by QI weight" },
+    { icon: Trophy,   color: "rgb(167,243,208)", lk: "vault.burn.benefitIdo",      ld: "Exclusive IDO Access", dk: "vault.burn.benefitIdoDesc",      dd: "Monthly launches, avg 50x. QI holders only" },
+    { icon: Sparkles, color: "rgb(196,181,253)", lk: "vault.burn.benefitScarcity", ld: "Protocol Scarcity",    dk: "vault.burn.benefitScarcityDesc", dd: "Hard cap 1.31M QI. External projects compete" },
   ];
 
   return (
@@ -120,7 +120,7 @@ export function EmberBurnSection() {
         <div className="h-5 w-5 rounded-md flex items-center justify-center" style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)" }}>
           <Flame className="h-3 w-3 text-red-400" />
         </div>
-        <h3 className="text-sm font-bold">{t("vault.burn.sectionTitle", "Burn RUNE · Permanent EMBER Yield")}</h3>
+        <h3 className="text-sm font-bold">{t("vault.burn.sectionTitle", "Burn QA · Permanent QI Yield")}</h3>
         <Badge className="text-[9px] border-0 ml-auto" style={{ background: "rgba(239,68,68,0.12)", color: "rgb(248,113,113)" }}>
           {t("vault.burn.badge", "Permanent Deflation")}
         </Badge>
@@ -136,13 +136,13 @@ export function EmberBurnSection() {
         >
           <div className="flex gap-4">
             <div>
-              <div className="text-[9px] text-muted-foreground uppercase mb-0.5">{isZh ? "已销毁RUNE" : "RUNE Burned"}</div>
+              <div className="text-[9px] text-muted-foreground uppercase mb-0.5">{isZh ? "已销毁QA" : "QA Burned"}</div>
               <div className="text-sm font-bold tabular-nums text-red-400">
                 {Number(stats?.totalRuneBurned || 0).toLocaleString()}
               </div>
             </div>
             <div>
-              <div className="text-[9px] text-muted-foreground uppercase mb-0.5">{isZh ? "每日EMBER" : "Daily EMBER"}</div>
+              <div className="text-[9px] text-muted-foreground uppercase mb-0.5">{isZh ? "每日QI" : "Daily QI"}</div>
               <div className="text-sm font-bold tabular-nums text-orange-400">
                 {Number(stats?.dailyEmber || 0).toFixed(4)}
               </div>
@@ -163,7 +163,7 @@ export function EmberBurnSection() {
 
       {/* Benefits */}
       <div className="rounded-xl p-3 space-y-2" style={{ background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.10)" }}>
-        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("vault.burn.benefitsTitle", "EMBER Staking Benefits")}</div>
+        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("vault.burn.benefitsTitle", "QI Staking Benefits")}</div>
         {benefits.map(({ icon: Icon, color, lk, ld, dk, dd }) => (
           <div key={lk} className="flex items-start gap-2.5">
             <div className="h-6 w-6 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: `${color}15`, border: `1px solid ${color}25` }}>
@@ -181,7 +181,7 @@ export function EmberBurnSection() {
       <button onClick={() => setShowTiers(v => !v)}
         className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors"
         style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
-        <span>{t("vault.burn.tiersTitle", "Daily Rate Tiers (by RUNE amount burned)")}</span>
+        <span>{t("vault.burn.tiersTitle", "Daily Rate Tiers (by QA amount burned)")}</span>
         {showTiers ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
       </button>
 
@@ -189,7 +189,7 @@ export function EmberBurnSection() {
         <div className="rounded-lg overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
           <table className="w-full text-[10px]">
             <thead><tr style={{ background: "rgba(255,255,255,0.04)" }}>
-              <th className="text-left px-3 py-2 text-muted-foreground font-medium">{t("vault.burn.tierAmount", "RUNE Burned")}</th>
+              <th className="text-left px-3 py-2 text-muted-foreground font-medium">{t("vault.burn.tierAmount", "QA Burned")}</th>
               <th className="text-center px-3 py-2 text-muted-foreground font-medium">{t("vault.burn.tierLevel", "Level")}</th>
               <th className="text-right px-3 py-2 text-muted-foreground font-medium">{t("vault.burn.tierRate", "Daily")}</th>
             </tr></thead>
@@ -217,7 +217,7 @@ export function EmberBurnSection() {
         style={{ background: "linear-gradient(135deg, rgba(239,68,68,0.85), rgba(220,38,38,0.85))", color: "#fff" }}
         onClick={() => { setOpen(true); setConfirmed(false); }} data-testid="button-ember-burn-open">
         <Flame className="mr-2 h-4 w-4" />
-        {t("vault.burn.burnButton", "Pay USDT · Burn RUNE → EMBER Yield")}
+        {t("vault.burn.burnButton", "Pay USDT · Burn QA → QI Yield")}
       </Button>
 
       {/* Dialog */}
@@ -226,10 +226,10 @@ export function EmberBurnSection() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-400">
               <Flame className="h-4 w-4" />
-              {t("vault.burn.confirmTitle", "Burn RUNE for EMBER")}
+              {t("vault.burn.confirmTitle", "Burn QA for QI")}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              {t("vault.burn.confirmDesc", "Pay USDT → buy RUNE at market price → burn permanently for daily EMBER yield")}
+              {t("vault.burn.confirmDesc", "Pay USDT → buy QA at market price → burn permanently for daily QI yield")}
             </DialogDescription>
           </DialogHeader>
 
@@ -249,7 +249,7 @@ export function EmberBurnSection() {
                 <div className="flex items-center gap-1.5 text-xs flex-wrap">
                   <span className="font-bold">${usdtNum.toFixed(2)} USDT</span>
                   <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                  <span className="font-bold text-red-400">{runeEquiv.toFixed(2)} RUNE</span>
+                  <span className="font-bold text-red-400">{runeEquiv.toFixed(2)} QA</span>
                   <span className="text-[10px] text-muted-foreground">(@ ${runePrice.toFixed(4)})</span>
                   <ArrowRight className="h-3 w-3 text-muted-foreground" />
                   <span className="font-bold text-orange-400">{t("vault.burn.burned", "burned")}</span>
@@ -257,12 +257,12 @@ export function EmberBurnSection() {
                 <div className="border-t border-border/30 pt-1.5 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
                   <div className="flex justify-between"><span className="text-muted-foreground">{t("vault.burn.currentTier", "Tier")}</span><span className="font-semibold" style={{ color: tier.best ? "rgb(248,113,113)" : undefined }}>{t(tier.tierKey, tier.tierDefault)}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">{t("vault.burn.dailyRateLabel", "Rate")}</span><span className="font-bold text-orange-400">{tier.rateLabel}/day</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">{t("vault.burn.dailyYield", "Daily EMBER")}</span><span className="font-semibold text-orange-300">{dailyEmber.toFixed(4)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">{t("vault.burn.dailyYield", "Daily QI")}</span><span className="font-semibold text-orange-300">{dailyEmber.toFixed(4)}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">{t("vault.burn.yearlyYield", "Annual Est.")}</span><span className="font-semibold text-orange-300">{yearlyEmber.toFixed(0)}</span></div>
                 </div>
                 {runeEquiv < 5000 && (
                   <div className="text-[9px] text-muted-foreground mt-1">
-                    💡 {t("vault.burn.tipUpgrade", "Spend more to reach higher tiers — max rate 1.5% at 5,000+ RUNE")}
+                    💡 {t("vault.burn.tipUpgrade", "Spend more to reach higher tiers — max rate 1.5% at 5,000+ QA")}
                   </div>
                 )}
               </div>
@@ -273,7 +273,7 @@ export function EmberBurnSection() {
                 <AlertCircle className="h-3.5 w-3.5 text-red-400 shrink-0 mt-0.5" />
                 <div className="text-red-300 space-y-0.5">
                   <div className="font-semibold">{t("vault.burn.irreversible", "⚠️ Irreversible Action")}</div>
-                  <div>{t("vault.burn.irreversibleDesc", "RUNE is permanently removed from circulation. Principal cannot be returned. You receive perpetual daily EMBER yield.")}</div>
+                  <div>{t("vault.burn.irreversibleDesc", "QA is permanently removed from circulation. Principal cannot be returned. You receive perpetual daily QI yield.")}</div>
                 </div>
               </div>
               <label className="flex items-center gap-2 cursor-pointer">

@@ -47,7 +47,6 @@ externalPort = 3002
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-publicDir = "dist"
 run = ["node", "./dist/index.cjs"]
 
 [userenv]

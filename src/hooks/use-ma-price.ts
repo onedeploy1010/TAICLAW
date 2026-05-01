@@ -46,20 +46,20 @@ export function useMaPrice() {
 
   const formatMA = (usdc: number) => {
     const ma = usdcToMA(usdc);
-    return `${new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ma)} RUNE`;
+    return `${new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ma)} QA`;
   };
 
   const formatCompactMA = (usdc: number) => {
     const ma = usdcToMA(usdc);
     const zh = (() => { try { return (localStorage.getItem("taiclaw-lang") || "en") === "zh"; } catch { return false; } })();
     if (zh) {
-      if (ma >= 100_000_000) return `${(ma / 100_000_000).toFixed(2)}亿 RUNE`;
-      if (ma >= 10_000) return `${(ma / 10_000).toFixed(2)}万 RUNE`;
-      return `${ma.toFixed(2)} RUNE`;
+      if (ma >= 100_000_000) return `${(ma / 100_000_000).toFixed(2)}亿 QA`;
+      if (ma >= 10_000) return `${(ma / 10_000).toFixed(2)}万 QA`;
+      return `${ma.toFixed(2)} QA`;
     }
-    if (ma >= 1_000_000) return `${(ma / 1_000_000).toFixed(2)}M RUNE`;
-    if (ma >= 1_000) return `${(ma / 1_000).toFixed(1)}K RUNE`;
-    return `${ma.toFixed(2)} RUNE`;
+    if (ma >= 1_000_000) return `${(ma / 1_000_000).toFixed(2)}M QA`;
+    if (ma >= 1_000) return `${(ma / 1_000).toFixed(1)}K QA`;
+    return `${ma.toFixed(2)} QA`;
   };
 
   return { price, source, isLoading, usdcToMA, formatMA, formatCompactMA };

@@ -129,7 +129,7 @@ export default function ProfilePage() {
   const shareReferralLink = () => {
     if (!referralLink) return;
     if (typeof navigator !== "undefined" && navigator.share) {
-      navigator.share({ title: "RUNE PROTOCOL", text: t("profile.inviteFriendsDesc"), url: referralLink }).catch(() => {});
+      navigator.share({ title: "QA PROTOCOL", text: t("profile.inviteFriendsDesc"), url: referralLink }).catch(() => {});
     } else {
       copyToClipboard(referralLink);
     }
@@ -254,8 +254,8 @@ export default function ProfilePage() {
             {/* 锁仓RUNE */}
             <div className="surface-inset bg-black/20 px-4 py-4 border-r border-amber-500/20">
               <div className="flex items-center gap-1.5 mb-2">
-                <Lock className="h-3.5 w-3.5" style={{ color: "rgba(212,168,50,0.6)" }} />
-                <span className="text-[10px] text-white/65 font-medium">锁仓 RUNE</span>
+                <Lock className="h-3.5 w-3.5" style={{ color: "rgba(59,130,246,0.6)" }} />
+                <span className="text-[10px] text-white/65 font-medium">锁仓 QA</span>
               </div>
               {!isConnected ? (
                 <div className="text-[20px] font-black text-white/20">--</div>
@@ -265,7 +265,7 @@ export default function ProfilePage() {
                     {runeLocked > 0 ? formatCompactMA(runeLocked) : "0"}
                   </div>
                   {veRune > 0 && (
-                    <div className="text-[10px] text-white/60 mt-0.5">veRUNE: {formatCompactMA(veRune)}</div>
+                    <div className="text-[10px] text-white/60 mt-0.5">veQA: {formatCompactMA(veRune)}</div>
                   )}
                   {runeLocked === 0 && (
                     <div className="text-[10px] text-white/50 mt-0.5">暂未锁仓</div>
@@ -278,7 +278,7 @@ export default function ProfilePage() {
             <div className="surface-inset bg-black/20 px-4 py-4">
               <div className="flex items-center gap-1.5 mb-2">
                 <Flame className="h-3.5 w-3.5 text-orange-400/60" />
-                <span className="text-[10px] text-white/65 font-medium">锁仓 EMBER</span>
+                <span className="text-[10px] text-white/65 font-medium">锁仓 QI</span>
               </div>
               {!isConnected ? (
                 <div className="text-[20px] font-black text-white/20">--</div>

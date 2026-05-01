@@ -288,7 +288,8 @@
     "hyperliquidVault": "Kho HyperLiquid",
     "dydxVault": "Kho dYdX",
     "flexible": "Linh hoạt · Không khóa",
-    "daily": "Hàng ngày"
+    "daily": "Hàng ngày",
+    "qaAiVault": "QA AI Vault"
   },
   "deposit": {
     "inputError": "Lỗi Nhập Liệu",

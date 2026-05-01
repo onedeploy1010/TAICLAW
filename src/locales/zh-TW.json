@@ -288,7 +288,8 @@
     "hyperliquidVault": "HyperLiquid 金庫",
     "dydxVault": "dYdX 金庫",
     "flexible": "靈活 · 無鎖定",
-    "daily": "日收益"
+    "daily": "日收益",
+    "qaAiVault": "QA AI 金庫"
   },
   "deposit": {
     "inputError": "輸入錯誤",

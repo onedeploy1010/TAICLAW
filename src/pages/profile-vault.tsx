@@ -68,32 +68,34 @@ export default function ProfileVaultPage() {
   const { price: runePrice } = useMaPrice();
   const [activeTab, setActiveTab] = useState<PosTab>("lock");
 
-  const { data: lockPositions = [], isLoading: lockLoading } = useQuery<RuneLockPosition[]>({
+  const { data: lockPositionsRaw, isLoading: lockLoading } = useQuery<RuneLockPosition[]>({
     queryKey: ["/api/rune-lock", wallet],
     queryFn: () => fetch(`/api/rune-lock?wallet=${wallet}`).then(r => r.json()),
     enabled: isConnected,
   });
+  const lockPositions: RuneLockPosition[] = Array.isArray(lockPositionsRaw) ? lockPositionsRaw : [];
 
-  const { data: burnPositions = [], isLoading: burnLoading } = useQuery<EmberBurnPosition[]>({
+  const { data: burnPositionsRaw, isLoading: burnLoading } = useQuery<EmberBurnPosition[]>({
     queryKey: ["/api/ember-burn", wallet],
     queryFn: () => fetch(`/api/ember-burn?wallet=${wallet}`).then(r => r.json()),
     enabled: isConnected,
   });
+  const burnPositions: EmberBurnPosition[] = Array.isArray(burnPositionsRaw) ? burnPositionsRaw : [];
 
   const claimMutation = useMutation({
     mutationFn: (positionId: string) =>
       apiPost("/api/ember-burn/claim", { walletAddress: wallet, positionId }),
     onSuccess: (_, positionId) => {
       queryClient.invalidateQueries({ queryKey: ["/api/ember-burn", wallet] });
-      toast({ title: isZh ? "领取成功" : "Claimed!", description: isZh ? "EMBER 已领取" : "EMBER claimed successfully." });
+      toast({ title: isZh ? "领取成功" : "Claimed!", description: isZh ? "QI 已领取" : "QI claimed successfully." });
     },
     onError: () => toast({ title: isZh ? "领取失败" : "Claim failed", variant: "destructive" }),
   });
 
   const TABS: Array<{ key: PosTab; icon: React.ElementType; labelZh: string; labelEn: string; accent: string; count: number }> = [
-    { key: "lock",  icon: Lock,     labelZh: "锁仓RUNE",  labelEn: "Lock RUNE",  accent: "rgba(212,168,50,0.9)", count: lockPositions.filter(p => p.status === "ACTIVE").length },
-    { key: "burn",  icon: Flame,    labelZh: "销毁RUNE",  labelEn: "Burn RUNE",  accent: "rgba(239,68,68,0.9)",  count: burnPositions.filter(p => p.status === "ACTIVE").length },
-    { key: "ember", icon: Sparkles, labelZh: "锁仓EMBER", labelEn: "Lock EMBER", accent: "rgba(251,146,60,0.9)", count: 0 },
+    { key: "lock",  icon: Lock,     labelZh: "锁仓QA",  labelEn: "Lock QA",  accent: "rgba(59,130,246,0.9)", count: lockPositions.filter(p => p.status === "ACTIVE").length },
+    { key: "burn",  icon: Flame,    labelZh: "销毁QA",  labelEn: "Burn QA",  accent: "rgba(239,68,68,0.9)",  count: burnPositions.filter(p => p.status === "ACTIVE").length },
+    { key: "ember", icon: Sparkles, labelZh: "锁仓QI", labelEn: "Lock QI", accent: "rgba(251,146,60,0.9)", count: 0 },
   ];
 
   const activeTabData = TABS.find(t => t.key === activeTab)!;
@@ -116,7 +118,7 @@ export default function ProfileVaultPage() {
             {isZh ? "我的金库仓位" : "My Vault Positions"}
           </h2>
           <p className="text-[10px] text-muted-foreground">
-            {isZh ? "锁仓 · 销毁 · EMBER锁仓" : "Lock · Burn · EMBER Lock"}
+            {isZh ? "锁仓 · 销毁 · QI锁仓" : "Lock · Burn · QI Lock"}
           </p>
         </div>
       </div>
@@ -207,8 +209,8 @@ export default function ProfileVaultPage() {
                         <Lock className="h-3.5 w-3.5" style={{ color: "rgba(212,168,50,0.9)" }} />
                       </div>
                       <div>
-                        <div className="text-[11px] font-bold" style={{ color: "rgba(212,168,50,0.9)" }}>
-                          {fmtRune(pos.runeAmount)} RUNE
+                        <div className="text-[11px] font-bold" style={{ color: "rgba(59,130,246,0.9)" }}>
+                          {fmtRune(pos.runeAmount)} QA
                         </div>
                         <div className="text-[9px] text-muted-foreground">
                           {pos.lockDays}D · {fmtDate(pos.startDate)} → {fmtDate(pos.endDate)}
@@ -268,7 +270,7 @@ export default function ProfileVaultPage() {
               accent="rgba(239,68,68,0.9)"
               titleZh="暂无销毁记录"
               titleEn="No burn positions"
-              descZh="前往金库销毁RUNE获得每日EMBER"
+              descZh="前往金库销毁QA获得每日QI"
               descEn="Go to Vault → Burn to create positions"
               isZh={isZh}
               onAction={() => navigate("/vault")}
@@ -297,7 +299,7 @@ export default function ProfileVaultPage() {
                       </div>
                       <div>
                         <div className="text-[11px] font-bold" style={{ color: "rgba(239,68,68,0.9)" }}>
-                          {fmtRune(pos.runeAmount)} RUNE {isZh ? "已销毁" : "burned"}
+                          {fmtRune(pos.runeAmount)} QA {isZh ? "已销毁" : "burned"}
                         </div>
                         <div className="text-[9px] text-muted-foreground">
                           {(Number(pos.dailyRate) * 100).toFixed(1)}%/d · {fmtDate(pos.lastClaimAt)} {isZh ? "最近领取" : "last claim"}
@@ -314,7 +316,7 @@ export default function ProfileVaultPage() {
 
                   <div className="grid grid-cols-3 gap-1.5">
                     <StatChip
-                      label={isZh ? "每日EMBER" : "Daily"}
+                      label={isZh ? "每日QI" : "Daily"}
                       value={dailyEmber.toFixed(2)}
                       accent="rgba(239,68,68,0.7)"
                     />
@@ -346,7 +348,7 @@ export default function ProfileVaultPage() {
                   >
                     {claimMutation.isPending
                       ? (isZh ? "领取中..." : "Claiming...")
-                      : (isZh ? `领取 ${pending.toFixed(2)} EMBER` : `Claim ${pending.toFixed(2)} EMBER`)}
+                      : (isZh ? `领取 ${pending.toFixed(2)} QI` : `Claim ${pending.toFixed(2)} QI`)}
                   </Button>
                 </div>
               );
@@ -371,12 +373,12 @@ export default function ProfileVaultPage() {
             </div>
             <div>
               <div className="text-sm font-bold mb-1" style={{ color: "rgba(251,146,60,0.9)" }}>
-                {isZh ? "锁仓EMBER" : "EMBER Lock"}
+                {isZh ? "锁仓QI" : "QI Lock"}
               </div>
               <div className="text-[11px] text-muted-foreground max-w-[240px] leading-relaxed">
                 {isZh
-                  ? "将EMBER销毁收益锁仓，获得更高权益加成与协议分红。合约部署后开放。"
-                  : "Lock your daily EMBER yield for enhanced protocol benefits and revenue share. Available after contract deployment."}
+                  ? "将QI销毁收益锁仓，获得更高权益加成与协议分红。合约部署后开放。"
+                  : "Lock your daily QI yield for enhanced protocol benefits and revenue share. Available after contract deployment."}
               </div>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
@@ -389,7 +391,7 @@ export default function ProfileVaultPage() {
             <div className="mt-2 space-y-2 w-full max-w-[260px]">
               {[
                 { zh: "协议分红 · 更高比例", en: "Higher protocol revenue share" },
-                { zh: "veEMBER 治理权重", en: "veEMBER governance weight" },
+                { zh: "veQI 治理权重", en: "veQI governance weight" },
                 { zh: "IDO白名单加成", en: "IDO whitelist boost" },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-2 text-[10px] text-muted-foreground">

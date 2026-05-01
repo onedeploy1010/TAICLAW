@@ -58,7 +58,7 @@ interface ModelMeta {
 }
 
 const MODELS: ModelMeta[] = [
-  { key: "RUNE", name: "RUNE AI", desc: "Multi-model consensus · Meta-strategy", color: "#d4a832", icon: Brain },
+  { key: "QA", name: "QA AI", desc: "Multi-model consensus · Meta-strategy", color: "#3b82f6", icon: Brain },
   { key: "GPT-4o", name: "GPT-4o", desc: "Trend follower · Momentum-based analysis", color: "#4ade80", icon: Brain },
   { key: "Claude", name: "Claude", desc: "Risk-aware · Contrarian analysis", color: "#a78bfa", icon: Eye },
   { key: "Gemini", name: "Gemini", desc: "Volatility scalper · Multi-timeframe", color: "#60a5fa", icon: Layers },

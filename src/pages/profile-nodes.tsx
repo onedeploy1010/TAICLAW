@@ -598,18 +598,18 @@ function PoolProgressCard({
                   <div className="text-2xl sm:text-3xl font-bold tabular-nums text-amber-200">
                     {nextUnlock.toLocaleString()}
                   </div>
-                  <div className="text-[11px] text-muted-foreground/82 mt-0.5">母币 RUNE</div>
+                  <div className="text-[11px] text-muted-foreground/82 mt-0.5">母币 QA</div>
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground/90 mb-1">该批参考价格</div>
                   <div className="text-2xl sm:text-3xl font-bold tabular-nums text-foreground/95">
                     ${AIRDROP_BATCHES[nextStageIdx]?.priceAt}
                   </div>
-                  <div className="text-[11px] text-muted-foreground/82 mt-0.5">/ 每枚 RUNE</div>
+                  <div className="text-[11px] text-muted-foreground/82 mt-0.5">/ 每枚 QA</div>
                 </div>
               </div>
               <div className="text-[11px] text-muted-foreground/77 tabular-nums border-t border-amber-500/15 pt-2.5">
-                {TIER_THEME[nodeType]?.nameCn} · {TIER_THEME[nodeType]?.nameEn} · {userAirdrop.perSeat.toLocaleString()} × {nextStage.pct}% = {nextUnlock.toLocaleString()} RUNE
+                {TIER_THEME[nodeType]?.nameCn} · {TIER_THEME[nodeType]?.nameEn} · {userAirdrop.perSeat.toLocaleString()} × {nextStage.pct}% = {nextUnlock.toLocaleString()} QA
               </div>
             </div>
           )}
@@ -716,16 +716,7 @@ function GenesisEarningsPanel({
 
 /* ── BenefitsSection (4 groups) ──────────────────────────────────────── */
 function BenefitsSection({ nodeType }: { nodeType: string | null }) {
-  if (!nodeType) {
-    return (
-      <Card className="bg-card/70 backdrop-blur border-border">
-        <CardContent className="py-12 text-center text-sm text-muted-foreground">
-          <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-30" />
-          购买节点后查看完整权益说明
-        </CardContent>
-      </Card>
-    );
-  }
+  if (!nodeType) return null;
 
   const theme    = TIER_THEME[nodeType] ?? DEFAULT_THEME;
   const airdrop  = AIRDROP_PER_NODE[nodeType];
@@ -740,7 +731,7 @@ function BenefitsSection({ nodeType }: { nodeType: string | null }) {
       {/* ── 1. 开盘价格 */}
       <BenefitGroup icon={Coins} title="开盘价格" subtitle="OPENING PRICES" delay={0}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <BenefitCell label="母币 RUNE 开盘价" value="$0.028" sub="/ 每枚母币" theme={theme} highlight />
+          <BenefitCell label="母币 QA 开盘价" value="$0.028" sub="/ 每枚母币" theme={theme} highlight />
           <BenefitCell label="子币 SUB 开盘价"  value="$0.038" sub="/ 每枚子币" theme={theme} highlight />
         </div>
       </BenefitGroup>
@@ -859,7 +850,7 @@ function BenefitsSection({ nodeType }: { nodeType: string | null }) {
       </BenefitGroup>
 
       <p className="text-[11px] text-muted-foreground/82 text-center pt-1">
-        所有权益依据 RUNE 节点招募计划执行，链上智能合约保障兑现
+        所有权益依据 QA 节点招募计划执行，链上智能合约保障兑现
       </p>
     </div>
   );
@@ -1052,7 +1043,7 @@ export default function ProfileNodesPage() {
                 className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-300/80"
               >
                 <Sparkles className="h-3 w-3 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.65)]" />
-                RUNE Protocol · 节点总览
+                QA Protocol · 节点总览
               </motion.span>
 
               {nodeType ? (
@@ -1071,7 +1062,7 @@ export default function ProfileNodesPage() {
                   </h1>
                 </motion.div>
               ) : (
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">RUNE 节点控制台</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">QA 节点控制台</h1>
               )}
 
               <motion.div

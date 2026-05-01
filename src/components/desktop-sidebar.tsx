@@ -4,24 +4,11 @@ import { useTranslation } from "react-i18next";
 import { useActiveAccount } from "thirdweb/react";
 
 const mainNavItems = [
-  { path: "/", icon: Home, labelKey: "nav.home" },
-  { path: "/trade", icon: BarChart3, labelKey: "nav.predict" },
-  {
-    path: "/vault",
-    labelKey: "nav.vault",
-    icon: () => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-        <circle cx="12" cy="8" r="5" />
-        <circle cx="12" cy="8" r="2" />
-        <path d="M12 13v3" />
-        <path d="M8 21h8" />
-        <path d="M10 18h4" />
-      </svg>
-    ),
-  },
-  { path: "/strategy", icon: Brain, labelKey: "nav.trade" },
-  { path: "/market", icon: TrendingUp, labelKey: "nav.market" },
-  { path: "/profile", icon: User, labelKey: "nav.profile" },
+  { path: "/", icon: TrendingUp, label: "行情" },
+  { path: "/trade", icon: BarChart3, label: "预测" },
+  { path: "/vault", icon: Home, label: "金库" },
+  { path: "/strategy", icon: Brain, label: "交易" },
+  { path: "/profile", icon: User, label: "我的" },
 ];
 
 const profileNavItems = [
@@ -68,7 +55,7 @@ export function DesktopSidebar() {
                   <div
                     className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all cursor-pointer ${
                       isActive
-                      ? "text-primary bg-primary/10 shadow-[0_0_12px_rgba(212,168,50,0.08)]"
+                      ? "text-primary bg-primary/10 shadow-[0_0_12px_rgba(59,130,246,0.12)]"
                         : "text-foreground/45 hover:text-foreground/75 hover:bg-white/[0.03]"
                     }`}
                   >
@@ -90,12 +77,12 @@ export function DesktopSidebar() {
                 <div
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${
                     isActive
-                      ? "text-primary bg-primary/10 shadow-[0_0_12px_rgba(212,168,50,0.08)]"
+                      ? "text-primary bg-primary/10 shadow-[0_0_12px_rgba(59,130,246,0.12)]"
                       : "text-foreground/50 hover:text-foreground/80 hover:bg-white/[0.03]"
                   }`}
                 >
                   <Icon className={`h-5 w-5 shrink-0 ${isActive ? "text-primary" : ""}`} />
-                  <span>{t(item.labelKey)}</span>
+                  <span>{item.label}</span>
                 </div>
               </Link>
             );
@@ -107,7 +94,7 @@ export function DesktopSidebar() {
       <div className="border-t border-border/20 px-4 py-3">
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${account ? "bg-primary animate-pulse" : "bg-foreground/20"}`}
-            style={account ? { boxShadow: "0 0 6px rgba(212,168,50,0.45)" } : undefined}
+            style={account ? { boxShadow: "0 0 6px rgba(59,130,246,0.45)" } : undefined}
           />
           <span className="text-xs text-foreground/40 truncate">
             {account ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` : t("common.notConnected")}

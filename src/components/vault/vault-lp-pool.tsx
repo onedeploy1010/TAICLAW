@@ -216,7 +216,7 @@ export function VaultLpPool() {
               <div className="flex items-center justify-between rounded-lg px-3 py-1.5"
                 style={{ background: "rgba(212,168,50,0.06)", border: "1px solid rgba(212,168,50,0.14)" }}>
                 <div className="text-[9px]" style={{ color: "rgba(212,168,50,0.7)" }}>
-                  {isZh ? "上线价 $0.028 / RUNE · 280万USDT : 1亿RUNE" : "Launch $0.028/RUNE · 2.8M USDT : 100M RUNE"}
+                  {isZh ? "上线价 $0.028 / QA · 280万USDT : 1亿QA" : "Launch $0.028/QA · 2.8M USDT : 100M QA"}
                 </div>
                 <div className="text-[9px] font-bold px-1.5 py-0.5 rounded"
                   style={{ background: "rgba(212,168,50,0.12)", color: "rgba(212,168,50,0.9)" }}>

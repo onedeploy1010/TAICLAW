@@ -288,7 +288,8 @@
     "hyperliquidVault": "하이퍼리퀴드 볼트",
     "dydxVault": "dYdX 볼트",
     "flexible": "유연 · 잠금 없음",
-    "daily": "일일"
+    "daily": "일일",
+    "qaAiVault": "QA AI Vault"
   },
   "deposit": {
     "inputError": "입력 오류",

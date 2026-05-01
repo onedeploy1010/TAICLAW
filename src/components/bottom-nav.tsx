@@ -1,64 +1,62 @@
 import { useLocation, Link } from "wouter";
-import { useTranslation } from "react-i18next";
 import { motion, LayoutGroup } from "framer-motion";
-import { LayoutDashboard, Eye, Shield, BarChart2, User } from "lucide-react";
+import { TrendingUp, Eye, Shield, BarChart2, User } from "lucide-react";
 
 const TABS = [
   {
     path: "/",
-    icon: LayoutDashboard,
+    icon: TrendingUp,
     id: "home",
-    zhLabel: "符阁",
-    enLabel: "HALL",
-    accent: "#d4a832",
-    glow: "rgba(212,168,50,0.6)",
-    pillBg: "rgba(212,168,50,0.15)",
+    zhLabel: "行情",
+    enLabel: "MARKET",
+    accent: "#3b82f6",
+    glow: "rgba(59,130,246,0.6)",
+    pillBg: "rgba(59,130,246,0.15)",
   },
   {
     path: "/trade",
     icon: Eye,
     id: "predict",
-    zhLabel: "符见",
-    enLabel: "SIGHT",
-    accent: "#ef4444",
-    glow: "rgba(239,68,68,0.6)",
-    pillBg: "rgba(239,68,68,0.15)",
+    zhLabel: "预测",
+    enLabel: "PREDICT",
+    accent: "#60a5fa",
+    glow: "rgba(96,165,250,0.6)",
+    pillBg: "rgba(96,165,250,0.15)",
   },
   {
     path: "/vault",
     icon: Shield,
     id: "vault",
-    zhLabel: "符库",
+    zhLabel: "金库",
     enLabel: "VAULT",
-    accent: "#d4a832",
-    glow: "rgba(212,168,50,0.6)",
-    pillBg: "rgba(212,168,50,0.15)",
+    accent: "#3b82f6",
+    glow: "rgba(59,130,246,0.6)",
+    pillBg: "rgba(59,130,246,0.15)",
   },
   {
     path: "/strategy",
     icon: BarChart2,
     id: "trade",
-    zhLabel: "符市",
-    enLabel: "MARKET",
-    accent: "#ef4444",
-    glow: "rgba(239,68,68,0.6)",
-    pillBg: "rgba(239,68,68,0.15)",
+    zhLabel: "交易",
+    enLabel: "TRADE",
+    accent: "#60a5fa",
+    glow: "rgba(96,165,250,0.6)",
+    pillBg: "rgba(96,165,250,0.15)",
   },
   {
     path: "/profile",
     icon: User,
     id: "profile",
-    zhLabel: "符身",
-    enLabel: "SELF",
-    accent: "#d4a832",
-    glow: "rgba(212,168,50,0.6)",
-    pillBg: "rgba(212,168,50,0.15)",
+    zhLabel: "我的",
+    enLabel: "ME",
+    accent: "#3b82f6",
+    glow: "rgba(59,130,246,0.6)",
+    pillBg: "rgba(59,130,246,0.15)",
   },
 ];
 
 export function BottomNav() {
   const [location] = useLocation();
-  const { t } = useTranslation();
 
   return (
     <nav
@@ -70,18 +68,18 @@ export function BottomNav() {
         <div
           className="pointer-events-auto relative flex items-stretch justify-around mx-3 mb-2.5 w-[calc(100%-1.5rem)] max-w-md rounded-2xl overflow-hidden"
           style={{
-            background: "linear-gradient(180deg, rgba(38,28,10,0.98) 0%, rgba(28,20,8,0.99) 100%)",
+            background: "linear-gradient(180deg, rgba(8,14,36,0.98) 0%, rgba(5,10,28,0.99) 100%)",
             backdropFilter: "blur(24px) saturate(1.8)",
             WebkitBackdropFilter: "blur(24px) saturate(1.8)",
-            border: "1px solid rgba(212,168,50,0.35)",
-            boxShadow: "0 -6px 32px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(212,168,50,0.18), inset 0 1px 0 rgba(255,255,255,0.08), 0 -2px 24px rgba(212,168,50,0.06)",
+            border: "1px solid rgba(59,130,246,0.35)",
+            boxShadow: "0 -6px 32px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(59,130,246,0.18), inset 0 1px 0 rgba(255,255,255,0.08), 0 -2px 24px rgba(59,130,246,0.06)",
           }}
         >
           {/* Top shimmer line */}
           <div
             className="absolute top-0 left-0 right-0 h-px pointer-events-none"
             style={{
-              background: "linear-gradient(90deg, transparent 0%, rgba(212,168,50,0.45) 30%, rgba(239,68,68,0.35) 70%, transparent 100%)",
+              background: "linear-gradient(90deg, transparent 0%, rgba(59,130,246,0.55) 30%, rgba(96,165,250,0.45) 70%, transparent 100%)",
             }}
           />
 

@@ -288,7 +288,8 @@
     "hyperliquidVault": "HyperLiquid Tresor",
     "dydxVault": "dYdX Tresor",
     "flexible": "Flexibel · Keine Sperre",
-    "daily": "Täglich"
+    "daily": "Täglich",
+    "qaAiVault": "QA AI Vault"
   },
   "deposit": {
     "inputError": "Eingabefehler",

@@ -231,7 +231,7 @@ export function RuneLockSection() {
                 <div className="flex items-center gap-1.5 text-xs flex-wrap">
                   <span className="font-bold">${usdtNum.toFixed(2)} USDT</span>
                   <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                  <span className="font-bold" style={{ color: "rgba(212,168,50,0.9)" }}>{runeEquiv.toFixed(2)} RUNE</span>
+                  <span className="font-bold" style={{ color: "rgba(59,130,246,0.9)" }}>{runeEquiv.toFixed(2)} QA</span>
                   <span className="text-[10px] text-muted-foreground">(@ ${runePrice.toFixed(4)})</span>
                   <ArrowRight className="h-3 w-3 text-muted-foreground" />
                   <span className="font-bold text-green-400">{veRunePreview.toFixed(4)} veRUNE</span>

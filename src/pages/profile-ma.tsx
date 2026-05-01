@@ -369,9 +369,9 @@ function MASwap() {
           />
           <div className="flex items-center gap-1 bg-white/10 rounded-lg px-2 py-1 shrink-0">
             <div className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold", isSwapped ? "bg-yellow-500/20 text-yellow-400" : "bg-primary/20 text-primary")}>
-              {isSwapped ? "$" : "R"}
+              {isSwapped ? "$" : "Q"}
             </div>
-            <span className="text-[11px] font-medium">{isSwapped ? outputToken : "RUNE"}</span>
+            <span className="text-[11px] font-medium">{isSwapped ? outputToken : "QA"}</span>
           </div>
         </div>
 
@@ -405,7 +405,7 @@ function MASwap() {
                 <option value="USDT">USDT</option>
                 <option value="USDC">USDC</option>
               </select>
-            ) : <span className="text-[11px] font-medium">RUNE</span>}
+            ) : <span className="text-[11px] font-medium">QA</span>}
           </div>
         </div>
 
@@ -461,7 +461,7 @@ function MASwap() {
             : !account ? t("ma.connectWallet", "连接钱包")
             : exceedsQuota ? t("ma.exceedsLimit", "超出额度")
             : inputAmount <= 0 ? t("ma.enterAmount", "输入数量")
-            : isSwapped ? t("ma.buyMA", "买入 RUNE")
+            : isSwapped ? t("ma.buyMA", "买入 QA")
             : t("ma.swapTo", "闪兑 {{token}}", { token: outputToken })}
         </button>
       </div>
@@ -610,7 +610,7 @@ function VaultRedeemSection() {
 
               <div className="text-[10px] space-y-1 text-white/40">
                 <div className="flex justify-between">
-                  <span>{t("ma.mintedMA", "铸造 RUNE")}</span>
+                  <span>{t("ma.mintedMA", "铸造 QA")}</span>
                   <span className="font-mono text-white/60">{totalMA.toFixed(2)} MA</span>
                 </div>
                 {isEarly && (
@@ -633,7 +633,7 @@ function VaultRedeemSection() {
                   redeeming === pos.id ? "bg-white/5 text-white/20" : "bg-primary/10 text-primary hover:bg-primary/20"
                 )}
               >
-                {redeeming === pos.id ? t("ma.redeeming", "赎回中...") : isEarly ? t("ma.earlyRedeem", "提前赎回 (获得80% RUNE)") : t("ma.redeemFull", "赎回 (100% RUNE)")}
+                {redeeming === pos.id ? t("ma.redeeming", "赎回中...") : isEarly ? t("ma.earlyRedeem", "提前赎回 (获得80% QA)") : t("ma.redeemFull", "赎回 (100% QA)")}
               </button>
             </div>
           );
