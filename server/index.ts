@@ -119,10 +119,12 @@ app.post("/api/auth-wallet", handle(async (req, res) => {
   }
 
   // ── UPSERT profile — bind referrer/placement only once (never overwrite) ──
+  // ref_code = wallet address (lowercase) for easy referral link sharing
   const { rows } = await primaryPool.query(
-    `INSERT INTO profiles (wallet_address, referrer_id, placement_id)
-     VALUES ($1, $2, $3)
+    `INSERT INTO profiles (wallet_address, ref_code, referrer_id, placement_id)
+     VALUES ($1, $1, $2, $3)
      ON CONFLICT (wallet_address) DO UPDATE SET
+       ref_code     = COALESCE(NULLIF(profiles.ref_code, ''), EXCLUDED.ref_code),
        referrer_id  = COALESCE(profiles.referrer_id,  EXCLUDED.referrer_id),
        placement_id = COALESCE(profiles.placement_id, EXCLUDED.placement_id)
      RETURNING *`,
