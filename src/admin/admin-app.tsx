@@ -126,9 +126,6 @@ function AdminLayout() {
               <Route path="/admin/contracts">
                 <ProtectedRoute permission="contracts"><AdminContracts /></ProtectedRoute>
               </Route>
-              <Route path="/admin/funds">
-                <ProtectedRoute permission="contracts"><AdminFunds /></ProtectedRoute>
-              </Route>
               <Route path="/admin/logs">
                 <ProtectedRoute permission="logs"><AdminLogs /></ProtectedRoute>
               </Route>
@@ -152,9 +149,6 @@ function AdminLayout() {
               </Route>
               <Route path="/admin/treasury">
                 <ProtectedRoute permission="ai-accuracy"><AdminTreasury /></ProtectedRoute>
-              </Route>
-              <Route path="/admin/providers">
-                <ProtectedRoute permission="providers"><AdminProviders /></ProtectedRoute>
               </Route>
             </Switch>
           </main>
