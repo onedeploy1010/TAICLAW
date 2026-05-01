@@ -4,7 +4,7 @@ import adminRoutes from "./admin-routes.js";
 import { startAiTradingEngine } from "./ai-trading-engine.js";
 import { fileURLToPath } from "url";
 import path from "path";
-import fs from "fs";
+import * as fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
