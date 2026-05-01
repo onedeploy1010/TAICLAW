@@ -736,7 +736,7 @@ export default function ProfileReferralPage() {
                     {[
                       { icon: Users, label: "直推笔数",     value: String(directRecs.length),              sub: "direct referrals", highlight: false },
                       { icon: DollarSign, label: "累计佣金", value: `$${totalComm.toFixed(0)}`,            sub: "USDT",             highlight: true  },
-                      { icon: Award, label: "节点收益",      value: `${nrTotal.toFixed(0)} MA`,            sub: "token rewards",    highlight: false },
+                      { icon: Award, label: "节点收益",      value: `${nrTotal.toFixed(0)} QA`,            sub: "token rewards",    highlight: false },
                     ].map((kpi, i) => (
                       <Kpi key={kpi.label} icon={kpi.icon} label={kpi.label} value={kpi.value} sub={kpi.sub} highlight={kpi.highlight} delay={i * 0.05} />
                     ))}
@@ -853,7 +853,7 @@ export default function ProfileReferralPage() {
                                 </div>
                               </div>
                               <div className="text-right shrink-0">
-                                <div className="text-[13px] font-bold num" style={{ color }}>+{amount.toFixed(2)} MA</div>
+                                <div className="text-[13px] font-bold num" style={{ color }}>+{amount.toFixed(2)} QA</div>
                               </div>
                             </div>
                           );

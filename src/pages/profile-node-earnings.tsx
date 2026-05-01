@@ -160,7 +160,7 @@ export default function ProfileNodeEarningsPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <div className="text-sm font-bold text-neon-value">
-                          +{usdcToMA(amount).toFixed(2)} MA
+                          +{usdcToMA(amount).toFixed(2)} QA
                         </div>
                         <div className="text-[10px] text-muted-foreground">{createdAt}</div>
                       </div>
