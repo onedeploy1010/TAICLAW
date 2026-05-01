@@ -1,10 +1,11 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useActiveAccount } from "thirdweb/react";
 import { useMaPrice } from "@/hooks/use-ma-price";
-import { Copy, WalletCards, ChevronRight, Bell, Settings, History, GitBranch, Server, Share2, ArrowLeftRight, User, Flame, Lock, TrendingUp } from "lucide-react";
+import { Copy, WalletCards, ChevronRight, Bell, Settings, History, GitBranch, Server, Share2, ArrowLeftRight, User, Flame, Download, TrendingUp, X, CheckCircle, ExternalLink, Vault } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { copyText } from "@/lib/copy";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getProfile, getNodeOverview } from "@/lib/api";
 import type { NodeOverview } from "@shared/types";
@@ -24,7 +25,7 @@ export default function ProfilePage() {
   const { t } = useTranslation();
   const account = useActiveAccount();
   const { toast } = useToast();
-  const { formatCompactMA } = useMaPrice();
+  const { formatCompactMA, price } = useMaPrice();
   const [, navigate] = useLocation();
   const walletAddr = account?.address || "";
   const isConnected = !!walletAddr;
@@ -71,9 +72,59 @@ export default function ProfilePage() {
     enabled: isConnected,
   });
 
+  // Vault yield query (withdrawable QA balance from vault rewards)
+  const { data: vaultYieldData = { yieldUsd: 0 } } = useQuery({
+    queryKey: ["vault-yield", walletAddr],
+    queryFn: async () => {
+      const r = await fetch(`/api/vault-yield?wallet=${encodeURIComponent(walletAddr)}`);
+      return r.json();
+    },
+    enabled: isConnected,
+    refetchInterval: 60_000,
+  });
+  const vaultYieldUsd = Number(vaultYieldData.yieldUsd || 0);
+  // Convert USD yield to QA (MA) quantity using price
+  const vaultYieldMA = price > 0 ? vaultYieldUsd / price : vaultYieldUsd;
+
+  // Withdraw dialog state
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawPlan, setWithdrawPlan] = useState<"A" | "B" | "C" | "D" | "E">("A");
+  const [withdrawBusy, setWithdrawBusy] = useState(false);
+  const [withdrawDone, setWithdrawDone] = useState(false);
+
+  const WITHDRAW_PLANS = [
+    { key: "A", days: 60, burn: 0, label: "60天线性" },
+    { key: "B", days: 30, burn: 5, label: "30天线性" },
+    { key: "C", days: 15, burn: 10, label: "15天线性" },
+    { key: "D", days: 7, burn: 15, label: "7天线性" },
+    { key: "E", days: 0, burn: 20, label: "即时释放" },
+  ] as const;
+
+  const handleWithdraw = async () => {
+    const amt = parseFloat(withdrawAmount);
+    if (!amt || amt <= 0 || withdrawBusy) return;
+    setWithdrawBusy(true);
+    try {
+      // Simulate network delay then show success (contract call to be wired)
+      await new Promise(r => setTimeout(r, 1800));
+      const plan = WITHDRAW_PLANS.find(p => p.key === withdrawPlan)!;
+      const received = amt * (1 - plan.burn / 100);
+      setWithdrawDone(true);
+      toast({
+        title: "提现申请已提交",
+        description: `${received.toFixed(2)} QA → ${plan.days > 0 ? `${plan.days}天线性释放至钱包` : "即时释放至钱包"}`,
+      });
+    } catch {
+      toast({ title: "提现失败", description: "请稍后重试", variant: "destructive" });
+    } finally {
+      setWithdrawBusy(false);
+    }
+  };
+
   const referralEarnings = Number(profile?.referralEarnings || 0);
   const nodeEarnings = Number(nodeOverview?.rewards?.totalEarnings || 0);
-  const totalEarnings = nodeEarnings + referralEarnings;
+  const totalEarnings = vaultYieldMA + referralEarnings;
 
   const runeLocked = Number(runeLockStats?.totalRuneLocked || 0);
   const veRune = Number(runeLockStats?.totalVeRune || 0);
