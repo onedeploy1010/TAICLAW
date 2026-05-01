@@ -229,7 +229,8 @@ export function useOrderBook(symbol: string) {
 
       return { bids: [], asks: [], buyPercent: "50.0", sellPercent: "50.0" };
     },
-    refetchInterval: 10000,
-    staleTime: 5000,
+    refetchInterval: 30000,
+    staleTime: 15000,
+    refetchOnWindowFocus: false,
   });
 }

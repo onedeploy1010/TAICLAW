@@ -859,13 +859,40 @@ app.get("/api/klines/:symbol/:timeframe", handle(async (req, res) => {
   res.json([]);
 }));
 
+const proxyCache = new Map<string, { data: string; ct: string; ts: number }>();
+const PROXY_CACHE_TTL: Record<string, number> = {
+  "depth": 15_000,   // order book: 15s
+  "ticker": 20_000,  // ticker: 20s
+  "klines": 30_000,  // klines: 30s
+};
+function proxyCacheTtl(url: string): number {
+  for (const [key, ttl] of Object.entries(PROXY_CACHE_TTL)) {
+    if (url.includes(key)) return ttl;
+  }
+  return 20_000;
+}
+
 app.post("/api/proxy", handle(async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: "Missing url" });
   const parsed = new URL(url);
   if (!ALLOWED_HOSTS.includes(parsed.hostname)) return res.status(403).json({ error: "Host not allowed" });
+
+  const ttl = proxyCacheTtl(url);
+  const cached = proxyCache.get(url);
+  if (cached && Date.now() - cached.ts < ttl) {
+    return res.set("Content-Type", cached.ct).send(cached.data);
+  }
+
   const r = await fetch(url, { headers: { Accept: "application/json", "User-Agent": "CoinMax/1.0" } });
   const data = await r.text();
+  if (r.ok) {
+    proxyCache.set(url, { data, ct: r.headers.get("Content-Type") || "application/json", ts: Date.now() });
+    if (proxyCache.size > 500) {
+      const oldest = [...proxyCache.entries()].sort((a, b) => a[1].ts - b[1].ts).slice(0, 100);
+      for (const [k] of oldest) proxyCache.delete(k);
+    }
+  }
   res.status(r.status).set("Content-Type", r.headers.get("Content-Type") || "application/json").send(data);
 }));
 
