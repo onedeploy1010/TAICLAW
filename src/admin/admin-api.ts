@@ -262,3 +262,14 @@ export async function adminGetBridgeCycles() {
 export async function adminCreateBridgeCycle(data: any) {
   return apiPost("/api/admin/bridge-cycles", data);
 }
+
+export async function adminGetVaultDeposits(limit = 30) {
+  return apiFetch(`/api/admin/vault-deposits?limit=${limit}`);
+}
+
+export async function adminGetTransactions(page: number, pageSize: number, types?: string, search?: string) {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  if (types) params.set("types", types);
+  if (search) params.set("search", search);
+  return apiFetch(`/api/admin/transactions?${params}`);
+}
