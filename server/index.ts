@@ -1,6 +1,10 @@
 import express from "express";
 import { pool, supabasePool, primaryPool } from "./db.js";
 import adminRoutes from "./admin-routes.js";
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 app.use(express.json());
@@ -1463,7 +1467,16 @@ app.get("/api/supabase/team/:wallet", handle(async (req, res) => {
   });
 }));
 
-const PORT = parseInt(process.env.PORT || "5001");
+// ── Static file serving (production only) ─────────────────────────────────────
+if (process.env.NODE_ENV === "production") {
+  const distPath = path.join(__dirname, "../dist");
+  app.use(express.static(distPath));
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
+  });
+}
+
+const PORT = parseInt(process.env.PORT || (process.env.NODE_ENV === "production" ? "5000" : "5001"));
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`API server running on port ${PORT}`);
 });
